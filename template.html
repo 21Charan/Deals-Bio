@@ -49,6 +49,25 @@
   .controls input:focus,.controls select:focus{outline:none;border-color:var(--pwc-orange);box-shadow:0 0 0 2px rgba(208,74,2,0.15)}
   .controls .reset-btn{padding:10px 16px;background:var(--white);color:var(--pwc-grey-700);border:1px solid var(--pwc-grey-300);border-radius:4px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;transition:all .15s}
   .controls .reset-btn:hover{border-color:var(--pwc-rose);color:var(--pwc-rose)}
+  /* Multi-select checkbox dropdown (used for Skills) */
+  .multiselect{position:relative;display:inline-block}
+  .ms-trigger{padding:10px 14px;border:1px solid var(--pwc-grey-300);border-radius:4px;background:var(--white);font-family:inherit;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px;min-width:180px;color:var(--pwc-grey-900)}
+  .ms-trigger:hover{border-color:var(--pwc-grey-400)}
+  .ms-trigger.has-selection{border-color:var(--pwc-orange);color:var(--pwc-orange);font-weight:600}
+  .ms-caret{font-size:10px;color:var(--pwc-grey-600);margin-left:auto}
+  .ms-panel{position:absolute;top:calc(100% + 4px);left:0;background:var(--white);border:1px solid var(--pwc-grey-300);border-radius:4px;box-shadow:0 6px 20px rgba(0,0,0,0.12);min-width:280px;max-width:340px;z-index:20;display:none;flex-direction:column}
+  .ms-panel.open{display:flex}
+  /* Explicit flex/sizing so the global .controls input rule doesn't bleed in */
+  .ms-search{display:block;width:100%;box-sizing:border-box;flex:0 0 auto;padding:10px 12px;border:none;border-bottom:1px solid var(--pwc-grey-300);font-family:inherit;font-size:13px;outline:none;border-radius:4px 4px 0 0;background:var(--white);color:var(--pwc-grey-900)}
+  .ms-options{flex:1 1 auto;max-height:280px;overflow-y:auto;padding:6px 0}
+  .ms-option{display:flex;align-items:center;gap:10px;padding:7px 12px;cursor:pointer;font-size:13px;color:var(--pwc-grey-900);text-align:left;justify-content:flex-start}
+  .ms-option:hover{background:var(--pwc-grey-100)}
+  .ms-option input[type="checkbox"]{flex:0 0 14px;width:14px;height:14px;min-width:14px;max-width:14px;margin:0;accent-color:var(--pwc-orange);cursor:pointer}
+  .ms-option span{flex:1 1 auto;text-align:left}
+  .ms-actions{display:flex;justify-content:space-between;padding:8px 10px;border-top:1px solid var(--pwc-grey-300);background:var(--pwc-grey-50);border-radius:0 0 4px 4px}
+  .ms-actions button{font-family:inherit;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--pwc-orange);cursor:pointer;padding:4px 8px;border-radius:3px}
+  .ms-actions button:hover{background:rgba(208,74,2,0.08)}
+  .ms-no-results{padding:14px;text-align:center;color:var(--pwc-grey-600);font-size:13px;font-style:italic}
   .role-section{margin-bottom:28px}
   .role-header{display:flex;align-items:center;gap:12px;margin:18px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--pwc-grey-300)}
   .role-header .role-title{font-size:16px;font-weight:700;color:var(--pwc-grey-900);text-transform:uppercase;letter-spacing:1px}
@@ -211,6 +230,20 @@
       <select id="dir-loc-filter"><option value="">All locations</option></select>
       <select id="dir-territory-filter"><option value="">All territories</option></select>
       <select id="dir-competency-filter"><option value="">All competencies</option></select>
+      <div class="multiselect" id="dir-skills-ms">
+        <button class="ms-trigger" type="button" id="dir-skills-trigger">
+          <span class="ms-label">All skills</span>
+          <span class="ms-caret">&#9662;</span>
+        </button>
+        <div class="ms-panel" id="dir-skills-panel">
+          <input type="text" class="ms-search" placeholder="Search skills..." id="dir-skills-search">
+          <div class="ms-options" id="dir-skills-options"></div>
+          <div class="ms-actions">
+            <button type="button" id="dir-skills-clear">Clear selection</button>
+            <button type="button" id="dir-skills-close">Done</button>
+          </div>
+        </div>
+      </div>
       <select id="dir-sort">
         <option value="Name">Sort: Name</option>
         <option value="__EXP_TOTAL__">Sort: Experience</option>
@@ -326,6 +359,110 @@
   }
   setKpis();
 
+  // ----- Skills multi-select (checkbox dropdown) -----
+  // Per-employee skill set built once at load — combines the Skills column
+  // and the per-row entries in the Employee Skills sheet. Lowercased keys
+  // for case-insensitive matching, with display name preserved for the UI.
+  const SKILL_DISPLAY = {};      // lower -> first-seen display name
+  EMPLOYEES.forEach(e => {
+    const set = new Set();
+    String(e.Skills || '').split(',').map(s => s.trim()).filter(Boolean).forEach(s => {
+      const k = s.toLowerCase();
+      set.add(k);
+      if (!SKILL_DISPLAY[k]) SKILL_DISPLAY[k] = s;
+    });
+    e._skills = set;
+  });
+  SKILLS.forEach(row => {
+    const empId = String(row.WorkdayID);
+    const emp = EMPLOYEES.find(x => String(x.WorkdayID) === empId);
+    if (!emp) return;
+    String(row.Skills || '').split(',').map(s => s.trim()).filter(Boolean).forEach(s => {
+      const k = s.toLowerCase();
+      emp._skills.add(k);
+      if (!SKILL_DISPLAY[k]) SKILL_DISPLAY[k] = s;
+    });
+  });
+  const ALL_SKILLS = Object.keys(SKILL_DISPLAY)
+    .sort((a, b) => SKILL_DISPLAY[a].localeCompare(SKILL_DISPLAY[b], undefined, { sensitivity: 'base' }));
+
+  // Selected skill set (lowercase keys). renderDirectory reads from this.
+  const selectedSkills = new Set();
+
+  const skillsPanel   = document.getElementById('dir-skills-panel');
+  const skillsTrigger = document.getElementById('dir-skills-trigger');
+  const skillsSearch  = document.getElementById('dir-skills-search');
+  const skillsOptions = document.getElementById('dir-skills-options');
+  const skillsLabel   = skillsTrigger.querySelector('.ms-label');
+
+  function renderSkillsOptions(filterStr){
+    const q = (filterStr || '').toLowerCase().trim();
+    const visible = ALL_SKILLS.filter(k => !q || SKILL_DISPLAY[k].toLowerCase().includes(q));
+    if (!visible.length){
+      skillsOptions.innerHTML = '<div class="ms-no-results">No matching skills</div>';
+      return;
+    }
+    skillsOptions.innerHTML = visible.map(k =>
+      '<label class="ms-option">'
+      + '<input type="checkbox" data-skill="' + esc(k) + '"' + (selectedSkills.has(k) ? ' checked' : '') + '>'
+      + '<span>' + esc(SKILL_DISPLAY[k]) + '</span>'
+      + '</label>'
+    ).join('');
+  }
+  renderSkillsOptions('');
+
+  function updateSkillsTrigger(){
+    if (selectedSkills.size === 0){
+      skillsLabel.textContent = 'All skills';
+      skillsTrigger.classList.remove('has-selection');
+    } else if (selectedSkills.size === 1){
+      skillsLabel.textContent = SKILL_DISPLAY[[...selectedSkills][0]];
+      skillsTrigger.classList.add('has-selection');
+    } else {
+      skillsLabel.textContent = selectedSkills.size + ' skills selected';
+      skillsTrigger.classList.add('has-selection');
+    }
+  }
+
+  // Toggle panel open/close
+  skillsTrigger.addEventListener('click', e => {
+    e.stopPropagation();
+    skillsPanel.classList.toggle('open');
+    if (skillsPanel.classList.contains('open')){
+      skillsSearch.value = '';
+      renderSkillsOptions('');
+      setTimeout(() => skillsSearch.focus(), 30);
+    }
+  });
+  // Close on outside click
+  document.addEventListener('click', e => {
+    if (!skillsPanel.contains(e.target) && e.target !== skillsTrigger){
+      skillsPanel.classList.remove('open');
+    }
+  });
+  // Filter the visible options
+  skillsSearch.addEventListener('input', e => renderSkillsOptions(e.target.value));
+  // Checkbox toggle
+  skillsOptions.addEventListener('change', e => {
+    if (e.target.matches('input[type="checkbox"]')){
+      const k = e.target.dataset.skill;
+      if (e.target.checked) selectedSkills.add(k);
+      else selectedSkills.delete(k);
+      updateSkillsTrigger();
+      renderDirectory();
+    }
+  });
+  // Clear / Done buttons
+  document.getElementById('dir-skills-clear').addEventListener('click', () => {
+    selectedSkills.clear();
+    updateSkillsTrigger();
+    renderSkillsOptions(skillsSearch.value);
+    renderDirectory();
+  });
+  document.getElementById('dir-skills-close').addEventListener('click', () => {
+    skillsPanel.classList.remove('open');
+  });
+
   // ----- Tabs -----
   document.querySelectorAll('nav.tabs button').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -391,6 +528,12 @@
       if (loc  && String(e['Location']   || '') !== loc)  return false;
       if (terr && String(e['Territory']  || '') !== terr) return false;
       if (comp && String(e['Competency'] || '') !== comp) return false;
+      // Skills filter — OR match (employee has ANY of the selected skills).
+      if (selectedSkills.size > 0){
+        let any = false;
+        for (const s of selectedSkills){ if (e._skills && e._skills.has(s)){ any = true; break; } }
+        if (!any) return false;
+      }
       if (!q) return true;
       return ['Name','Role','OU','Location','Territory','Competency','Skills','Qualification','emailid','Team']
         .some(k => String(e[k] ?? '').toLowerCase().includes(q));
@@ -440,7 +583,7 @@
    'dir-territory-filter','dir-competency-filter','dir-sort'].forEach(id =>
     document.getElementById(id).addEventListener('input', renderDirectory));
 
-  // Reset clears search, all filters, and sort.
+  // Reset clears search, all filters (including the Skills multi-select), and sort.
   document.getElementById('dir-reset').addEventListener('click', () => {
     document.getElementById('dir-search').value = '';
     ['dir-ou-filter','dir-role-filter','dir-loc-filter',
@@ -448,6 +591,11 @@
       document.getElementById(id).value = '';
     });
     document.getElementById('dir-sort').value = 'Name';
+    selectedSkills.clear();
+    updateSkillsTrigger();
+    if (skillsSearch) skillsSearch.value = '';
+    renderSkillsOptions('');
+    skillsPanel.classList.remove('open');
     renderDirectory();
   });
 
