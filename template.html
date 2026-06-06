@@ -448,32 +448,37 @@
   }
   setKpis();
 
-  // ----- Skills multi-select (checkbox dropdown) -----
-  // Per-employee skill set built once at load — combines the Skills column
-  // and the per-row entries in the Employee Skills sheet. Lowercased keys
-  // for case-insensitive matching, with display name preserved for the UI.
-  const SKILL_DISPLAY = {};      // lower -> first-seen display name
-  EMPLOYEES.forEach(e => {
-    const set = new Set();
-    String(e.Skills || '').split(',').map(s => s.trim()).filter(Boolean).forEach(s => {
-      const k = s.toLowerCase();
-      set.add(k);
-      if (!SKILL_DISPLAY[k]) SKILL_DISPLAY[k] = s;
-    });
-    e._skills = set;
-  });
+  // ----- Skills index (canonical, from Employee Skills sheet only) -----
+  // We use Employee Skills as the single source of truth because the free-text
+  // Skills column on Employee Details has inconsistent delimiters and duplicates.
+  // Each row in Employee Skills is joined by WorkdayID. Split defensively on
+  // both ',' and ';' so legacy multi-skill rows still work cleanly.
+  const SKILL_DISPLAY = Object.create(null);   // lower -> first-seen display name
+  const SKILL_CATEGORY = Object.create(null);  // lower -> Skill Category
+  EMPLOYEES.forEach(e => { e._skills = new Set(); });
+
   SKILLS.forEach(row => {
     const empId = String(row.WorkdayID);
     const emp = EMPLOYEES.find(x => String(x.WorkdayID) === empId);
     if (!emp) return;
-    String(row.Skills || '').split(',').map(s => s.trim()).filter(Boolean).forEach(s => {
+    const cat = String(row['Skill Category'] || '').trim() || 'Uncategorised';
+    String(row.Skills || '').split(/[,;]/).map(s => s.trim()).filter(Boolean).forEach(s => {
       const k = s.toLowerCase();
       emp._skills.add(k);
-      if (!SKILL_DISPLAY[k]) SKILL_DISPLAY[k] = s;
+      if (!SKILL_DISPLAY[k])  SKILL_DISPLAY[k]  = s;
+      if (!SKILL_CATEGORY[k]) SKILL_CATEGORY[k] = cat;
     });
   });
   const ALL_SKILLS = Object.keys(SKILL_DISPLAY)
     .sort((a, b) => SKILL_DISPLAY[a].localeCompare(SKILL_DISPLAY[b], undefined, { sensitivity: 'base' }));
+
+  // Pre-computed searchable string of each employee's canonical skills.
+  // Used by Directory search so "python" finds people with Python in the
+  // Employee Skills sheet (the messy Skills column on Employee Details is
+  // intentionally NOT searched any more).
+  EMPLOYEES.forEach(e => {
+    e._skillsSearchable = [...e._skills].map(k => SKILL_DISPLAY[k] || '').join(' ').toLowerCase();
+  });
 
   // Selected skill set (lowercase keys). renderDirectory reads from this.
   const selectedSkills = new Set();
@@ -624,7 +629,10 @@
         if (!any) return false;
       }
       if (!q) return true;
-      return ['Name','Role','OU','Location','Territory','Competency','Skills','Qualification','emailid','Team']
+      // Searches both regular fields and the canonical skills index
+      // (Employee Skills sheet, not the messy free-text Skills column).
+      if ((e._skillsSearchable || '').includes(q)) return true;
+      return ['Name','Role','OU','Location','Territory','Competency','Qualification','emailid','Team']
         .some(k => String(e[k] ?? '').toLowerCase().includes(q));
     });
     list.sort((a, b) => {
@@ -747,16 +755,8 @@
         +   [...sks].map(s => '<span class="skill-tag">' + esc(s) + '</span>').join('')
         + '</div>'
         + '</div>').join('');
-    } else if (emp.Skills){
-      // No category breakdown — render the flat Skills field under "General"
-      skillsHtml = '<div class="skill-cat-block">'
-        + '<div class="cat-header">General</div>'
-        + '<div class="cat-skills">'
-        +   String(emp.Skills).split(',').map(s =>
-              '<span class="skill-tag">' + esc(s.trim()) + '</span>').join('')
-        + '</div></div>';
     } else {
-      skillsHtml = '<em style="color:var(--pwc-grey-600);">No skills recorded.</em>';
+      skillsHtml = '<em style="color:var(--pwc-grey-600);">No skills recorded in the Employee Skills sheet.</em>';
     }
 
     // Utilization — smooth area+line chart (SVG, Catmull-Rom-style bezier).
@@ -855,7 +855,12 @@
     // except ones already in the banner or stored internally.
     const SKIP_FIELDS = new Set([
       'Name','Role','OU','PhotoID','Employee Description','Team',
-      EXP_TOTAL, EXP_PWC, '_photo', '_initials'
+      // Skills is intentionally hidden — categorised skills are shown below
+      // via the Employee Skills sheet (authoritative source). The free-text
+      // column on Employee Details has inconsistent delimiters and would
+      // duplicate / contradict the canonical list.
+      'Skills',
+      EXP_TOTAL, EXP_PWC, '_photo', '_initials', '_skills', '_skillsSearchable'
     ]);
     // Preferred display order; anything else comes after alphabetically.
     const PREFERRED_ORDER = [
@@ -929,18 +934,7 @@
   }
 
   // ----- Skill Atlas -----
-  // Map skill (lowercase) -> Skill Category from the Employee Skills sheet.
-  // Skills only seen in the free-text Skills column get "Uncategorised".
-  const SKILL_CATEGORY = Object.create(null);
-  SKILLS.forEach(row => {
-    const cat = String(row['Skill Category'] || '').trim() || 'Uncategorised';
-    String(row.Skills || '').split(',').map(s => s.trim()).filter(Boolean).forEach(s => {
-      const k = s.toLowerCase();
-      if (!SKILL_CATEGORY[k]) SKILL_CATEGORY[k] = cat;
-    });
-  });
-  ALL_SKILLS.forEach(k => { if (!SKILL_CATEGORY[k]) SKILL_CATEGORY[k] = 'Uncategorised'; });
-
+  // SKILL_CATEGORY is already populated up above (when we ingested SKILLS).
   // Count per skill + headcount holders
   const SKILL_COUNT = Object.create(null);
   const SKILL_HOLDERS = Object.create(null);   // skill key -> array of employees
