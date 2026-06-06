@@ -136,61 +136,98 @@
   .util-svg .util-dot-label{fill:var(--pwc-grey-700);font-size:11px;font-weight:600;font-family:inherit;text-anchor:middle}
   .util-svg .util-month-label{fill:var(--pwc-grey-600);font-size:11px;font-family:inherit;text-anchor:middle}
   .util-svg .util-threshold{stroke:var(--pwc-rose);stroke-width:1;stroke-dasharray:4 4;opacity:.6}
-  /* ---- Org Tree ---- */
-  .tree-controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
-  .tree-controls input{flex:1 1 280px;padding:10px 14px;border:1px solid var(--pwc-grey-300);border-radius:4px;font-size:14px;font-family:inherit;background:var(--white)}
-  .tree-controls input:focus{outline:none;border-color:var(--pwc-orange);box-shadow:0 0 0 2px rgba(208,74,2,0.15)}
-  .tree-controls button{padding:10px 16px;border:1px solid var(--pwc-orange);background:var(--white);color:var(--pwc-orange);border-radius:4px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
-  .tree-controls button:hover{background:var(--pwc-orange);color:var(--white)}
-  .tree{background:var(--white);border-radius:6px;padding:18px 24px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
-  .tree-node{margin:2px 0}
-  .tree-node.tree-hidden{display:none}
-  .tree-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:4px;cursor:pointer;user-select:none;transition:background .15s}
-  .tree-toggle{width:18px;height:18px;border:none;background:transparent;cursor:pointer;color:inherit;font-size:11px;flex-shrink:0;padding:0;font-family:inherit;display:flex;align-items:center;justify-content:center}
-  .tree-toggle::before{content:"\25B6";transition:transform .2s;display:inline-block}
-  .tree-node.expanded > .tree-row .tree-toggle::before{transform:rotate(90deg)}
-  .tree-children{padding-left:28px;border-left:2px solid var(--pwc-grey-300);margin-left:12px;margin-top:4px}
-  .tree-node:not(.expanded) > .tree-children{display:none}
-  /* OU level */
-  .tree-ou > .tree-row{background:var(--pwc-grey-900);color:var(--white);font-weight:700;text-transform:uppercase;letter-spacing:0.6px;font-size:13px;padding:10px 14px;margin-top:8px}
-  .tree-ou > .tree-row:hover{background:#1a1a1a}
-  .tree-ou > .tree-children{border-left-color:var(--pwc-orange)}
-  /* Team Lead level */
-  .tree-lead > .tree-row{background:var(--pwc-grey-50);border-left:3px solid var(--pwc-orange);padding-left:11px}
-  .tree-lead > .tree-row:hover{background:var(--pwc-grey-100)}
-  .tree-lead-photo{width:34px;height:34px;border-radius:50%;overflow:hidden;background:var(--pwc-grey-100);flex-shrink:0;display:flex;align-items:center;justify-content:center}
-  .tree-lead-photo img{width:100%;height:100%;object-fit:cover}
-  .tree-lead-photo.fallback{background:var(--pwc-orange);color:var(--white);font-weight:600;font-size:13px}
-  .tree-lead-name{font-weight:600;font-size:14px;color:var(--pwc-grey-900)}
-  .tree-lead-role{font-size:11px;color:var(--pwc-orange);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;background:rgba(208,74,2,0.08);padding:2px 8px;border-radius:3px}
-  .tree-lead-orphan{color:var(--pwc-grey-600);font-style:italic;font-weight:500}
-  /* Location level */
-  .tree-location > .tree-row:hover{background:var(--pwc-grey-100)}
-  .tree-loc-icon{font-size:14px}
-  .tree-loc-name{font-weight:500;font-size:14px;color:var(--pwc-grey-700)}
-  /* Employee leaf */
-  .tree-emp{display:flex;align-items:center;gap:10px;padding:6px 10px;margin:2px 0;border-radius:4px;cursor:pointer;transition:background .15s}
-  .tree-emp:hover{background:rgba(208,74,2,0.08)}
-  .tree-emp-photo{width:30px;height:30px;border-radius:50%;overflow:hidden;background:var(--pwc-grey-100);flex-shrink:0;display:flex;align-items:center;justify-content:center}
-  .tree-emp-photo img{width:100%;height:100%;object-fit:cover}
-  .tree-emp-photo.fallback{background:var(--pwc-orange);color:var(--white);font-weight:600;font-size:12px}
-  .tree-emp-name{font-weight:600;font-size:13px;color:var(--pwc-grey-900)}
-  .tree-emp-role{font-size:10px;color:var(--pwc-grey-600);text-transform:uppercase;letter-spacing:0.4px}
-  .tree-count{margin-left:auto;background:rgba(255,255,255,0.15);color:inherit;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;min-width:28px;text-align:center}
-  .tree-lead > .tree-row .tree-count,.tree-location > .tree-row .tree-count{background:var(--pwc-grey-200,#e5e5e5);color:var(--pwc-grey-700)}
-  .tree-empty{padding:30px;text-align:center;color:var(--pwc-grey-600)}
-  .analytics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px}
-  .chart-card{background:var(--white);border-radius:6px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
-  .chart-card h3{margin:0 0 16px;font-size:15px;color:var(--pwc-grey-900)}
-  .donut-wrap{display:flex;align-items:center;gap:18px}
-  .donut-wrap svg{flex-shrink:0}
-  .legend{display:flex;flex-direction:column;gap:8px;font-size:13px}
-  .legend .legend-item{display:flex;align-items:center;gap:8px}
-  .legend .swatch{width:12px;height:12px;border-radius:2px}
-  .hbar{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:13px}
-  .hbar .name{width:110px;color:var(--pwc-grey-700)}
-  .hbar .track{flex:1;background:var(--pwc-grey-100);height:22px;border-radius:3px;overflow:hidden;position:relative}
-  .hbar .fill{height:100%;background:linear-gradient(90deg,var(--pwc-orange),var(--pwc-tangerine));display:flex;align-items:center;justify-content:flex-end;padding:0 8px;color:var(--white);font-weight:600;font-size:12px}
+  /* ---- Skill Atlas ---- */
+  .atlas-grid{display:grid;grid-template-columns:1fr 380px;gap:20px;margin-bottom:32px}
+  @media (max-width:980px){.atlas-grid{grid-template-columns:1fr}}
+  .atlas-explorer{background:var(--white);border-radius:6px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,0.08);display:flex;flex-direction:column;min-height:520px}
+  .atlas-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+  .atlas-toolbar input{flex:1 1 220px;padding:9px 12px;border:1px solid var(--pwc-grey-300);border-radius:4px;font-family:inherit;font-size:13px}
+  .atlas-toolbar input:focus{outline:none;border-color:var(--pwc-orange);box-shadow:0 0 0 2px rgba(208,74,2,0.15)}
+  .atlas-legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--pwc-grey-700)}
+  .atlas-legend .leg{display:flex;align-items:center;gap:5px}
+  .atlas-legend .swatch{width:11px;height:11px;border-radius:2px;display:inline-block}
+  .treemap-wrap{flex:1;min-height:460px;position:relative}
+  #treemap{width:100%;height:100%;display:block;border-radius:4px;overflow:hidden}
+  .tm-tile{cursor:pointer;transition:opacity .15s,filter .15s}
+  .tm-tile:hover{filter:brightness(1.08)}
+  .tm-tile.dim{opacity:.25}
+  .tm-label{fill:var(--white);font-family:inherit;font-weight:600;pointer-events:none}
+  .tm-count{fill:rgba(255,255,255,0.85);font-family:inherit;font-size:10px;pointer-events:none}
+  .atlas-detail{background:var(--white);border-radius:6px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,0.08);max-height:680px;overflow-y:auto;position:sticky;top:20px}
+  .atlas-detail-empty{text-align:center;color:var(--pwc-grey-600);padding:40px 20px;font-size:13px;line-height:1.6}
+  .adt-emoji{font-size:36px;margin-bottom:10px}
+  .adt-head{display:flex;align-items:center;gap:12px;border-bottom:2px solid var(--pwc-grey-100);padding-bottom:12px;margin-bottom:14px}
+  .adt-cat{width:6px;height:42px;border-radius:3px;flex-shrink:0}
+  .adt-name{font-size:18px;font-weight:700;color:var(--pwc-grey-900);line-height:1.15;margin:0}
+  .adt-cat-name{font-size:11px;color:var(--pwc-grey-600);text-transform:uppercase;letter-spacing:0.6px;font-weight:600}
+  .adt-section-title{font-size:11px;font-weight:700;color:var(--pwc-grey-600);text-transform:uppercase;letter-spacing:0.7px;margin:16px 0 8px;border-left:3px solid var(--pwc-orange);padding-left:8px}
+  .adt-bars{display:flex;flex-direction:column;gap:5px}
+  .adt-bar-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--pwc-grey-700)}
+  .adt-bar-row .bar-name{flex:0 0 92px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .adt-bar-row .bar-track{flex:1;height:16px;background:var(--pwc-grey-100);border-radius:3px;overflow:hidden}
+  .adt-bar-row .bar-fill{height:100%;background:var(--pwc-orange);display:flex;align-items:center;padding-left:6px;color:var(--white);font-size:10px;font-weight:600;min-width:18px}
+  .adt-bar-row .bar-fill.c1{background:var(--pwc-pink)}
+  .adt-bar-row .bar-fill.c2{background:var(--pwc-tangerine)}
+  .adt-bar-row .bar-fill.c3{background:var(--pwc-burgundy)}
+  .adt-adj{display:flex;flex-wrap:wrap;gap:5px}
+  .adt-adj .adj-chip{background:var(--pwc-grey-100);border:1px solid var(--pwc-grey-300);border-radius:999px;padding:4px 10px;font-size:12px;cursor:pointer;transition:all .15s}
+  .adt-adj .adj-chip:hover{background:var(--pwc-orange);color:var(--white);border-color:var(--pwc-orange)}
+  .adt-adj .adj-chip .adj-n{color:var(--pwc-grey-600);font-size:10px;margin-left:4px}
+  .adt-adj .adj-chip:hover .adj-n{color:rgba(255,255,255,0.85)}
+  .adt-people{display:flex;flex-direction:column;gap:4px;max-height:280px;overflow-y:auto;padding-right:4px}
+  .adt-person{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:4px;cursor:pointer;transition:background .15s}
+  .adt-person:hover{background:var(--pwc-grey-100)}
+  .adt-person-photo{width:30px;height:30px;border-radius:50%;overflow:hidden;background:var(--pwc-grey-100);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .adt-person-photo img{width:100%;height:100%;object-fit:cover}
+  .adt-person-photo.fallback{background:var(--pwc-orange);color:var(--white);font-weight:600;font-size:11px}
+  .adt-person-name{font-size:13px;font-weight:600;color:var(--pwc-grey-900);line-height:1.2}
+  .adt-person-meta{font-size:11px;color:var(--pwc-grey-600)}
+  .adt-actions{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--pwc-grey-100)}
+  .adt-actions button{flex:1;padding:8px 10px;background:var(--pwc-orange);color:var(--white);border:none;border-radius:4px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600}
+  .adt-actions button:hover{background:#a83a01}
+  .adt-actions button.secondary{background:var(--white);color:var(--pwc-orange);border:1px solid var(--pwc-orange)}
+  .adt-actions button.secondary:hover{background:rgba(208,74,2,0.08)}
+
+  /* ---- Staffing Builder ---- */
+  .staffing{background:var(--white);border-radius:6px;padding:22px 24px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+  .staffing-head{margin-bottom:18px}
+  .staffing-head h2{margin:0;font-size:20px;font-weight:600;color:var(--pwc-grey-900)}
+  .staffing-head .subtitle{margin:4px 0 0;font-size:13px}
+  .staffing-pickers{display:grid;grid-template-columns:1fr 1fr auto;gap:18px;align-items:end;margin-bottom:18px}
+  @media (max-width:760px){.staffing-pickers{grid-template-columns:1fr}}
+  .staffing-picker label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--pwc-grey-600);margin-bottom:6px}
+  .chip-input{position:relative;background:var(--white);border:1px solid var(--pwc-grey-300);border-radius:4px;padding:6px;display:flex;flex-wrap:wrap;align-items:center;gap:4px;min-height:44px}
+  .chip-input:focus-within{border-color:var(--pwc-orange);box-shadow:0 0 0 2px rgba(208,74,2,0.15)}
+  .chip-input .chips{display:contents}
+  .chip-input .chip{background:var(--pwc-orange);color:var(--white);padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+  .chip-input.nice .chip{background:var(--pwc-tangerine)}
+  .chip-input .chip .x{cursor:pointer;font-weight:700;opacity:.9;background:rgba(255,255,255,0.2);width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px}
+  .chip-input .chip .x:hover{opacity:1;background:rgba(255,255,255,0.35)}
+  .chip-input input{flex:1 1 120px;border:none;outline:none;padding:6px 8px;font-family:inherit;font-size:13px;background:transparent;min-width:120px}
+  .chip-suggest{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1px solid var(--pwc-grey-300);border-radius:4px;box-shadow:0 6px 16px rgba(0,0,0,0.12);max-height:240px;overflow-y:auto;display:none;z-index:30}
+  .chip-suggest.open{display:block}
+  .chip-suggest .sug-item{padding:7px 12px;font-size:13px;cursor:pointer;color:var(--pwc-grey-900);display:flex;justify-content:space-between;gap:10px}
+  .chip-suggest .sug-item:hover,.chip-suggest .sug-item.active{background:var(--pwc-grey-100)}
+  .chip-suggest .sug-cat{font-size:10px;color:var(--pwc-grey-600);text-transform:uppercase;letter-spacing:0.4px;align-self:center}
+  .staffing-summary{font-size:13px;color:var(--pwc-grey-700);margin-bottom:12px}
+  .staffing-summary strong{color:var(--pwc-orange)}
+  .staffing-summary .copy-link{color:var(--pwc-orange);background:transparent;border:none;cursor:pointer;font-weight:600;font-family:inherit;font-size:13px;padding:0;text-decoration:underline}
+  .staffing-results{display:flex;flex-direction:column;gap:8px}
+  .smatch{background:var(--pwc-grey-50);border:1px solid var(--pwc-grey-100);border-radius:5px;padding:10px 14px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .15s}
+  .smatch:hover{border-color:var(--pwc-orange);box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+  .smatch .sm-photo{width:42px;height:42px;border-radius:50%;overflow:hidden;background:var(--pwc-grey-100);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .smatch .sm-photo img{width:100%;height:100%;object-fit:cover}
+  .smatch .sm-photo.fallback{background:var(--pwc-orange);color:var(--white);font-weight:600;font-size:14px}
+  .smatch .sm-info{flex:1;min-width:0}
+  .smatch .sm-name{font-size:14px;font-weight:600;color:var(--pwc-grey-900)}
+  .smatch .sm-meta{font-size:11px;color:var(--pwc-grey-600);margin-top:2px}
+  .smatch .sm-score{font-weight:700;color:var(--pwc-orange);font-size:13px;font-variant-numeric:tabular-nums}
+  .smatch .sm-pills{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+  .smatch .sm-pill{font-size:11px;padding:2px 7px;border-radius:999px;font-weight:600}
+  .smatch .sm-pill.hit-must{background:var(--pwc-orange);color:var(--white)}
+  .smatch .sm-pill.hit-nice{background:var(--pwc-tangerine);color:var(--white)}
+  .smatch .sm-pill.miss{background:var(--pwc-grey-100);color:var(--pwc-grey-600);text-decoration:line-through}
+  .smatch-empty{text-align:center;color:var(--pwc-grey-600);padding:30px;font-size:13px;font-style:italic}
   footer{text-align:center;color:var(--pwc-grey-600);font-size:12px;padding:24px}
   @media (max-width:600px){.bio-banner{flex-direction:column;text-align:center}main,header.brand,nav.tabs{padding-left:16px;padding-right:16px}}
 </style>
@@ -209,8 +246,7 @@
 
 <nav class="tabs">
   <button data-tab="directory" class="active">Directory</button>
-  <button data-tab="orgtree">Org Tree</button>
-  <button data-tab="analytics">Analytics</button>
+  <button data-tab="skills">Skill Atlas</button>
 </nav>
 
 <main>
@@ -255,20 +291,60 @@
     <div id="dir-content"></div>
   </section>
 
-  <section class="tab-panel" id="tab-orgtree">
-    <h1>Organisation Tree</h1>
-    <p class="subtitle">Operating Unit &rarr; Team Lead &rarr; Location &rarr; Employees. Click any name to open their bio.</p>
-    <div class="tree-controls">
-      <input type="text" id="tree-search" placeholder="Search name, role, OU, location...">
-      <button id="tree-expand-all">Expand all</button>
-      <button id="tree-collapse-all">Collapse all</button>
-    </div>
-    <div class="tree" id="org-tree"></div>
-  </section>
+  <section class="tab-panel" id="tab-skills">
+    <h1>Skill Atlas</h1>
+    <p class="subtitle">Every skill in the team, sized by coverage and coloured by competency. Click any tile to drill in.</p>
 
-  <section class="tab-panel" id="tab-analytics">
-    <h1>Workforce Analytics</h1>
-    <div class="analytics-grid" id="analytics-grid"></div>
+    <section class="stats" id="skills-kpis">
+      <div class="stat-card"><div class="value" id="skp-unique">-</div><div class="label">Unique Skills</div></div>
+      <div class="stat-card t2"><div class="value" id="skp-avg">-</div><div class="label">Avg Skills / Person</div></div>
+      <div class="stat-card t3"><div class="value" id="skp-top">-</div><div class="label">Most Covered</div></div>
+      <div class="stat-card t5"><div class="value" id="skp-rare">-</div><div class="label">Single-Expert Skills</div></div>
+    </section>
+
+    <div class="atlas-grid">
+      <div class="atlas-explorer">
+        <div class="atlas-toolbar">
+          <input type="text" id="atlas-search" placeholder="Highlight skill in treemap...">
+          <div class="atlas-legend" id="atlas-legend"></div>
+        </div>
+        <div class="treemap-wrap"><svg id="treemap" preserveAspectRatio="none"></svg></div>
+      </div>
+      <aside class="atlas-detail" id="atlas-detail">
+        <div class="atlas-detail-empty">
+          <div class="adt-emoji">&#129504;</div>
+          <p>Click any tile to see who knows that skill, where they sit, and which skills go with it.</p>
+        </div>
+      </aside>
+    </div>
+
+    <section class="staffing">
+      <div class="staffing-head">
+        <h2>Staffing Match</h2>
+        <p class="subtitle">Drop required and nice-to-have skills below &mdash; we'll rank your team by fit.</p>
+      </div>
+      <div class="staffing-pickers">
+        <div class="staffing-picker">
+          <label>Must-have skills</label>
+          <div class="chip-input" id="must-chip-input">
+            <div class="chips" id="must-chips"></div>
+            <input type="text" id="must-input" placeholder="Type to add &mdash; e.g. Python">
+            <div class="chip-suggest" id="must-suggest"></div>
+          </div>
+        </div>
+        <div class="staffing-picker">
+          <label>Nice-to-have skills</label>
+          <div class="chip-input" id="nice-chip-input">
+            <div class="chips" id="nice-chips"></div>
+            <input type="text" id="nice-input" placeholder="Type to add">
+            <div class="chip-suggest" id="nice-suggest"></div>
+          </div>
+        </div>
+        <button class="reset-btn" id="staffing-clear" title="Clear all picks">Clear</button>
+      </div>
+      <div class="staffing-summary" id="staffing-summary"></div>
+      <div class="staffing-results" id="staffing-results"></div>
+    </section>
   </section>
 </main>
 
@@ -305,6 +381,19 @@
   // the modal's prev/next buttons walk this filtered/sorted list.
   let visibleOrder = [];
   let currentBioId = null;
+
+  // Pre-index SKILLS and UTIL by WorkdayID so each modal open is O(1)
+  // instead of scanning the full sheets (matters at 1500+ employees).
+  const SKILLS_BY_EMP = Object.create(null);
+  SKILLS.forEach(s => {
+    const id = String(s.WorkdayID);
+    (SKILLS_BY_EMP[id] = SKILLS_BY_EMP[id] || []).push(s);
+  });
+  const UTIL_BY_EMP = Object.create(null);
+  UTIL.forEach(u => {
+    const id = String(u.WorkdayID);
+    (UTIL_BY_EMP[id] = UTIL_BY_EMP[id] || []).push(u);
+  });
 
   // ----- Populate filter dropdowns from data (so new columns Just Work) -----
   function uniqueValues(key){
@@ -496,7 +585,7 @@
 
   function cardHtml(e){
     const photo = e._photo
-      ? '<img src="' + e._photo + '" alt="' + esc(e.Name) + '">'
+      ? '<img loading="lazy" src="' + e._photo + '" alt="' + esc(e.Name) + '">'
       : '<div class="avatar-fallback">' + esc(e._initials) + '</div>';
     return ''
       + '<div class="dir-card" data-id="' + esc(e.WorkdayID) + '">'
@@ -641,7 +730,7 @@
 
     // Categorised skills — group by Skill Category, dedupe within each category.
     // Falls back to the comma-separated Skills field if no per-category rows exist.
-    const empSkills = SKILLS.filter(s => String(s.WorkdayID) === String(workdayId));
+    const empSkills = SKILLS_BY_EMP[String(workdayId)] || [];
     const grouped = {};
     empSkills.forEach(s => {
       const cat = String(s['Skill Category'] || 'Other').trim() || 'Other';
@@ -671,7 +760,7 @@
     }
 
     // Utilization — smooth area+line chart (SVG, Catmull-Rom-style bezier).
-    const utilRows = UTIL.filter(u => String(u.WorkdayID) === String(workdayId))
+    const utilRows = (UTIL_BY_EMP[String(workdayId)] || []).slice()
       .sort((a, b) => String(a['Month Year']).localeCompare(String(b['Month Year'])));
     let utilHtml;
     if (utilRows.length){
@@ -759,7 +848,7 @@
     }
 
     const photo = emp._photo
-      ? '<img src="' + emp._photo + '" alt="' + esc(emp.Name) + '">'
+      ? '<img loading="eager" src="' + emp._photo + '" alt="' + esc(emp.Name) + '">'
       : '<div class="avatar-fallback">' + esc(emp._initials) + '</div>';
 
     // Build info grid dynamically — show EVERY column that has a value,
@@ -839,271 +928,429 @@
     openModal();
   }
 
-  // ----- Analytics -----
-  function donutSvg(items){
-    const total = items.reduce((s, i) => s + i.value, 0) || 1;
-    const r = 60, cx = 75, cy = 75, stroke = 24;
-    const circ = 2 * Math.PI * r;
-    let offset = 0;
-    const segs = items.map((it, idx) => {
-      const frac = it.value / total;
-      const dash = frac * circ;
-      const seg = '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '"'
-        + ' fill="none" stroke="' + PALETTE[idx % PALETTE.length] + '"'
-        + ' stroke-width="' + stroke + '"'
-        + ' stroke-dasharray="' + dash + ' ' + (circ - dash) + '"'
-        + ' stroke-dashoffset="' + (-offset) + '"'
-        + ' transform="rotate(-90 ' + cx + ' ' + cy + ')"/>';
-      offset += dash;
-      return seg;
-    }).join('');
-    return '<svg width="150" height="150" viewBox="0 0 150 150">'
-      + segs
-      + '<text x="75" y="80" text-anchor="middle" font-size="22" font-weight="700" fill="#2D2D2D">' + total + '</text>'
-      + '</svg>';
-  }
-  function legendHtml(items){
-    return '<div class="legend">' + items.map((it, idx) =>
-      '<div class="legend-item">'
-      + '<span class="swatch" style="background:' + PALETTE[idx % PALETTE.length] + '"></span>'
-      + '<span><strong>' + esc(it.label) + '</strong> &mdash; ' + it.value + '</span>'
-      + '</div>').join('') + '</div>';
-  }
-  function groupBy(arr, key){
-    const m = {};
-    arr.forEach(r => {
-      const k = String(r[key] || '—').trim() || '—';
-      m[k] = (m[k] || 0) + 1;
+  // ----- Skill Atlas -----
+  // Map skill (lowercase) -> Skill Category from the Employee Skills sheet.
+  // Skills only seen in the free-text Skills column get "Uncategorised".
+  const SKILL_CATEGORY = Object.create(null);
+  SKILLS.forEach(row => {
+    const cat = String(row['Skill Category'] || '').trim() || 'Uncategorised';
+    String(row.Skills || '').split(',').map(s => s.trim()).filter(Boolean).forEach(s => {
+      const k = s.toLowerCase();
+      if (!SKILL_CATEGORY[k]) SKILL_CATEGORY[k] = cat;
     });
-    return Object.entries(m).map(([label, value]) => ({ label, value }))
-      .sort((a, b) => b.value - a.value);
-  }
-  function buildAnalytics(){
-    // Charts: distribution by OU, Role, Location
-    const byOU   = groupBy(EMPLOYEES, 'OU');
-    const byRole = groupBy(EMPLOYEES, 'Role');
-    const byLoc  = groupBy(EMPLOYEES, 'Location');
+  });
+  ALL_SKILLS.forEach(k => { if (!SKILL_CATEGORY[k]) SKILL_CATEGORY[k] = 'Uncategorised'; });
 
-    const utilByEmp = {};
-    UTIL.forEach(u => {
-      const id = String(u.WorkdayID);
-      if (!utilByEmp[id]) utilByEmp[id] = [];
-      utilByEmp[id].push(Number(u.Utilization) || 0);
+  // Count per skill + headcount holders
+  const SKILL_COUNT = Object.create(null);
+  const SKILL_HOLDERS = Object.create(null);   // skill key -> array of employees
+  ALL_SKILLS.forEach(k => { SKILL_COUNT[k] = 0; SKILL_HOLDERS[k] = []; });
+  EMPLOYEES.forEach(e => {
+    e._skills.forEach(k => {
+      SKILL_COUNT[k] = (SKILL_COUNT[k] || 0) + 1;
+      (SKILL_HOLDERS[k] = SKILL_HOLDERS[k] || []).push(e);
     });
-    const avgUtil = EMPLOYEES.map(e => {
-      const vals = utilByEmp[String(e.WorkdayID)] || [];
-      const avg = vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : 0;
-      return { name: e.Name, value: Math.round(avg) };
-    }).sort((a, b) => b.value - a.value);
+  });
 
-    const maxAvg = Math.max(120, ...avgUtil.map(x => x.value));
-    // Bar fills cycle through the PwC palette so we're not all-orange.
-    const utilBars = avgUtil.map((x, i) => {
-      let style;
-      if (x.value > 100){
-        style = 'background:linear-gradient(90deg,' + ROSE + ',' + PINK + ');';
+  // Category colour assignment — cycle through the PwC palette
+  const CAT_COLOR = Object.create(null);
+  const ORDERED_CATS = [...new Set(Object.values(SKILL_CATEGORY))].sort();
+  // Uncategorised always grey
+  const CAT_PALETTE = [ORANGE, PINK, TANGERINE, BURGUNDY, YELLOW, ROSE, BLACK];
+  let pi = 0;
+  ORDERED_CATS.forEach(c => {
+    if (c === 'Uncategorised') CAT_COLOR[c] = '#9C9C9C';
+    else { CAT_COLOR[c] = CAT_PALETTE[pi % CAT_PALETTE.length]; pi++; }
+  });
+
+  // Co-occurrence: how often each pair of skills appears together
+  // Stored compactly: COOCCUR[a][b] = count, symmetric.
+  const COOCCUR = Object.create(null);
+  EMPLOYEES.forEach(e => {
+    const arr = [...e._skills];
+    for (let i = 0; i < arr.length; i++){
+      const a = arr[i];
+      for (let j = i + 1; j < arr.length; j++){
+        const b = arr[j];
+        if (!COOCCUR[a]) COOCCUR[a] = Object.create(null);
+        if (!COOCCUR[b]) COOCCUR[b] = Object.create(null);
+        COOCCUR[a][b] = (COOCCUR[a][b] || 0) + 1;
+        COOCCUR[b][a] = (COOCCUR[b][a] || 0) + 1;
+      }
+    }
+  });
+
+  // ----- KPI strip -----
+  (function(){
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set('skp-unique', ALL_SKILLS.length);
+    const avg = EMPLOYEES.length
+      ? (EMPLOYEES.reduce((s, e) => s + e._skills.size, 0) / EMPLOYEES.length).toFixed(1)
+      : '0';
+    set('skp-avg', avg);
+    const top = ALL_SKILLS.slice().sort((a,b) => SKILL_COUNT[b] - SKILL_COUNT[a])[0];
+    set('skp-top', top ? (SKILL_DISPLAY[top] + ' (' + SKILL_COUNT[top] + ')') : '-');
+    const singles = ALL_SKILLS.filter(k => SKILL_COUNT[k] === 1).length;
+    set('skp-rare', singles);
+  })();
+
+  // ----- Legend -----
+  (function(){
+    const el = document.getElementById('atlas-legend');
+    el.innerHTML = ORDERED_CATS.map(c =>
+      '<span class="leg"><span class="swatch" style="background:' + CAT_COLOR[c] + '"></span>' + esc(c) + '</span>'
+    ).join('');
+  })();
+
+  // ----- Squarified treemap -----
+  // Implementation of squarified treemap (Bruls/Huijsen/van Wijk 2000).
+  // Inputs are values pre-sorted desc. Returns rects {x,y,w,h,index}.
+  function squarify(values, x, y, w, h){
+    const result = [];
+    if (!values.length) return result;
+    const remaining = values.slice();
+    let cx = x, cy = y, cw = w, ch = h;
+    let totalRemaining = remaining.reduce((s,v) => s + v, 0);
+    let indexBase = 0;
+    function worst(rowVals, length){
+      let sum = 0, mx = 0, mn = Infinity;
+      for (const v of rowVals){ sum += v; if (v > mx) mx = v; if (v < mn) mn = v; }
+      const s2 = sum * sum, l2 = length * length;
+      return Math.max(l2 * mx / s2, s2 / (l2 * mn));
+    }
+    while (remaining.length > 0){
+      const totalArea = cw * ch;
+      const length = Math.min(cw, ch);
+      const row = [];
+      while (remaining.length > 0){
+        const v = remaining[0] * totalArea / totalRemaining;
+        const candidate = [...row, v];
+        if (row.length === 0 || worst(candidate, length) <= worst(row, length)){
+          row.push(v);
+          remaining.shift();
+        } else break;
+      }
+      const rowSum = row.reduce((s,v) => s + v, 0);
+      const rowDepth = rowSum / length;
+      if (cw >= ch){
+        let py = cy;
+        row.forEach((v, k) => {
+          const tileH = v / rowDepth;
+          result.push({ x: cx, y: py, w: rowDepth, h: tileH, index: indexBase + k });
+          py += tileH;
+        });
+        cx += rowDepth; cw -= rowDepth;
       } else {
-        const c1 = PALETTE[i % PALETTE.length];
-        const c2 = PALETTE[(i + 1) % PALETTE.length];
-        style = 'background:linear-gradient(90deg,' + c1 + ',' + c2 + ');';
+        let px = cx;
+        row.forEach((v, k) => {
+          const tileW = v / rowDepth;
+          result.push({ x: px, y: cy, w: tileW, h: rowDepth, index: indexBase + k });
+          px += tileW;
+        });
+        cy += rowDepth; ch -= rowDepth;
       }
-      return '<div class="hbar">'
-        + '<div class="name">' + esc(x.name) + '</div>'
-        + '<div class="track">'
-        +   '<div class="fill" style="width:' + ((x.value / maxAvg) * 100) + '%;' + style + '">' + x.value + '%</div>'
-        + '</div>'
-        + '</div>';
+      indexBase += row.length;
+      totalRemaining = remaining.reduce((s,v) => s + v, 0);
+    }
+    return result;
+  }
+
+  function renderTreemap(){
+    const sorted = ALL_SKILLS.slice().sort((a,b) => SKILL_COUNT[b] - SKILL_COUNT[a]);
+    const svg = document.getElementById('treemap');
+    const wrap = svg.parentElement;
+    const W = wrap.clientWidth || 800;
+    const H = wrap.clientHeight || 460;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('width', W);
+    svg.setAttribute('height', H);
+    const values = sorted.map(k => SKILL_COUNT[k]);
+    const rects = squarify(values, 0, 0, W, H);
+    svg.innerHTML = rects.map(r => {
+      const skill = sorted[r.index];
+      const cat = SKILL_CATEGORY[skill];
+      const color = CAT_COLOR[cat] || '#9C9C9C';
+      const count = SKILL_COUNT[skill];
+      const display = SKILL_DISPLAY[skill];
+      // Only label tiles big enough; tweak font size by tile dimension
+      const small = Math.min(r.w, r.h);
+      const showLabel = small >= 28;
+      const labelSize = Math.max(10, Math.min(18, Math.floor(small / 3.5)));
+      const showCount = small >= 50;
+      const labels = showLabel
+        ? '<text class="tm-label" x="' + (r.x + 8) + '" y="' + (r.y + labelSize + 4) + '" font-size="' + labelSize + '">' + esc(truncateForTile(display, r.w, labelSize)) + '</text>'
+          + (showCount ? '<text class="tm-count" x="' + (r.x + 8) + '" y="' + (r.y + labelSize + 18) + '">' + count + ' ppl</text>' : '')
+        : '';
+      return '<g class="tm-tile" data-skill="' + esc(skill) + '">'
+           + '<rect x="' + r.x + '" y="' + r.y + '" width="' + (r.w - 1) + '" height="' + (r.h - 1) + '" fill="' + color + '" rx="2"></rect>'
+           + labels
+           + '<title>' + esc(display) + ' — ' + count + ' people · ' + esc(cat) + '</title>'
+           + '</g>';
     }).join('');
-
-    document.getElementById('analytics-grid').innerHTML = ''
-      + '<div class="chart-card">'
-      +   '<h3>Employees by Operating Unit</h3>'
-      +   '<div class="donut-wrap">' + donutSvg(byOU) + legendHtml(byOU) + '</div>'
-      + '</div>'
-      + '<div class="chart-card">'
-      +   '<h3>Employees by Role</h3>'
-      +   '<div class="donut-wrap">' + donutSvg(byRole) + legendHtml(byRole) + '</div>'
-      + '</div>'
-      + '<div class="chart-card">'
-      +   '<h3>Employees by Location</h3>'
-      +   '<div class="donut-wrap">' + donutSvg(byLoc) + legendHtml(byLoc) + '</div>'
-      + '</div>'
-      + '<div class="chart-card" style="grid-column:1 / -1;">'
-      +   '<h3>Average Utilization by Employee (%)</h3>'
-      +   (utilBars || '<em>No utilization data.</em>')
-      + '</div>';
+    // Wire up click handler (delegate)
+    svg.onclick = (e) => {
+      const tile = e.target.closest('.tm-tile');
+      if (tile) renderSkillDetail(tile.dataset.skill);
+    };
   }
-  buildAnalytics();
-
-  // ----- Org Tree (OU -> Team Lead -> Location -> Employees) -----
-  // Resolve a Team Lead value (either a Name or a WorkdayID) to an employee record.
-  function findLeadEmployee(ref){
-    if (!ref) return null;
-    const r = String(ref).trim();
-    if (!r) return null;
-    if (/^\d+$/.test(r)){
-      const m = EMPLOYEES.find(e => String(e.WorkdayID) === r);
-      if (m) return m;
-    }
-    return EMPLOYEES.find(e => String(e.Name).toLowerCase() === r.toLowerCase()) || null;
+  function truncateForTile(text, width, fontSize){
+    // ~0.55 chars per font-size pixel of width
+    const maxChars = Math.max(3, Math.floor((width - 16) / (fontSize * 0.55)));
+    return text.length > maxChars ? text.slice(0, maxChars - 1) + '…' : text;
   }
-
-  // Build OU -> Lead -> Location -> [employees].
-  // Lead key is normalised to the lead's full Name where possible so that
-  // "Sai Charan" and "1234567" referring to the same person collapse together.
-  function buildOrgTree(){
-    const tree = {};
-    EMPLOYEES.forEach(e => {
-      const ou   = String(e.OU || '').trim() || '— Unassigned OU —';
-      const loc  = String(e.Location || '').trim() || '— Unknown Location —';
-      const rawLead = String(e['Team Lead'] || '').trim();
-      const leadEmp = findLeadEmployee(rawLead);
-      const leadKey = rawLead
-        ? (leadEmp ? leadEmp.Name : rawLead)
-        : '— No Lead Assigned —';
-      if (!tree[ou]) tree[ou] = {};
-      if (!tree[ou][leadKey]) tree[ou][leadKey] = { _emp: leadEmp, _locs: {} };
-      if (!tree[ou][leadKey]._locs[loc]) tree[ou][leadKey]._locs[loc] = [];
-      tree[ou][leadKey]._locs[loc].push(e);
-    });
-    return tree;
-  }
-
-  function leafHtml(e){
-    const ph = e._photo
-      ? '<img src="' + e._photo + '" alt="' + esc(e.Name) + '">'
-      : '<div class="tree-emp-photo fallback">' + esc(e._initials) + '</div>';
-    const photoWrap = e._photo
-      ? '<div class="tree-emp-photo">' + ph + '</div>'
-      : ph;
-    return '<div class="tree-emp" data-id="' + esc(e.WorkdayID) + '">'
-         +   photoWrap
-         +   '<span class="tree-emp-name">' + esc(e.Name) + '</span>'
-         +   '<span class="tree-emp-role">' + esc(e.Role || '') + '</span>'
-         + '</div>';
-  }
-
-  function locationNodeHtml(loc, emps){
-    const sorted = emps.slice().sort((a,b) => String(a.Name).localeCompare(String(b.Name)));
-    return '<div class="tree-node tree-location expanded">'
-         +   '<div class="tree-row">'
-         +     '<button class="tree-toggle" aria-label="Toggle"></button>'
-         +     '<span class="tree-loc-icon">&#128205;</span>'
-         +     '<span class="tree-loc-name">' + esc(loc) + '</span>'
-         +     '<span class="tree-count">' + emps.length + '</span>'
-         +   '</div>'
-         +   '<div class="tree-children">' + sorted.map(leafHtml).join('') + '</div>'
-         + '</div>';
-  }
-
-  function leadNodeHtml(leadKey, leadObj){
-    const leadEmp = leadObj._emp;
-    const locs = leadObj._locs;
-    const total = Object.values(locs).reduce((s, a) => s + a.length, 0);
-    let leftHtml;
-    if (leadEmp){
-      const ph = leadEmp._photo
-        ? '<div class="tree-lead-photo"><img src="' + leadEmp._photo + '" alt="' + esc(leadEmp.Name) + '"></div>'
-        : '<div class="tree-lead-photo fallback">' + esc(leadEmp._initials) + '</div>';
-      leftHtml = ph
-        + '<span class="tree-lead-name">' + esc(leadEmp.Name) + '</span>'
-        + '<span class="tree-lead-role">' + esc(leadEmp.Role || '') + '</span>';
-    } else {
-      // Lead not found in the employee list — could be external or a typo.
-      leftHtml = '<div class="tree-lead-photo fallback">?</div>'
-        + '<span class="tree-lead-name tree-lead-orphan">' + esc(leadKey) + '</span>';
-    }
-    const sortedLocs = Object.keys(locs).sort();
-    const children = sortedLocs.map(l => locationNodeHtml(l, locs[l])).join('');
-    return '<div class="tree-node tree-lead expanded" data-lead-id="' + esc(leadEmp ? leadEmp.WorkdayID : '') + '">'
-         +   '<div class="tree-row">'
-         +     '<button class="tree-toggle" aria-label="Toggle"></button>'
-         +     leftHtml
-         +     '<span class="tree-count">' + total + '</span>'
-         +   '</div>'
-         +   '<div class="tree-children">' + children + '</div>'
-         + '</div>';
-  }
-
-  function ouNodeHtml(ou, leads){
-    const sortedLeads = Object.keys(leads).sort();
-    const total = sortedLeads.reduce((s, k) =>
-      s + Object.values(leads[k]._locs).reduce((ss, a) => ss + a.length, 0), 0);
-    const children = sortedLeads.map(k => leadNodeHtml(k, leads[k])).join('');
-    return '<div class="tree-node tree-ou expanded">'
-         +   '<div class="tree-row">'
-         +     '<button class="tree-toggle" aria-label="Toggle"></button>'
-         +     '<span class="tree-ou-name">' + esc(ou) + '</span>'
-         +     '<span class="tree-count">' + total + '</span>'
-         +   '</div>'
-         +   '<div class="tree-children">' + children + '</div>'
-         + '</div>';
-  }
-
-  function renderTree(){
-    const tree = buildOrgTree();
-    const treeEl = document.getElementById('org-tree');
-    const ous = Object.keys(tree).sort();
-    if (!ous.length){
-      treeEl.innerHTML = '<div class="tree-empty">No employees to display.</div>';
-      return;
-    }
-    treeEl.innerHTML = ous.map(ou => ouNodeHtml(ou, tree[ou])).join('');
-
-    // Click on a row (any non-leaf) toggles expand/collapse.
-    // Click on an employee leaf opens the bio modal.
-    treeEl.addEventListener('click', e => {
-      const leaf = e.target.closest('.tree-emp');
-      if (leaf){
-        e.stopPropagation();
-        showBio(leaf.dataset.id);
-        return;
-      }
-      const row = e.target.closest('.tree-row');
-      if (row){
-        const node = row.parentElement;
-        node.classList.toggle('expanded');
-      }
-    });
-  }
-  renderTree();
-
-  // Expand / Collapse all
-  document.getElementById('tree-expand-all').addEventListener('click', () => {
-    document.querySelectorAll('#org-tree .tree-node').forEach(n => n.classList.add('expanded'));
-  });
-  document.getElementById('tree-collapse-all').addEventListener('click', () => {
-    // Keep OU level expanded; collapse leads and locations.
-    document.querySelectorAll('#org-tree .tree-node:not(.tree-ou)').forEach(n => n.classList.remove('expanded'));
-    document.querySelectorAll('#org-tree .tree-ou').forEach(n => n.classList.add('expanded'));
+  renderTreemap();
+  // Re-render on resize so the treemap stays correct.
+  let _tmResizeTO = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(_tmResizeTO);
+    _tmResizeTO = setTimeout(renderTreemap, 150);
   });
 
-  // Search filter — hides nodes whose subtree has no match. Auto-expands ancestors of matches.
-  document.getElementById('tree-search').addEventListener('input', e => {
+  // ----- Treemap search-highlight -----
+  document.getElementById('atlas-search').addEventListener('input', e => {
     const q = e.target.value.toLowerCase().trim();
-    const treeEl = document.getElementById('org-tree');
-    if (!q){
-      treeEl.querySelectorAll('.tree-hidden').forEach(n => n.classList.remove('tree-hidden'));
+    document.querySelectorAll('#treemap .tm-tile').forEach(t => {
+      const k = t.dataset.skill;
+      const match = !q || SKILL_DISPLAY[k].toLowerCase().includes(q);
+      t.classList.toggle('dim', !match);
+    });
+  });
+
+  // ----- Skill detail panel -----
+  function bucketBy(employees, key){
+    const m = {};
+    employees.forEach(e => {
+      const v = String(e[key] || '').trim() || '— Unspecified —';
+      m[v] = (m[v] || 0) + 1;
+    });
+    return Object.entries(m)
+      .map(([label, value]) => ({ label, value }))
+      .sort((a,b) => b.value - a.value);
+  }
+  function barBlock(title, items, total, colorClass){
+    if (!items.length) return '';
+    const max = Math.max(...items.map(i => i.value));
+    const rows = items.slice(0, 6).map(it => {
+      const pct = (it.value / max) * 100;
+      return '<div class="adt-bar-row">'
+           +   '<div class="bar-name" title="' + esc(it.label) + '">' + esc(it.label) + '</div>'
+           +   '<div class="bar-track"><div class="bar-fill ' + colorClass + '" style="width:' + pct + '%;">' + it.value + '</div></div>'
+           + '</div>';
+    }).join('');
+    return '<div class="adt-section-title">' + esc(title) + '</div><div class="adt-bars">' + rows + '</div>';
+  }
+
+  function renderSkillDetail(skillKey){
+    if (!skillKey || !SKILL_DISPLAY[skillKey]) return;
+    const panel = document.getElementById('atlas-detail');
+    const display = SKILL_DISPLAY[skillKey];
+    const cat = SKILL_CATEGORY[skillKey];
+    const color = CAT_COLOR[cat];
+    const holders = SKILL_HOLDERS[skillKey] || [];
+
+    const byCat   = bucketBy(holders, 'Competency');
+    const byTerr  = bucketBy(holders, 'Territory');
+    const byLoc   = bucketBy(holders, 'Location');
+    const byRole  = bucketBy(holders, 'Role');
+
+    const adj = Object.entries(COOCCUR[skillKey] || {})
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([k, n]) =>
+        '<span class="adj-chip" data-skill="' + esc(k) + '">' + esc(SKILL_DISPLAY[k] || k) + '<span class="adj-n">×' + n + '</span></span>'
+      ).join('');
+
+    const peopleHtml = holders.slice()
+      .sort((a,b) => String(a.Name).localeCompare(String(b.Name)))
+      .map(e => {
+        const ph = e._photo
+          ? '<img loading="lazy" src="' + e._photo + '" alt="' + esc(e.Name) + '">'
+          : '<div class="adt-person-photo fallback">' + esc(e._initials) + '</div>';
+        const photoWrap = e._photo
+          ? '<div class="adt-person-photo">' + ph + '</div>'
+          : ph;
+        return '<div class="adt-person" data-id="' + esc(e.WorkdayID) + '">'
+             +   photoWrap
+             +   '<div><div class="adt-person-name">' + esc(e.Name) + '</div>'
+             +     '<div class="adt-person-meta">' + esc(e.Role || '') + ' · ' + esc(e.OU || '') + ' · ' + esc(e.Location || '') + '</div>'
+             +   '</div></div>';
+      }).join('');
+
+    panel.innerHTML = ''
+      + '<div class="adt-head">'
+      +   '<div class="adt-cat" style="background:' + color + '"></div>'
+      +   '<div><div class="adt-cat-name">' + esc(cat) + '</div>'
+      +     '<p class="adt-name">' + esc(display) + '</p>'
+      +     '<div style="font-size:12px;color:var(--pwc-grey-600);">' + holders.length + ' people</div></div>'
+      + '</div>'
+      + barBlock('By Competency', byCat,  holders.length, '')
+      + barBlock('By Territory',  byTerr, holders.length, 'c1')
+      + barBlock('By Location',   byLoc,  holders.length, 'c2')
+      + barBlock('By Role',       byRole, holders.length, 'c3')
+      + (adj ? ('<div class="adt-section-title">Often paired with</div><div class="adt-adj">' + adj + '</div>') : '')
+      + (peopleHtml ? ('<div class="adt-section-title">People (' + holders.length + ')</div><div class="adt-people">' + peopleHtml + '</div>') : '')
+      + '<div class="adt-actions">'
+      +   '<button id="adt-add-must">Add to must-have</button>'
+      +   '<button class="secondary" id="adt-add-nice">Add to nice-to-have</button>'
+      + '</div>';
+
+    // Wire panel interactions
+    panel.querySelectorAll('.adt-person').forEach(p =>
+      p.addEventListener('click', () => showBio(p.dataset.id)));
+    panel.querySelectorAll('.adj-chip').forEach(c =>
+      c.addEventListener('click', () => renderSkillDetail(c.dataset.skill)));
+    document.getElementById('adt-add-must').onclick = () => { addStaffingChip('must', skillKey); };
+    document.getElementById('adt-add-nice').onclick = () => { addStaffingChip('nice', skillKey); };
+  }
+
+  // ----- Staffing builder -----
+  const mustSet = new Set();
+  const niceSet = new Set();
+
+  function addStaffingChip(kind, skillKey){
+    const target = kind === 'must' ? mustSet : niceSet;
+    const other  = kind === 'must' ? niceSet : mustSet;
+    if (!SKILL_DISPLAY[skillKey]) return;
+    target.add(skillKey);
+    other.delete(skillKey);  // a skill can't be in both lists
+    renderStaffingChips();
+    renderStaffingResults();
+  }
+  function removeStaffingChip(kind, skillKey){
+    (kind === 'must' ? mustSet : niceSet).delete(skillKey);
+    renderStaffingChips();
+    renderStaffingResults();
+  }
+  function chipHtml(kind, k){
+    return '<span class="chip" data-skill="' + esc(k) + '">' + esc(SKILL_DISPLAY[k] || k)
+         + '<span class="x" data-kind="' + kind + '" data-skill="' + esc(k) + '">&times;</span></span>';
+  }
+  function renderStaffingChips(){
+    document.getElementById('must-chips').innerHTML = [...mustSet].map(k => chipHtml('must', k)).join('');
+    document.getElementById('nice-chips').innerHTML = [...niceSet].map(k => chipHtml('nice', k)).join('');
+    document.querySelectorAll('.chip .x').forEach(x =>
+      x.addEventListener('click', e => {
+        e.stopPropagation();
+        removeStaffingChip(x.dataset.kind, x.dataset.skill);
+      }));
+  }
+  function renderStaffingResults(){
+    const summary = document.getElementById('staffing-summary');
+    const list = document.getElementById('staffing-results');
+    if (mustSet.size === 0 && niceSet.size === 0){
+      summary.innerHTML = '';
+      list.innerHTML = '<div class="smatch-empty">Add some skills above to see ranked matches.</div>';
       return;
     }
-    // Helper: does this element contain the query in its visible text?
-    function show(node){
-      const text = node.querySelector('.tree-row')?.textContent.toLowerCase() || '';
-      const isLeaf = node.classList.contains('tree-emp');
-      const ownMatch = isLeaf
-        ? (node.textContent.toLowerCase().includes(q))
-        : text.includes(q);
-      let anyChildMatches = false;
-      node.querySelectorAll(':scope > .tree-children > .tree-node, :scope > .tree-children > .tree-emp').forEach(child => {
-        if (show(child)) anyChildMatches = true;
-      });
-      const matched = ownMatch || anyChildMatches;
-      node.classList.toggle('tree-hidden', !matched);
-      if (anyChildMatches) node.classList.add('expanded');
-      return matched;
+    // Strict must-have: every must skill must be present.
+    const matches = EMPLOYEES.filter(e => {
+      for (const m of mustSet){ if (!e._skills.has(m)) return false; }
+      return true;
+    }).map(e => {
+      const mustHits = [...mustSet].filter(k => e._skills.has(k));
+      const niceHits = [...niceSet].filter(k => e._skills.has(k));
+      const score = mustHits.length * 10 + niceHits.length * 3;
+      return { emp: e, mustHits, niceHits, score };
+    }).sort((a, b) => b.score - a.score || String(a.emp.Name).localeCompare(String(b.emp.Name)));
+
+    const total = matches.length;
+    const top10emails = matches.slice(0, 10).map(m => m.emp.emailid).filter(Boolean).join('; ');
+    summary.innerHTML = '<strong>' + total + '</strong> employee'
+      + (total === 1 ? '' : 's') + ' match'
+      + (total === 1 ? 'es' : '') + ' your criteria.'
+      + (total > 0 ? ' <button class="copy-link" id="copy-emails">Copy emails of top ' + Math.min(10, total) + '</button>' : '');
+
+    list.innerHTML = matches.slice(0, 50).map(m => {
+      const e = m.emp;
+      const ph = e._photo
+        ? '<img loading="lazy" src="' + e._photo + '" alt="' + esc(e.Name) + '">'
+        : '<div class="sm-photo fallback">' + esc(e._initials) + '</div>';
+      const photoWrap = e._photo ? '<div class="sm-photo">' + ph + '</div>' : ph;
+      const pills = [
+        ...m.mustHits.map(k => '<span class="sm-pill hit-must">' + esc(SKILL_DISPLAY[k] || k) + '</span>'),
+        ...m.niceHits.map(k => '<span class="sm-pill hit-nice">' + esc(SKILL_DISPLAY[k] || k) + '</span>'),
+        ...[...niceSet].filter(k => !m.niceHits.includes(k)).map(k =>
+          '<span class="sm-pill miss">' + esc(SKILL_DISPLAY[k] || k) + '</span>')
+      ].join('');
+      return '<div class="smatch" data-id="' + esc(e.WorkdayID) + '">'
+           +   photoWrap
+           +   '<div class="sm-info">'
+           +     '<div class="sm-name">' + esc(e.Name) + '</div>'
+           +     '<div class="sm-meta">' + esc(e.Role || '') + ' · ' + esc(e.OU || '') + ' · ' + esc(e.Location || '') + '</div>'
+           +     '<div class="sm-pills">' + pills + '</div>'
+           +   '</div>'
+           +   '<div class="sm-score">' + m.mustHits.length + '/' + mustSet.size + ' must<br>' + m.niceHits.length + '/' + niceSet.size + ' nice</div>'
+           + '</div>';
+    }).join('') + (matches.length > 50 ? '<div class="smatch-empty">Showing top 50 of ' + matches.length + '.</div>' : '');
+
+    // Wire interactions
+    list.querySelectorAll('.smatch').forEach(row =>
+      row.addEventListener('click', () => showBio(row.dataset.id)));
+    const copyBtn = document.getElementById('copy-emails');
+    if (copyBtn) copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(top10emails).then(() => {
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => renderStaffingResults(), 1200);
+      }).catch(() => alert(top10emails));
+    });
+  }
+
+  // ----- Chip-input autocomplete (must + nice) -----
+  function setupChipInput(kind){
+    const input = document.getElementById(kind + '-input');
+    const sug = document.getElementById(kind + '-suggest');
+    const container = document.getElementById(kind + '-chip-input');
+    container.classList.toggle('nice', kind === 'nice');
+    let activeIdx = -1;
+    function render(q){
+      q = (q || '').toLowerCase().trim();
+      const taken = kind === 'must' ? mustSet : niceSet;
+      const cand = ALL_SKILLS
+        .filter(k => !taken.has(k) && (q ? SKILL_DISPLAY[k].toLowerCase().includes(q) : true))
+        .slice(0, 12);
+      if (!cand.length){ sug.innerHTML = ''; sug.classList.remove('open'); return; }
+      sug.innerHTML = cand.map((k, i) =>
+        '<div class="sug-item' + (i === activeIdx ? ' active' : '') + '" data-skill="' + esc(k) + '">'
+        + '<span>' + esc(SKILL_DISPLAY[k]) + ' <span style="color:var(--pwc-grey-400);font-size:11px;">(' + SKILL_COUNT[k] + ')</span></span>'
+        + '<span class="sug-cat">' + esc(SKILL_CATEGORY[k]) + '</span></div>'
+      ).join('');
+      sug.classList.add('open');
+      sug.querySelectorAll('.sug-item').forEach(it =>
+        it.addEventListener('mousedown', () => {  // mousedown so it fires before blur
+          addStaffingChip(kind, it.dataset.skill);
+          input.value = '';
+          render('');
+          input.focus();
+        }));
     }
-    treeEl.querySelectorAll(':scope > .tree-node').forEach(show);
+    input.addEventListener('focus', () => render(input.value));
+    input.addEventListener('input', () => { activeIdx = -1; render(input.value); });
+    input.addEventListener('blur',  () => setTimeout(() => sug.classList.remove('open'), 150));
+    input.addEventListener('keydown', e => {
+      const items = sug.querySelectorAll('.sug-item');
+      if (e.key === 'ArrowDown'){ activeIdx = Math.min(activeIdx + 1, items.length - 1); render(input.value); e.preventDefault(); }
+      else if (e.key === 'ArrowUp'){ activeIdx = Math.max(activeIdx - 1, 0); render(input.value); e.preventDefault(); }
+      else if (e.key === 'Enter' && activeIdx >= 0){
+        const k = items[activeIdx].dataset.skill;
+        addStaffingChip(kind, k);
+        input.value = ''; activeIdx = -1; render(''); e.preventDefault();
+      } else if (e.key === 'Backspace' && input.value === ''){
+        const last = [...(kind === 'must' ? mustSet : niceSet)].pop();
+        if (last) removeStaffingChip(kind, last);
+      }
+    });
+  }
+  setupChipInput('must');
+  setupChipInput('nice');
+  renderStaffingChips();
+  renderStaffingResults();
+
+  document.getElementById('staffing-clear').addEventListener('click', () => {
+    mustSet.clear(); niceSet.clear();
+    renderStaffingChips(); renderStaffingResults();
   });
+
+  // (Org Tree + Analytics removed in favour of Skill Atlas above.)
 </script>
 </body>
 </html>
