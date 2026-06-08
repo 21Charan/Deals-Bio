@@ -303,6 +303,65 @@
   .insight-row-stat.watch{color:var(--pwc-rose)}
   .insight-row-stat.bench{color:var(--pwc-tangerine)}
   .insight-empty{padding:20px;text-align:center;color:var(--pwc-grey-600);font-size:12px;font-style:italic}
+
+  /* ---- Boardroom ---- */
+  .boardroom-filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center;background:var(--white);padding:14px 16px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.06);position:sticky;top:60px;z-index:5}
+  .boardroom-filters select{padding:9px 12px;border:1px solid var(--pwc-grey-300);border-radius:4px;font-family:inherit;font-size:13px;background:var(--white);min-width:170px}
+  .boardroom-filters select:focus{outline:none;border-color:var(--pwc-orange);box-shadow:0 0 0 2px rgba(208,74,2,0.15)}
+  .br-kpis{margin-bottom:22px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  .boardroom-main{display:grid;grid-template-columns:minmax(0, 1fr) minmax(0, 1.2fr);gap:18px;margin-bottom:22px}
+  @media (max-width:960px){.boardroom-main{grid-template-columns:1fr}}
+  .bm-card{background:var(--white);border-radius:8px;padding:20px 22px;box-shadow:0 1px 3px rgba(0,0,0,0.08);min-height:380px}
+  .bm-card-head{margin-bottom:16px}
+  .bm-card-head h3{margin:0;font-size:15px;font-weight:700;color:var(--pwc-grey-900);text-transform:uppercase;letter-spacing:0.6px}
+  .bm-card-head .bm-card-sub{display:block;font-size:11px;color:var(--pwc-grey-600);margin-top:2px}
+
+  /* Talent funnel — centred bars with smooth grow-in animation */
+  .funnel{display:flex;flex-direction:column;gap:8px;padding:8px 4px}
+  .funnel-tier{display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform .15s}
+  .funnel-tier:hover{transform:translateY(-1px)}
+  .funnel-tier.active .funnel-bar{outline:3px solid var(--pwc-grey-900);outline-offset:2px}
+  .funnel-bar-wrap{width:100%;display:flex;justify-content:center}
+  .funnel-bar{height:46px;border-radius:4px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;color:var(--white);font-weight:700;font-size:14px;min-width:80px;box-shadow:0 1px 3px rgba(0,0,0,0.1);animation:funnelGrow .55s cubic-bezier(.2,.7,.3,1) both;position:relative}
+  @keyframes funnelGrow{from{transform:scaleX(.2);opacity:0}to{transform:scaleX(1);opacity:1}}
+  .funnel-bar .ftier-name{letter-spacing:0.5px;text-transform:uppercase;font-size:12px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,0.15)}
+  .funnel-bar .ftier-count{background:rgba(255,255,255,0.22);padding:2px 9px;border-radius:999px;font-size:12px;font-variant-numeric:tabular-nums}
+  .funnel-tier:nth-child(1) .funnel-bar{animation-delay:0s}
+  .funnel-tier:nth-child(2) .funnel-bar{animation-delay:.06s}
+  .funnel-tier:nth-child(3) .funnel-bar{animation-delay:.12s}
+  .funnel-tier:nth-child(4) .funnel-bar{animation-delay:.18s}
+  .funnel-tier:nth-child(5) .funnel-bar{animation-delay:.24s}
+  .funnel-tier:nth-child(6) .funnel-bar{animation-delay:.30s}
+  .funnel-empty{padding:30px;text-align:center;color:var(--pwc-grey-600);font-size:13px;font-style:italic}
+
+  /* Capability matrix */
+  .matrix-wrap{overflow-x:auto}
+  .matrix-table{width:100%;border-collapse:separate;border-spacing:3px;font-size:12px;font-family:inherit}
+  .matrix-table th{font-weight:700;color:var(--pwc-grey-700);text-align:center;padding:6px 4px;font-size:10px;letter-spacing:0.5px;text-transform:uppercase;background:var(--pwc-grey-50);border-radius:3px;white-space:nowrap}
+  .matrix-table thead th:first-child{background:transparent}
+  .matrix-table tbody th{text-align:right;background:var(--pwc-grey-50);padding:8px 10px;font-size:11px;font-weight:700;color:var(--pwc-grey-700);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .matrix-cell{aspect-ratio:1.5;min-width:48px;text-align:center;vertical-align:middle;cursor:pointer;color:var(--pwc-grey-900);font-weight:600;font-variant-numeric:tabular-nums;border-radius:3px;transition:transform .12s,box-shadow .12s}
+  .matrix-cell:hover{transform:scale(1.07);box-shadow:0 4px 12px rgba(0,0,0,0.18);position:relative;z-index:2}
+  .matrix-cell.zero{color:var(--pwc-grey-400);background:var(--pwc-grey-50);cursor:default}
+  .matrix-cell.zero:hover{transform:none;box-shadow:none}
+  .matrix-cell.dark{color:var(--white)}
+  .matrix-cell.active{outline:2px solid var(--pwc-grey-900);outline-offset:1px}
+
+  /* Drill panel */
+  .bm-drill{background:var(--white);border-radius:8px;padding:20px 22px;box-shadow:0 1px 3px rgba(0,0,0,0.08);min-height:140px}
+  .bm-drill-empty{text-align:center;color:var(--pwc-grey-600);padding:24px 16px;font-size:13px;line-height:1.6}
+  .bm-drill-header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--pwc-grey-100);padding-bottom:12px;margin-bottom:14px}
+  .bm-drill-title{font-size:15px;font-weight:700;color:var(--pwc-grey-900);margin:0}
+  .bm-drill-title .bm-drill-pill{display:inline-block;font-size:10px;font-weight:700;background:var(--pwc-orange);color:var(--white);padding:2px 8px;border-radius:999px;margin-right:8px;text-transform:uppercase;letter-spacing:0.5px}
+  .bm-drill-count{font-size:12px;color:var(--pwc-grey-600)}
+  .bm-drill-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;max-height:420px;overflow-y:auto}
+  .bm-person{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--pwc-grey-100);border-radius:4px;cursor:pointer;transition:all .15s}
+  .bm-person:hover{border-color:var(--pwc-orange);background:var(--pwc-grey-50)}
+  .bm-person-photo{width:36px;height:36px;border-radius:50%;overflow:hidden;background:var(--pwc-grey-100);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .bm-person-photo img{width:100%;height:100%;object-fit:cover}
+  .bm-person-photo.fallback{background:var(--pwc-orange);color:var(--white);font-weight:600;font-size:12px}
+  .bm-person-name{font-size:13px;font-weight:600;color:var(--pwc-grey-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bm-person-meta{font-size:11px;color:var(--pwc-grey-600);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   footer{text-align:center;color:var(--pwc-grey-600);font-size:12px;padding:24px}
   @media (max-width:600px){.bio-banner{flex-direction:column;text-align:center}main,header.brand,nav.tabs{padding-left:16px;padding-right:16px}}
 </style>
@@ -323,6 +382,7 @@
   <button data-tab="directory" class="active">Directory</button>
   <button data-tab="skills">Skill Atlas</button>
   <button data-tab="pulse">Pulse</button>
+  <button data-tab="boardroom">Boardroom</button>
 </nav>
 
 <main>
@@ -477,6 +537,55 @@
           <span class="insight-sub">Joined in the last 12 months</span>
         </div>
         <div id="insight-new" class="insight-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tab-panel" id="tab-boardroom">
+    <h1>Boardroom</h1>
+    <p class="subtitle">A strategic read on team shape, capability coverage and leverage. Click any tier or cell to drill in.</p>
+
+    <div class="boardroom-filters">
+      <select id="br-competency"><option value="">All competencies</option></select>
+      <select id="br-experience">
+        <option value="">All experience bands</option>
+        <option value="0-3">0&ndash;3 yrs (early career)</option>
+        <option value="4-7">4&ndash;7 yrs (mid)</option>
+        <option value="8-12">8&ndash;12 yrs (senior)</option>
+        <option value="13+">13+ yrs (leadership)</option>
+      </select>
+      <select id="br-role"><option value="">All roles</option></select>
+      <button class="reset-btn" id="br-reset">Reset filters</button>
+    </div>
+
+    <section class="stats br-kpis">
+      <div class="stat-card"><div class="value" id="br-total">-</div><div class="label">Team Size</div></div>
+      <div class="stat-card t2"><div class="value" id="br-leverage">-</div><div class="label">Leverage Ratio (junior : senior)</div></div>
+      <div class="stat-card t3"><div class="value" id="br-median">-</div><div class="label">Median Experience (yrs)</div></div>
+      <div class="stat-card t4"><div class="value" id="br-coverage">-</div><div class="label">Capability Coverage</div></div>
+    </section>
+
+    <div class="boardroom-main">
+      <div class="bm-card">
+        <div class="bm-card-head">
+          <h3>Talent Funnel</h3>
+          <span class="bm-card-sub">Headcount by role tier &mdash; width shows scale</span>
+        </div>
+        <div class="funnel" id="br-funnel"></div>
+      </div>
+      <div class="bm-card">
+        <div class="bm-card-head">
+          <h3>Capability Matrix</h3>
+          <span class="bm-card-sub">Competency &times; role &mdash; darker = more people, white cells are gaps</span>
+        </div>
+        <div class="matrix-wrap"><table class="matrix-table" id="br-matrix"></table></div>
+      </div>
+    </div>
+
+    <div class="bm-drill" id="br-drill">
+      <div class="bm-drill-empty">
+        <div class="adt-emoji">&#127968;</div>
+        <p>Click a tier in the funnel or a cell in the matrix to see the people in that segment.</p>
       </div>
     </div>
   </section>
@@ -1740,6 +1849,286 @@
     document.getElementById(id).addEventListener('input', () => { pulsePage = 0; renderPulse(); }));
 
   renderPulse();
+
+  // ============================================================
+  // ===== Boardroom — strategic talent view for MDs =============
+  // ============================================================
+
+  // Role tiers in pyramid order (top = most senior).
+  const BR_TIERS = ['Managing Directors','Directors','Senior Managers','Managers','Senior Associates','Associates'];
+  // Senior tiers for the leverage + capability-coverage calculations.
+  const BR_SENIOR = new Set(['Managing Directors','Directors','Senior Managers','Managers']);
+  const BR_JUNIOR = new Set(['Senior Associates','Associates']);
+  // Tier colours — deep at top, warming as you descend.
+  const BR_TIER_COLOR = {
+    'Managing Directors': '#5C1A40',
+    'Directors':          '#8C2D63',
+    'Senior Managers':    '#B33D2C',
+    'Managers':           '#D04A02',
+    'Senior Associates':  '#EB8C00',
+    'Associates':         '#FFB600'
+  };
+
+  // Experience-band helper. Returns label or null.
+  function expBand(yrs){
+    if (yrs == null || isNaN(yrs)) return null;
+    if (yrs <= 3)  return '0-3';
+    if (yrs <= 7)  return '4-7';
+    if (yrs <= 12) return '8-12';
+    return '13+';
+  }
+
+  // Populate filter dropdowns
+  fillSelect('br-competency', uniqueValues('Competency'));
+  fillSelect('br-role',       uniqueValues('Role'));
+
+  // Currently-selected segment (a {tier, competency} object or null)
+  let brSelection = null;
+
+  function brFiltered(){
+    const comp = document.getElementById('br-competency').value;
+    const band = document.getElementById('br-experience').value;
+    const role = document.getElementById('br-role').value;
+    return EMPLOYEES.filter(e => {
+      if (comp && String(e.Competency || '') !== comp) return false;
+      if (role && String(e.Role || '')        !== role) return false;
+      if (band){
+        const b = expBand(e[EXP_TOTAL]);
+        if (b !== band) return false;
+      }
+      return true;
+    });
+  }
+
+  // Median utility
+  function median(arr){
+    if (!arr.length) return null;
+    const s = arr.slice().sort((a,b) => a - b);
+    const mid = Math.floor(s.length / 2);
+    return s.length % 2 ? s[mid] : (s[mid-1] + s[mid]) / 2;
+  }
+
+  // ----- KPI strip -----
+  function renderBoardroomKpis(list){
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set('br-total', list.length);
+
+    const seniors = list.filter(e => BR_SENIOR.has(groupForRole(e.Role))).length;
+    const juniors = list.filter(e => BR_JUNIOR.has(groupForRole(e.Role))).length;
+    set('br-leverage', seniors ? (juniors / seniors).toFixed(2) + ' : 1' : '—');
+
+    const exps = list.map(e => Number(e[EXP_TOTAL])).filter(v => !isNaN(v));
+    const med = median(exps);
+    set('br-median', med != null ? med.toFixed(1) : '—');
+
+    // Capability coverage = fraction of (Competency × senior-tier) pairs that
+    // have at least one person. 100% means every competency has senior cover.
+    const comps = [...new Set(list.map(e => String(e.Competency || '').trim()).filter(Boolean))];
+    const seniorTiers = ['Managing Directors','Directors','Senior Managers','Managers'];
+    if (comps.length === 0){
+      set('br-coverage', '—');
+    } else {
+      const filled = new Set();
+      list.forEach(e => {
+        const c = String(e.Competency || '').trim();
+        const t = groupForRole(e.Role);
+        if (c && seniorTiers.includes(t)) filled.add(c + '|' + t);
+      });
+      const possible = comps.length * seniorTiers.length;
+      const pct = Math.round((filled.size / possible) * 100);
+      set('br-coverage', pct + '%');
+    }
+  }
+
+  // ----- Talent Funnel -----
+  function renderFunnel(list){
+    const counts = BR_TIERS.map(t => ({
+      tier: t,
+      count: list.filter(e => groupForRole(e.Role) === t).length
+    }));
+    const max = Math.max(1, ...counts.map(c => c.count));
+    const funnel = document.getElementById('br-funnel');
+    const present = counts.filter(c => c.count > 0);
+    if (!present.length){
+      funnel.innerHTML = '<div class="funnel-empty">No employees in this slice.</div>';
+      return;
+    }
+    // Every tier renders (even with 0) so leverage gaps are visible — but render
+    // an obvious thin "missing tier" line for zeros.
+    funnel.innerHTML = counts.map(c => {
+      const w = c.count === 0 ? 12 : Math.max(15, (c.count / max) * 100);
+      const bg = c.count === 0 ? 'var(--pwc-grey-300)' : BR_TIER_COLOR[c.tier];
+      const cls = c.count === 0 ? ' funnel-tier-empty' : '';
+      const inner = c.count === 0
+        ? '<span class="ftier-name" style="color:var(--pwc-grey-600);text-shadow:none;font-style:italic;">' + esc(c.tier) + ' &mdash; none</span>'
+        : '<span class="ftier-name">' + esc(c.tier) + '</span><span class="ftier-count">' + c.count + '</span>';
+      return '<div class="funnel-tier' + cls + '" data-tier="' + esc(c.tier) + '">'
+           +   '<div class="funnel-bar-wrap">'
+           +     '<div class="funnel-bar" style="width:' + w + '%; background:' + bg + ';">' + inner + '</div>'
+           +   '</div>'
+           + '</div>';
+    }).join('');
+
+    funnel.querySelectorAll('.funnel-tier').forEach(el => {
+      el.addEventListener('click', () => {
+        if (el.classList.contains('funnel-tier-empty')) return;
+        brSelection = { tier: el.dataset.tier };
+        // Visual highlight
+        funnel.querySelectorAll('.funnel-tier').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        document.querySelectorAll('#br-matrix .matrix-cell').forEach(c => c.classList.remove('active'));
+        renderDrill(list);
+      });
+    });
+  }
+
+  // ----- Capability Matrix -----
+  function renderMatrix(list){
+    const comps = [...new Set(list.map(e => String(e.Competency || '').trim()).filter(Boolean))]
+      .sort((a, b) => {
+        const ca = list.filter(e => String(e.Competency || '').trim() === a).length;
+        const cb = list.filter(e => String(e.Competency || '').trim() === b).length;
+        return cb - ca;
+      });
+    const matrix = document.getElementById('br-matrix');
+    if (!comps.length){
+      matrix.innerHTML = '<tr><td colspan="' + (BR_TIERS.length + 1) + '" class="funnel-empty">No competency data in this slice.</td></tr>';
+      return;
+    }
+    // Build counts: comp -> tier -> count
+    const cells = {};
+    let maxCell = 0;
+    comps.forEach(c => { cells[c] = {}; BR_TIERS.forEach(t => cells[c][t] = 0); });
+    list.forEach(e => {
+      const c = String(e.Competency || '').trim();
+      const t = groupForRole(e.Role);
+      if (cells[c] && BR_TIERS.includes(t)){
+        cells[c][t]++;
+        if (cells[c][t] > maxCell) maxCell = cells[c][t];
+      }
+    });
+
+    function cellColor(v){
+      if (v === 0) return { bg: '', cls: 'zero' };
+      const intensity = maxCell ? v / maxCell : 0;
+      // PwC orange ramped from very pale to full
+      const alpha = 0.18 + intensity * 0.82;
+      const dark = intensity > 0.55;
+      return { bg: 'rgba(208,74,2,' + alpha.toFixed(2) + ')', cls: dark ? 'dark' : '' };
+    }
+
+    let html = '<thead><tr><th></th>';
+    BR_TIERS.forEach(t => {
+      // Short header labels
+      const short = t === 'Managing Directors' ? 'MD'
+                  : t === 'Directors' ? 'D'
+                  : t === 'Senior Managers' ? 'SM'
+                  : t === 'Managers' ? 'M'
+                  : t === 'Senior Associates' ? 'SA'
+                  : 'A';
+      html += '<th title="' + esc(t) + '">' + short + '</th>';
+    });
+    html += '</tr></thead><tbody>';
+    comps.forEach(c => {
+      html += '<tr><th title="' + esc(c) + '">' + esc(c) + '</th>';
+      BR_TIERS.forEach(t => {
+        const v = cells[c][t];
+        const col = cellColor(v);
+        const style = col.bg ? ' style="background:' + col.bg + ';"' : '';
+        html += '<td class="matrix-cell ' + col.cls + '"' + style
+              + ' data-competency="' + esc(c) + '" data-tier="' + esc(t) + '"'
+              + ' title="' + esc(c) + ' · ' + esc(t) + ' · ' + v + '">' + v + '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody>';
+    matrix.innerHTML = html;
+
+    matrix.querySelectorAll('.matrix-cell:not(.zero)').forEach(el => {
+      el.addEventListener('click', () => {
+        brSelection = { competency: el.dataset.competency, tier: el.dataset.tier };
+        matrix.querySelectorAll('.matrix-cell').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        document.querySelectorAll('#br-funnel .funnel-tier').forEach(t => t.classList.remove('active'));
+        renderDrill(list);
+      });
+    });
+  }
+
+  // ----- Drill panel (people in selected segment) -----
+  function renderDrill(list){
+    const drill = document.getElementById('br-drill');
+    if (!brSelection){
+      drill.innerHTML = '<div class="bm-drill-empty"><div class="adt-emoji">&#127968;</div>'
+                     + '<p>Click a tier in the funnel or a cell in the matrix to see the people in that segment.</p></div>';
+      return;
+    }
+    let people = list.slice();
+    if (brSelection.tier){
+      people = people.filter(e => groupForRole(e.Role) === brSelection.tier);
+    }
+    if (brSelection.competency){
+      people = people.filter(e => String(e.Competency || '').trim() === brSelection.competency);
+    }
+    const titlePills = [];
+    if (brSelection.competency) titlePills.push('<span class="bm-drill-pill">' + esc(brSelection.competency) + '</span>');
+    if (brSelection.tier)       titlePills.push('<span class="bm-drill-pill">' + esc(brSelection.tier) + '</span>');
+
+    people.sort((a, b) => String(a.Name).localeCompare(String(b.Name)));
+    let html = '<div class="bm-drill-header">'
+             +   '<h3 class="bm-drill-title">' + titlePills.join('') + 'Selected segment</h3>'
+             +   '<span class="bm-drill-count">' + people.length + ' ' + (people.length === 1 ? 'person' : 'people') + '</span>'
+             + '</div>';
+    if (people.length === 0){
+      html += '<div class="bm-drill-empty"><p>Nobody in this segment with current filters.</p></div>';
+    } else {
+      html += '<div class="bm-drill-grid">';
+      people.forEach(e => {
+        const ph = e._photo
+          ? '<div class="bm-person-photo"><img loading="lazy" src="' + e._photo + '" alt="' + esc(e.Name) + '"></div>'
+          : '<div class="bm-person-photo fallback">' + esc(e._initials) + '</div>';
+        html += '<div class="bm-person" data-id="' + esc(e.WorkdayID) + '">'
+              +   ph
+              +   '<div style="min-width:0;flex:1;">'
+              +     '<div class="bm-person-name">' + esc(e.Name) + '</div>'
+              +     '<div class="bm-person-meta">' + esc(e.Role || '') + ' &middot; ' + esc(e.Location || '') + ' &middot; ' + esc(e[EXP_TOTAL] || '?') + ' yrs</div>'
+              +   '</div>'
+              + '</div>';
+      });
+      html += '</div>';
+    }
+    drill.innerHTML = html;
+    drill.querySelectorAll('.bm-person').forEach(p =>
+      p.addEventListener('click', () => showBio(p.dataset.id)));
+  }
+
+  function renderBoardroom(){
+    const list = brFiltered();
+    renderBoardroomKpis(list);
+    renderFunnel(list);
+    renderMatrix(list);
+    // If a selection no longer exists in the filtered set, clear it.
+    if (brSelection){
+      const stillInList = list.some(e => {
+        const okTier = !brSelection.tier || groupForRole(e.Role) === brSelection.tier;
+        const okComp = !brSelection.competency || String(e.Competency || '').trim() === brSelection.competency;
+        return okTier && okComp;
+      });
+      if (!stillInList) brSelection = null;
+    }
+    renderDrill(list);
+  }
+
+  ['br-competency','br-experience','br-role'].forEach(id =>
+    document.getElementById(id).addEventListener('change', renderBoardroom));
+  document.getElementById('br-reset').addEventListener('click', () => {
+    document.getElementById('br-competency').value = '';
+    document.getElementById('br-experience').value = '';
+    document.getElementById('br-role').value = '';
+    brSelection = null;
+    renderBoardroom();
+  });
+  renderBoardroom();
 </script>
 </body>
 </html>
