@@ -139,20 +139,46 @@
   /* ---- Skill Atlas ---- */
   .atlas-grid{display:grid;grid-template-columns:1fr 380px;gap:20px;margin-bottom:32px}
   @media (max-width:980px){.atlas-grid{grid-template-columns:1fr}}
-  .atlas-explorer{background:var(--white);border-radius:6px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,0.08);display:flex;flex-direction:column;min-height:520px}
+  .atlas-explorer{background:transparent;padding:0;display:flex;flex-direction:column;gap:0}
   .atlas-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
   .atlas-toolbar input{flex:1 1 220px;padding:9px 12px;border:1px solid var(--pwc-grey-300);border-radius:4px;font-family:inherit;font-size:13px}
   .atlas-toolbar input:focus{outline:none;border-color:var(--pwc-orange);box-shadow:0 0 0 2px rgba(208,74,2,0.15)}
   .atlas-legend{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--pwc-grey-700)}
   .atlas-legend .leg{display:flex;align-items:center;gap:5px}
   .atlas-legend .swatch{width:11px;height:11px;border-radius:2px;display:inline-block}
-  .treemap-wrap{flex:1;min-height:460px;position:relative}
-  #treemap{width:100%;height:100%;display:block;border-radius:4px;overflow:hidden}
-  .tm-tile{cursor:pointer;transition:opacity .15s,filter .15s}
-  .tm-tile:hover{filter:brightness(1.08)}
-  .tm-tile.dim{opacity:.25}
-  .tm-label{fill:var(--white);font-family:inherit;font-weight:600;pointer-events:none}
-  .tm-count{fill:rgba(255,255,255,0.85);font-family:inherit;font-size:10px;pointer-events:none}
+  /* Executive Insights banner */
+  .atlas-insights{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:14px}
+  .insight-callout{background:var(--white);border-radius:8px;padding:14px 16px;border-left:5px solid var(--pwc-orange);box-shadow:0 1px 3px rgba(0,0,0,0.06);position:relative;overflow:hidden}
+  .insight-callout.strength{border-left-color:var(--pwc-orange)}
+  .insight-callout.risk{border-left-color:var(--pwc-rose)}
+  .insight-callout.gap{border-left-color:var(--pwc-burgundy)}
+  .insight-callout .ic-icon{font-size:18px;line-height:1;margin-bottom:6px}
+  .insight-callout .ic-headline{font-size:15px;font-weight:600;color:var(--pwc-grey-900);line-height:1.3}
+  .insight-callout .ic-headline strong{color:var(--pwc-orange);font-weight:700}
+  .insight-callout.risk .ic-headline strong{color:var(--pwc-rose)}
+  .insight-callout.gap .ic-headline strong{color:var(--pwc-burgundy)}
+  .insight-callout .ic-desc{font-size:11px;color:var(--pwc-grey-600);margin-top:6px;line-height:1.4;text-transform:uppercase;letter-spacing:0.3px}
+
+  /* Competency cards */
+  .atlas-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+  .comp-card{background:var(--white);border-radius:8px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,0.08);border-top:4px solid var(--pwc-orange);display:flex;flex-direction:column}
+  .comp-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border-bottom:1px solid var(--pwc-grey-100);padding-bottom:10px;margin-bottom:10px}
+  .comp-card-title{font-size:15px;font-weight:700;color:var(--pwc-grey-900);margin:0;text-transform:uppercase;letter-spacing:0.4px}
+  .comp-card-strength{font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;flex-shrink:0}
+  .comp-card-strength.deep{background:rgba(208,74,2,0.12);color:var(--pwc-orange)}
+  .comp-card-strength.solid{background:rgba(235,140,0,0.14);color:#a06200}
+  .comp-card-strength.thin{background:rgba(224,48,30,0.10);color:var(--pwc-rose)}
+  .comp-card-stats{font-size:11px;color:var(--pwc-grey-600);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.4px;font-weight:600}
+  .comp-card-skills{display:flex;flex-direction:column;gap:5px;flex:1}
+  .cc-skill{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--pwc-grey-900);padding:3px 4px;border-radius:3px;transition:background .12s}
+  .cc-skill:hover{background:var(--pwc-grey-100)}
+  .cc-name{flex:0 0 110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+  .cc-bar{flex:1;height:16px;background:var(--pwc-grey-100);border-radius:3px;overflow:hidden;min-width:30px}
+  .cc-fill{height:100%;background:var(--pwc-orange);min-width:3px;transition:width .25s}
+  .cc-count{flex:0 0 28px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:var(--pwc-grey-700);font-weight:700}
+  .comp-card-more{margin-top:10px;font-size:12px;color:var(--pwc-orange);font-weight:600;cursor:pointer;background:transparent;border:none;padding:6px 0 0;font-family:inherit;text-align:left;border-top:1px solid var(--pwc-grey-100)}
+  .comp-card-more:hover{text-decoration:underline}
+  .atlas-cards-empty{grid-column:1 / -1;text-align:center;color:var(--pwc-grey-600);padding:30px;font-size:13px;font-style:italic}
   .atlas-detail{background:var(--white);border-radius:6px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,0.08);max-height:680px;overflow-y:auto;position:sticky;top:20px}
   .atlas-detail-empty{text-align:center;color:var(--pwc-grey-600);padding:40px 20px;font-size:13px;line-height:1.6}
   .adt-emoji{font-size:36px;margin-bottom:10px}
@@ -228,6 +254,55 @@
   .smatch .sm-pill.hit-nice{background:var(--pwc-tangerine);color:var(--white)}
   .smatch .sm-pill.miss{background:var(--pwc-grey-100);color:var(--pwc-grey-600);text-decoration:line-through}
   .smatch-empty{text-align:center;color:var(--pwc-grey-600);padding:30px;font-size:13px;font-style:italic}
+
+  /* ---- Pulse (capacity heatmap) ---- */
+  .pulse-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .pulse-controls input,.pulse-controls select{padding:9px 12px;border:1px solid var(--pwc-grey-300);border-radius:4px;font-family:inherit;font-size:13px;background:var(--white)}
+  .pulse-controls input{flex:1 1 240px}
+  .pulse-controls input:focus,.pulse-controls select:focus{outline:none;border-color:var(--pwc-orange);box-shadow:0 0 0 2px rgba(208,74,2,0.15)}
+  .pulse-legend{display:flex;flex-wrap:wrap;gap:8px;font-size:11px;color:var(--pwc-grey-700);margin-left:auto}
+  .pulse-legend .leg{display:inline-flex;align-items:center;gap:5px}
+  .pulse-legend .sw{width:14px;height:14px;border-radius:3px;display:inline-block}
+  .heatmap-wrap{background:var(--white);border-radius:6px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,0.08);overflow-x:auto;margin-bottom:24px}
+  .heatmap{display:grid;gap:2px;min-width:600px}
+  .heatmap .hm-corner,.heatmap .hm-month-header{background:var(--pwc-grey-900);color:var(--white);padding:8px 6px;font-size:11px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:0.4px}
+  .heatmap .hm-name-row{display:contents}
+  .heatmap .hm-name{background:var(--pwc-grey-50);padding:6px 10px;display:flex;align-items:center;gap:8px;border-radius:3px;cursor:pointer;min-width:0}
+  .heatmap .hm-name:hover{background:var(--pwc-grey-100)}
+  .heatmap .hm-name-photo{width:24px;height:24px;border-radius:50%;overflow:hidden;background:var(--pwc-grey-200,#e5e5e5);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .heatmap .hm-name-photo img{width:100%;height:100%;object-fit:cover}
+  .heatmap .hm-name-photo.fallback{background:var(--pwc-orange);color:var(--white);font-size:10px;font-weight:600}
+  .heatmap .hm-name-text{font-size:12px;font-weight:600;color:var(--pwc-grey-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .heatmap .hm-name-meta{font-size:10px;color:var(--pwc-grey-600);text-transform:uppercase;letter-spacing:0.3px}
+  .heatmap .hm-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--white);cursor:pointer;border-radius:3px;transition:transform .1s}
+  .heatmap .hm-cell:hover{transform:scale(1.1);outline:2px solid var(--pwc-grey-900);outline-offset:1px;z-index:2;position:relative}
+  .heatmap .hm-cell.empty{background:var(--pwc-grey-100);color:var(--pwc-grey-400);cursor:default}
+  .heatmap .hm-cell.empty:hover{transform:none;outline:none}
+  .heatmap .hm-cell.text-dark{color:var(--pwc-grey-900)}
+  .pulse-pager{display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:12px;color:var(--pwc-grey-600)}
+  .pulse-pager button{padding:7px 14px;border:1px solid var(--pwc-orange);background:var(--white);color:var(--pwc-orange);border-radius:4px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
+  .pulse-pager button:hover:not(:disabled){background:var(--pwc-orange);color:var(--white)}
+  .pulse-pager button:disabled{opacity:.35;cursor:not-allowed}
+  .pulse-insights{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+  .insight-card{background:var(--white);border-radius:6px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+  .insight-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;border-bottom:1px solid var(--pwc-grey-100);padding-bottom:10px}
+  .insight-pill{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:0.5px;color:var(--white)}
+  .insight-pill.bench{background:var(--pwc-tangerine)}
+  .insight-pill.watch{background:var(--pwc-rose)}
+  .insight-pill.new{background:var(--pwc-pink)}
+  .insight-sub{font-size:11px;color:var(--pwc-grey-600)}
+  .insight-list{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto}
+  .insight-row{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:4px;cursor:pointer}
+  .insight-row:hover{background:var(--pwc-grey-100)}
+  .insight-row-photo{width:32px;height:32px;border-radius:50%;overflow:hidden;background:var(--pwc-grey-100);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .insight-row-photo img{width:100%;height:100%;object-fit:cover}
+  .insight-row-photo.fallback{background:var(--pwc-orange);color:var(--white);font-size:11px;font-weight:600}
+  .insight-row-name{font-size:13px;font-weight:600;color:var(--pwc-grey-900)}
+  .insight-row-meta{font-size:11px;color:var(--pwc-grey-600)}
+  .insight-row-stat{margin-left:auto;font-size:13px;font-weight:700;color:var(--pwc-orange);font-variant-numeric:tabular-nums}
+  .insight-row-stat.watch{color:var(--pwc-rose)}
+  .insight-row-stat.bench{color:var(--pwc-tangerine)}
+  .insight-empty{padding:20px;text-align:center;color:var(--pwc-grey-600);font-size:12px;font-style:italic}
   footer{text-align:center;color:var(--pwc-grey-600);font-size:12px;padding:24px}
   @media (max-width:600px){.bio-banner{flex-direction:column;text-align:center}main,header.brand,nav.tabs{padding-left:16px;padding-right:16px}}
 </style>
@@ -247,6 +322,7 @@
 <nav class="tabs">
   <button data-tab="directory" class="active">Directory</button>
   <button data-tab="skills">Skill Atlas</button>
+  <button data-tab="pulse">Pulse</button>
 </nav>
 
 <main>
@@ -304,11 +380,12 @@
 
     <div class="atlas-grid">
       <div class="atlas-explorer">
+        <div class="atlas-insights" id="atlas-insights"></div>
         <div class="atlas-toolbar">
-          <input type="text" id="atlas-search" placeholder="Highlight skill in treemap...">
+          <input type="text" id="atlas-search" placeholder="Search skills across competencies...">
           <div class="atlas-legend" id="atlas-legend"></div>
         </div>
-        <div class="treemap-wrap"><svg id="treemap" preserveAspectRatio="none"></svg></div>
+        <div class="atlas-cards" id="atlas-cards"></div>
       </div>
       <aside class="atlas-detail" id="atlas-detail">
         <div class="atlas-detail-empty">
@@ -345,6 +422,63 @@
       <div class="staffing-summary" id="staffing-summary"></div>
       <div class="staffing-results" id="staffing-results"></div>
     </section>
+  </section>
+
+  <section class="tab-panel" id="tab-pulse">
+    <h1>Workforce Pulse</h1>
+    <p class="subtitle">A read on the team's current load. Hot cells are stretched, cool cells are available &mdash; click any to open the bio.</p>
+
+    <section class="stats" id="pulse-kpis">
+      <div class="stat-card"><div class="value" id="pl-avg">-</div><div class="label">This-Month Avg Util</div></div>
+      <div class="stat-card t2"><div class="value" id="pl-bench">-</div><div class="label">On the Bench (&lt;60%)</div></div>
+      <div class="stat-card t3"><div class="value" id="pl-healthy">-</div><div class="label">Healthy (80&ndash;100%)</div></div>
+      <div class="stat-card t4"><div class="value" id="pl-stretched">-</div><div class="label">Stretched (&gt;100%)</div></div>
+      <div class="stat-card t5"><div class="value" id="pl-burnout">-</div><div class="label">Burnout Watch (3-mo &gt;100%)</div></div>
+    </section>
+
+    <div class="pulse-controls">
+      <input type="text" id="pulse-search" placeholder="Search name, role, OU, location...">
+      <select id="pulse-ou"><option value="">All operating units</option></select>
+      <select id="pulse-role"><option value="">All roles</option></select>
+      <select id="pulse-loc"><option value="">All locations</option></select>
+      <select id="pulse-sort">
+        <option value="avg-desc">Sort: avg util &#8595;</option>
+        <option value="avg-asc">Sort: avg util &#8593;</option>
+        <option value="latest-desc">Sort: latest month &#8595;</option>
+        <option value="latest-asc">Sort: latest month &#8593;</option>
+        <option value="name">Sort: Name</option>
+      </select>
+      <div class="pulse-legend" id="pulse-legend"></div>
+    </div>
+
+    <div class="heatmap-wrap">
+      <div class="heatmap" id="heatmap"></div>
+      <div class="pulse-pager" id="pulse-pager"></div>
+    </div>
+
+    <div class="pulse-insights">
+      <div class="insight-card">
+        <div class="insight-head">
+          <span class="insight-pill bench">On the Bench</span>
+          <span class="insight-sub">Lowest util this month</span>
+        </div>
+        <div id="insight-bench" class="insight-list"></div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-head">
+          <span class="insight-pill watch">Watch List</span>
+          <span class="insight-sub">Sustained &gt;100% over last 3 months</span>
+        </div>
+        <div id="insight-watch" class="insight-list"></div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-head">
+          <span class="insight-pill new">New Joiners</span>
+          <span class="insight-sub">Joined in the last 12 months</span>
+        </div>
+        <div id="insight-new" class="insight-list"></div>
+      </div>
+    </div>
   </section>
 </main>
 
@@ -996,118 +1130,136 @@
     ).join('');
   })();
 
-  // ----- Squarified treemap -----
-  // Implementation of squarified treemap (Bruls/Huijsen/van Wijk 2000).
-  // Inputs are values pre-sorted desc. Returns rects {x,y,w,h,index}.
-  function squarify(values, x, y, w, h){
-    const result = [];
-    if (!values.length) return result;
-    const remaining = values.slice();
-    let cx = x, cy = y, cw = w, ch = h;
-    let totalRemaining = remaining.reduce((s,v) => s + v, 0);
-    let indexBase = 0;
-    function worst(rowVals, length){
-      let sum = 0, mx = 0, mn = Infinity;
-      for (const v of rowVals){ sum += v; if (v > mx) mx = v; if (v < mn) mn = v; }
-      const s2 = sum * sum, l2 = length * length;
-      return Math.max(l2 * mx / s2, s2 / (l2 * mn));
-    }
-    while (remaining.length > 0){
-      const totalArea = cw * ch;
-      const length = Math.min(cw, ch);
-      const row = [];
-      while (remaining.length > 0){
-        const v = remaining[0] * totalArea / totalRemaining;
-        const candidate = [...row, v];
-        if (row.length === 0 || worst(candidate, length) <= worst(row, length)){
-          row.push(v);
-          remaining.shift();
-        } else break;
-      }
-      const rowSum = row.reduce((s,v) => s + v, 0);
-      const rowDepth = rowSum / length;
-      if (cw >= ch){
-        let py = cy;
-        row.forEach((v, k) => {
-          const tileH = v / rowDepth;
-          result.push({ x: cx, y: py, w: rowDepth, h: tileH, index: indexBase + k });
-          py += tileH;
-        });
-        cx += rowDepth; cw -= rowDepth;
-      } else {
-        let px = cx;
-        row.forEach((v, k) => {
-          const tileW = v / rowDepth;
-          result.push({ x: px, y: cy, w: tileW, h: rowDepth, index: indexBase + k });
-          px += tileW;
-        });
-        cy += rowDepth; ch -= rowDepth;
-      }
-      indexBase += row.length;
-      totalRemaining = remaining.reduce((s,v) => s + v, 0);
-    }
-    return result;
+  // ----- Executive layout: Insights banner + Competency Cards -----
+  // (Replaces the previous treemap, which didn't scale to many small skills.)
+  function categoryStrength(peopleCount){
+    if (peopleCount >= 20) return 'deep';
+    if (peopleCount >= 5)  return 'solid';
+    return 'thin';
+  }
+  function strengthLabel(s){
+    return s === 'deep' ? 'Deep Capability' : s === 'solid' ? 'Solid Bench' : 'Thin Bench';
   }
 
-  function renderTreemap(){
-    const sorted = ALL_SKILLS.slice().sort((a,b) => SKILL_COUNT[b] - SKILL_COUNT[a]);
-    const svg = document.getElementById('treemap');
-    const wrap = svg.parentElement;
-    const W = wrap.clientWidth || 800;
-    const H = wrap.clientHeight || 460;
-    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
-    svg.setAttribute('width', W);
-    svg.setAttribute('height', H);
-    const values = sorted.map(k => SKILL_COUNT[k]);
-    const rects = squarify(values, 0, 0, W, H);
-    svg.innerHTML = rects.map(r => {
-      const skill = sorted[r.index];
-      const cat = SKILL_CATEGORY[skill];
-      const color = CAT_COLOR[cat] || '#9C9C9C';
-      const count = SKILL_COUNT[skill];
-      const display = SKILL_DISPLAY[skill];
-      // Only label tiles big enough; tweak font size by tile dimension
-      const small = Math.min(r.w, r.h);
-      const showLabel = small >= 28;
-      const labelSize = Math.max(10, Math.min(18, Math.floor(small / 3.5)));
-      const showCount = small >= 50;
-      const labels = showLabel
-        ? '<text class="tm-label" x="' + (r.x + 8) + '" y="' + (r.y + labelSize + 4) + '" font-size="' + labelSize + '">' + esc(truncateForTile(display, r.w, labelSize)) + '</text>'
-          + (showCount ? '<text class="tm-count" x="' + (r.x + 8) + '" y="' + (r.y + labelSize + 18) + '">' + count + ' ppl</text>' : '')
-        : '';
-      return '<g class="tm-tile" data-skill="' + esc(skill) + '">'
-           + '<rect x="' + r.x + '" y="' + r.y + '" width="' + (r.w - 1) + '" height="' + (r.h - 1) + '" fill="' + color + '" rx="2"></rect>'
-           + labels
-           + '<title>' + esc(display) + ' — ' + count + ' people · ' + esc(cat) + '</title>'
-           + '</g>';
-    }).join('');
-    // Wire up click handler (delegate)
-    svg.onclick = (e) => {
-      const tile = e.target.closest('.tm-tile');
-      if (tile) renderSkillDetail(tile.dataset.skill);
-    };
-  }
-  function truncateForTile(text, width, fontSize){
-    // ~0.55 chars per font-size pixel of width
-    const maxChars = Math.max(3, Math.floor((width - 16) / (fontSize * 0.55)));
-    return text.length > maxChars ? text.slice(0, maxChars - 1) + '…' : text;
-  }
-  renderTreemap();
-  // Re-render on resize so the treemap stays correct.
-  let _tmResizeTO = null;
-  window.addEventListener('resize', () => {
-    clearTimeout(_tmResizeTO);
-    _tmResizeTO = setTimeout(renderTreemap, 150);
-  });
-
-  // ----- Treemap search-highlight -----
-  document.getElementById('atlas-search').addEventListener('input', e => {
-    const q = e.target.value.toLowerCase().trim();
-    document.querySelectorAll('#treemap .tm-tile').forEach(t => {
-      const k = t.dataset.skill;
-      const match = !q || SKILL_DISPLAY[k].toLowerCase().includes(q);
-      t.classList.toggle('dim', !match);
+  // Per-category roll-up: unique people, skill list with counts.
+  function buildCategoryData(){
+    const cats = Object.create(null);
+    ALL_SKILLS.forEach(k => {
+      const cat = SKILL_CATEGORY[k] || 'Uncategorised';
+      if (!cats[cat]) cats[cat] = { skills: [], people: new Set() };
+      cats[cat].skills.push({ key: k, count: SKILL_COUNT[k] });
+      (SKILL_HOLDERS[k] || []).forEach(p => cats[cat].people.add(p.WorkdayID));
     });
+    return Object.entries(cats).map(([name, data]) => ({
+      name,
+      color: CAT_COLOR[name] || '#9C9C9C',
+      peopleCount: data.people.size,
+      skillsCount: data.skills.length,
+      skills: data.skills.sort((a,b) => b.count - a.count),
+      strength: categoryStrength(data.people.size)
+    })).sort((a,b) => b.peopleCount - a.peopleCount);
+  }
+
+  // Three auto-generated executive callouts.
+  function renderExecutiveInsights(){
+    const cats = buildCategoryData().filter(c => c.name !== 'Uncategorised');
+    const banner = document.getElementById('atlas-insights');
+    if (!cats.length){ banner.innerHTML = ''; return; }
+
+    const strongest = cats[0];
+    const thinnest = cats.length > 1 ? cats[cats.length - 1] : null;
+    const singles = ALL_SKILLS.filter(k => SKILL_COUNT[k] === 1).length;
+    const total = ALL_SKILLS.length;
+    const singlesPct = total ? Math.round((singles / total) * 100) : 0;
+
+    let html = ''
+      + '<div class="insight-callout strength">'
+      +   '<div class="ic-icon">&#127942;</div>'
+      +   '<div class="ic-headline"><strong>' + esc(strongest.name) + '</strong> is your deepest capability</div>'
+      +   '<div class="ic-desc">' + strongest.peopleCount + ' people &middot; ' + strongest.skillsCount + ' skills</div>'
+      + '</div>'
+      + '<div class="insight-callout risk">'
+      +   '<div class="ic-icon">&#9888;&#65039;</div>'
+      +   '<div class="ic-headline"><strong>' + singles + ' skills</strong> held by 1 person</div>'
+      +   '<div class="ic-desc">' + singlesPct + '% of skill catalogue &middot; concentration risk</div>'
+      + '</div>';
+    if (thinnest){
+      html += '<div class="insight-callout gap">'
+            +   '<div class="ic-icon">&#127919;</div>'
+            +   '<div class="ic-headline"><strong>' + esc(thinnest.name) + '</strong> is your thinnest area</div>'
+            +   '<div class="ic-desc">Only ' + thinnest.peopleCount + ' people &middot; ' + thinnest.skillsCount + ' skills covered</div>'
+            + '</div>';
+    }
+    banner.innerHTML = html;
+  }
+  renderExecutiveInsights();
+
+  // Render the cards grid. `q` filters skill names; categories with no
+  // matching skills hide entirely.
+  function renderCompetencyCards(q){
+    q = (q || '').toLowerCase().trim();
+    let cats = buildCategoryData();
+    if (q){
+      cats = cats.map(c => ({
+        ...c,
+        skills: c.skills.filter(s => (SKILL_DISPLAY[s.key] || '').toLowerCase().includes(q))
+      })).filter(c => c.skills.length > 0);
+    }
+    const wrap = document.getElementById('atlas-cards');
+    if (!cats.length){
+      wrap.innerHTML = '<div class="atlas-cards-empty">No skills match &mdash; try a different search.</div>';
+      return;
+    }
+    function skillRow(s, color, max){
+      const pct = (s.count / max) * 100;
+      return '<div class="cc-skill" data-skill="' + esc(s.key) + '">'
+           +   '<div class="cc-name" title="' + esc(SKILL_DISPLAY[s.key]) + '">' + esc(SKILL_DISPLAY[s.key]) + '</div>'
+           +   '<div class="cc-bar"><div class="cc-fill" style="width:' + pct + '%;background:' + color + ';"></div></div>'
+           +   '<div class="cc-count">' + s.count + '</div>'
+           + '</div>';
+    }
+    wrap.innerHTML = cats.map(c => {
+      const TOPN = 6;
+      const top = c.skills.slice(0, TOPN);
+      const remaining = c.skills.length - TOPN;
+      const maxCount = Math.max(...c.skills.map(s => s.count));
+      const skillsHtml = top.map(s => skillRow(s, c.color, maxCount)).join('');
+      const moreBtn = remaining > 0
+        ? '<button class="comp-card-more" data-cat="' + esc(c.name) + '">+ ' + remaining + ' more skill' + (remaining === 1 ? '' : 's') + ' &rarr;</button>'
+        : '';
+      return '<div class="comp-card" data-cat="' + esc(c.name) + '" style="border-top-color:' + c.color + ';">'
+           +   '<div class="comp-card-header">'
+           +     '<h3 class="comp-card-title">' + esc(c.name) + '</h3>'
+           +     '<span class="comp-card-strength ' + c.strength + '">' + esc(strengthLabel(c.strength)) + '</span>'
+           +   '</div>'
+           +   '<div class="comp-card-stats">' + c.peopleCount + ' people &middot; ' + c.skillsCount + ' skill' + (c.skillsCount === 1 ? '' : 's') + '</div>'
+           +   '<div class="comp-card-skills">' + skillsHtml + '</div>'
+           +   moreBtn
+           + '</div>';
+    }).join('');
+
+    // Wire up clicks
+    wrap.querySelectorAll('.cc-skill').forEach(el =>
+      el.addEventListener('click', () => renderSkillDetail(el.dataset.skill)));
+    wrap.querySelectorAll('.comp-card-more').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const card = btn.closest('.comp-card');
+        const cat = buildCategoryData().find(c => c.name === btn.dataset.cat);
+        if (!cat) return;
+        const maxCount = Math.max(...cat.skills.map(s => s.count));
+        card.querySelector('.comp-card-skills').innerHTML =
+          cat.skills.map(s => skillRow(s, cat.color, maxCount)).join('');
+        btn.remove();
+        card.querySelectorAll('.cc-skill').forEach(el =>
+          el.addEventListener('click', () => renderSkillDetail(el.dataset.skill)));
+      });
+    });
+  }
+  renderCompetencyCards('');
+
+  // Search input filters cards live.
+  document.getElementById('atlas-search').addEventListener('input', e => {
+    renderCompetencyCards(e.target.value);
   });
 
   // ----- Skill detail panel -----
@@ -1344,7 +1496,250 @@
     renderStaffingChips(); renderStaffingResults();
   });
 
-  // (Org Tree + Analytics removed in favour of Skill Atlas above.)
+  // ============================================================
+  // ===== Pulse — workforce capacity heatmap + insight cards ====
+  // ============================================================
+
+  // Collect all unique months from UTIL, sorted chronologically.
+  const ALL_MONTHS = [...new Set(UTIL.map(u => String(u['Month Year']).slice(0, 7)))].sort();
+  // Map of "WorkdayID|YYYY-MM" -> utilization value
+  const UTIL_LOOKUP = Object.create(null);
+  UTIL.forEach(u => {
+    const m = String(u['Month Year']).slice(0, 7);
+    UTIL_LOOKUP[String(u.WorkdayID) + '|' + m] = Number(u.Utilization) || 0;
+  });
+  const LATEST_MONTH = ALL_MONTHS[ALL_MONTHS.length - 1] || '';
+
+  // Pre-compute per-employee: avg util, latest util, sustained risk flag
+  EMPLOYEES.forEach(e => {
+    const id = String(e.WorkdayID);
+    const all = (UTIL_BY_EMP[id] || []).map(r => Number(r.Utilization) || 0);
+    e._avgUtil = all.length ? all.reduce((s,v) => s+v, 0) / all.length : null;
+    e._latestUtil = UTIL_LOOKUP[id + '|' + LATEST_MONTH];
+    // 3-month sustained: avg of the most recent 3 months for this employee
+    const last3 = (UTIL_BY_EMP[id] || [])
+      .slice()
+      .sort((a,b) => String(b['Month Year']).localeCompare(String(a['Month Year'])))
+      .slice(0, 3)
+      .map(r => Number(r.Utilization) || 0);
+    e._sustained3 = last3.length ? last3.reduce((s,v) => s+v, 0) / last3.length : null;
+  });
+
+  // Colour ramp tuned for PwC palette. Returns {bg, dark}.
+  function utilColor(v){
+    if (v == null || isNaN(v)) return { bg: 'var(--pwc-grey-100)', dark: true };
+    if (v < 40)  return { bg: '#FFF1E5', dark: true };
+    if (v < 60)  return { bg: '#FFD9B5', dark: true };
+    if (v < 80)  return { bg: '#FFA86A', dark: false };
+    if (v < 95)  return { bg: '#EB8C00', dark: false };  // tangerine
+    if (v < 105) return { bg: '#D04A02', dark: false };  // PwC orange
+    if (v < 120) return { bg: '#E0301E', dark: false };  // rose
+    return { bg: '#8C2D63', dark: false };               // burgundy
+  }
+
+  // KPIs (against latest month)
+  (function setPulseKpis(){
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    const monthVals = EMPLOYEES.map(e => e._latestUtil).filter(v => typeof v === 'number');
+    const avg = monthVals.length ? Math.round(monthVals.reduce((s,v) => s+v, 0) / monthVals.length) : 0;
+    set('pl-avg', monthVals.length ? avg + '%' : '-');
+    set('pl-bench',     EMPLOYEES.filter(e => e._latestUtil !== undefined && e._latestUtil < 60).length);
+    set('pl-healthy',   EMPLOYEES.filter(e => e._latestUtil !== undefined && e._latestUtil >= 80 && e._latestUtil <= 100).length);
+    set('pl-stretched', EMPLOYEES.filter(e => e._latestUtil !== undefined && e._latestUtil > 100).length);
+    set('pl-burnout',   EMPLOYEES.filter(e => e._sustained3 !== null && e._sustained3 > 100).length);
+  })();
+
+  // Legend
+  (function legend(){
+    const stops = [
+      { l: '<40%',     c: utilColor(30).bg, dark: true },
+      { l: '40-60%',   c: utilColor(50).bg, dark: true },
+      { l: '60-80%',   c: utilColor(70).bg, dark: false },
+      { l: '80-95%',   c: utilColor(90).bg, dark: false },
+      { l: '95-105%',  c: utilColor(100).bg, dark: false },
+      { l: '105-120%', c: utilColor(110).bg, dark: false },
+      { l: '>120%',    c: utilColor(130).bg, dark: false }
+    ];
+    document.getElementById('pulse-legend').innerHTML = stops.map(s =>
+      '<span class="leg"><span class="sw" style="background:' + s.c + '"></span>' + s.l + '</span>'
+    ).join('');
+  })();
+
+  // Filter dropdowns — share the same data as Directory but for the Pulse tab.
+  fillSelect('pulse-ou',   uniqueValues('OU'));
+  fillSelect('pulse-role', uniqueValues('Role'));
+  fillSelect('pulse-loc',  uniqueValues('Location'));
+
+  // Pagination state
+  const PULSE_PAGE_SIZE = 60;
+  let pulsePage = 0;
+
+  function fmtMonth(ym){
+    // "2026-01" -> "Jan '26"
+    const [y, m] = ym.split('-');
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[parseInt(m, 10) - 1] + " '" + y.slice(2);
+  }
+
+  function renderPulse(){
+    const q   = document.getElementById('pulse-search').value.toLowerCase().trim();
+    const ou  = document.getElementById('pulse-ou').value;
+    const rol = document.getElementById('pulse-role').value;
+    const loc = document.getElementById('pulse-loc').value;
+    const srt = document.getElementById('pulse-sort').value;
+
+    let list = EMPLOYEES.filter(e => {
+      if (ou  && String(e['OU']       || '') !== ou)  return false;
+      if (rol && String(e['Role']     || '') !== rol) return false;
+      if (loc && String(e['Location'] || '') !== loc) return false;
+      if (!q) return true;
+      return ['Name','Role','OU','Location','Team Lead','Qualification']
+        .some(k => String(e[k] ?? '').toLowerCase().includes(q));
+    });
+
+    const cmpVal = (a, b, key) => {
+      const av = a[key], bv = b[key];
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      return av - bv;
+    };
+    if      (srt === 'avg-desc')    list.sort((a,b) => cmpVal(b, a, '_avgUtil'));
+    else if (srt === 'avg-asc')     list.sort((a,b) => cmpVal(a, b, '_avgUtil'));
+    else if (srt === 'latest-desc') list.sort((a,b) => cmpVal(b, a, '_latestUtil'));
+    else if (srt === 'latest-asc')  list.sort((a,b) => cmpVal(a, b, '_latestUtil'));
+    else                            list.sort((a,b) => String(a.Name).localeCompare(String(b.Name)));
+
+    // Pagination
+    const totalPages = Math.max(1, Math.ceil(list.length / PULSE_PAGE_SIZE));
+    if (pulsePage >= totalPages) pulsePage = totalPages - 1;
+    const start = pulsePage * PULSE_PAGE_SIZE;
+    const page = list.slice(start, start + PULSE_PAGE_SIZE);
+
+    // Build grid template: name column (220px) + N month columns
+    const heatmap = document.getElementById('heatmap');
+    heatmap.style.gridTemplateColumns = '220px repeat(' + ALL_MONTHS.length + ', minmax(58px, 1fr))';
+
+    if (!ALL_MONTHS.length){
+      heatmap.innerHTML = '<div class="insight-empty" style="grid-column:1/-1;padding:30px;">No utilization data available.</div>';
+      document.getElementById('pulse-pager').innerHTML = '';
+      return;
+    }
+
+    let html = '<div class="hm-corner">Employee</div>';
+    ALL_MONTHS.forEach(m => { html += '<div class="hm-month-header">' + esc(fmtMonth(m)) + '</div>'; });
+
+    page.forEach(e => {
+      const ph = e._photo
+        ? '<div class="hm-name-photo"><img loading="lazy" src="' + e._photo + '" alt="' + esc(e.Name) + '"></div>'
+        : '<div class="hm-name-photo fallback">' + esc(e._initials) + '</div>';
+      html += '<div class="hm-name" data-id="' + esc(e.WorkdayID) + '">'
+            +   ph
+            +   '<div style="min-width:0;flex:1;">'
+            +     '<div class="hm-name-text" title="' + esc(e.Name) + '">' + esc(e.Name) + '</div>'
+            +     '<div class="hm-name-meta">' + esc(e.Role || '') + ' &middot; ' + esc(e.OU || '') + '</div>'
+            +   '</div></div>';
+      ALL_MONTHS.forEach(m => {
+        const v = UTIL_LOOKUP[String(e.WorkdayID) + '|' + m];
+        if (v === undefined){
+          html += '<div class="hm-cell empty" title="No data"></div>';
+        } else {
+          const col = utilColor(v);
+          const label = v >= 100 ? Math.round(v) : Math.round(v);
+          html += '<div class="hm-cell' + (col.dark ? ' text-dark' : '') + '" '
+                + 'style="background:' + col.bg + ';" '
+                + 'data-id="' + esc(e.WorkdayID) + '" '
+                + 'title="' + esc(e.Name) + ' &middot; ' + fmtMonth(m) + ' &middot; ' + v + '%">' + label + '%</div>';
+        }
+      });
+    });
+    if (page.length === 0){
+      html += '<div class="insight-empty" style="grid-column:1/-1;padding:30px;">No employees match.</div>';
+    }
+    heatmap.innerHTML = html;
+
+    // Pager controls
+    const pager = document.getElementById('pulse-pager');
+    pager.innerHTML = ''
+      + '<div>Showing <strong>' + (page.length ? (start + 1) : 0) + '&ndash;'
+      + (start + page.length) + '</strong> of <strong>' + list.length + '</strong></div>'
+      + '<div style="display:flex;gap:8px;align-items:center;">'
+      +   '<button id="pulse-prev"' + (pulsePage === 0 ? ' disabled' : '') + '>&larr; Prev</button>'
+      +   '<span>Page ' + (pulsePage + 1) + ' / ' + totalPages + '</span>'
+      +   '<button id="pulse-next"' + (pulsePage >= totalPages - 1 ? ' disabled' : '') + '>Next &rarr;</button>'
+      + '</div>';
+    const prev = document.getElementById('pulse-prev');
+    const next = document.getElementById('pulse-next');
+    if (prev) prev.addEventListener('click', () => { if (pulsePage > 0){ pulsePage--; renderPulse(); window.scrollTo({ top: 0, behavior: 'smooth' }); } });
+    if (next) next.addEventListener('click', () => { if (pulsePage < totalPages - 1){ pulsePage++; renderPulse(); window.scrollTo({ top: 0, behavior: 'smooth' }); } });
+
+    // Click handlers on cells/names -> bio
+    heatmap.querySelectorAll('.hm-name,.hm-cell:not(.empty)').forEach(el => {
+      el.addEventListener('click', () => showBio(el.dataset.id));
+    });
+  }
+
+  // Insight panels — independent of heatmap filters; always show the team picture.
+  function renderInsights(){
+    function rowHtml(e, statText, statClass){
+      const ph = e._photo
+        ? '<div class="insight-row-photo"><img loading="lazy" src="' + e._photo + '" alt="' + esc(e.Name) + '"></div>'
+        : '<div class="insight-row-photo fallback">' + esc(e._initials) + '</div>';
+      return '<div class="insight-row" data-id="' + esc(e.WorkdayID) + '">'
+           +   ph
+           +   '<div style="min-width:0;flex:1;">'
+           +     '<div class="insight-row-name">' + esc(e.Name) + '</div>'
+           +     '<div class="insight-row-meta">' + esc(e.Role || '') + ' &middot; ' + esc(e.OU || '') + ' &middot; ' + esc(e.Location || '') + '</div>'
+           +   '</div>'
+           +   '<div class="insight-row-stat ' + statClass + '">' + statText + '</div>'
+           + '</div>';
+    }
+
+    // On the bench — lowest latest-month util
+    const bench = EMPLOYEES
+      .filter(e => typeof e._latestUtil === 'number')
+      .sort((a,b) => a._latestUtil - b._latestUtil)
+      .slice(0, 10);
+    document.getElementById('insight-bench').innerHTML = bench.length
+      ? bench.map(e => rowHtml(e, Math.round(e._latestUtil) + '%', 'bench')).join('')
+      : '<div class="insight-empty">No utilization data yet.</div>';
+
+    // Watch list — sustained 3-month avg > 100, ranked by intensity
+    const watch = EMPLOYEES
+      .filter(e => e._sustained3 !== null && e._sustained3 > 100)
+      .sort((a,b) => b._sustained3 - a._sustained3)
+      .slice(0, 10);
+    document.getElementById('insight-watch').innerHTML = watch.length
+      ? watch.map(e => rowHtml(e, Math.round(e._sustained3) + '% avg', 'watch')).join('')
+      : '<div class="insight-empty">No one sustained above 100% &mdash; nice!</div>';
+
+    // New joiners — last 12 months by Join Date
+    const cutoff = new Date();
+    cutoff.setFullYear(cutoff.getFullYear() - 1);
+    const joiners = EMPLOYEES
+      .filter(e => {
+        const d = e['Join Date'];
+        if (!d) return false;
+        const dt = new Date(d);
+        return !isNaN(dt) && dt >= cutoff;
+      })
+      .sort((a,b) => new Date(b['Join Date']) - new Date(a['Join Date']))
+      .slice(0, 10);
+    document.getElementById('insight-new').innerHTML = joiners.length
+      ? joiners.map(e => rowHtml(e, String(e['Join Date']).slice(0, 10), '')).join('')
+      : '<div class="insight-empty">No recent joiners.</div>';
+
+    // Wire clicks across the three lists
+    document.querySelectorAll('.pulse-insights .insight-row').forEach(r =>
+      r.addEventListener('click', () => showBio(r.dataset.id)));
+  }
+  renderInsights();
+
+  // Wire filter inputs (reset page on change)
+  ['pulse-search','pulse-ou','pulse-role','pulse-loc','pulse-sort'].forEach(id =>
+    document.getElementById(id).addEventListener('input', () => { pulsePage = 0; renderPulse(); }));
+
+  renderPulse();
 </script>
 </body>
 </html>
