@@ -20,9 +20,23 @@ then rerun:
 import base64
 import json
 import datetime
+from io import BytesIO
 from pathlib import Path
 
 import openpyxl
+
+# Optional: Pillow for photo downscaling. Massive HTML-size win at scale.
+# pip install Pillow
+try:
+    from PIL import Image
+    HAVE_PIL = True
+except ImportError:
+    HAVE_PIL = False
+
+# Maximum dimension (px) for embedded photos. 240 covers both the directory
+# card and the bio modal at high-DPI quality while keeping file size tiny.
+PHOTO_MAX_DIM = 240
+PHOTO_JPEG_QUALITY = 72
 
 # ---- Configuration -------------------------------------------------------
 SCRIPT_DIR   = Path(__file__).resolve().parent
@@ -98,19 +112,57 @@ def load_workbook_data(path):
     return data
 
 
+def _encode_one(path):
+    """Return (data_uri, bytes_size) for a single image file.
+
+    With Pillow: re-encode to a JPEG thumbnail (max 240px) for huge savings.
+    Without Pillow: embed the original bytes (with a warning printed by caller).
+    """
+    if HAVE_PIL:
+        try:
+            with Image.open(path) as img:
+                # Flatten alpha onto white so JPEG (no alpha) doesn't go black.
+                if img.mode in ("RGBA", "LA", "P"):
+                    if img.mode == "P":
+                        img = img.convert("RGBA")
+                    bg = Image.new("RGB", img.size, (255, 255, 255))
+                    bg.paste(img, mask=img.split()[-1] if img.mode == "RGBA" else None)
+                    img = bg
+                elif img.mode != "RGB":
+                    img = img.convert("RGB")
+                # Downscale (in-place, keeps aspect ratio). LANCZOS = high quality.
+                img.thumbnail((PHOTO_MAX_DIM, PHOTO_MAX_DIM), Image.LANCZOS)
+                buf = BytesIO()
+                img.save(buf, format="JPEG", quality=PHOTO_JPEG_QUALITY, optimize=True)
+                data = buf.getvalue()
+                return ("data:image/jpeg;base64," + base64.b64encode(data).decode("ascii"), len(data))
+        except Exception as e:
+            print(f"  [warn] Could not process {path.name}: {e}. Embedding original.")
+    # Fallback path
+    ext = path.suffix.lower()
+    mime = MIME.get(ext, "image/png")
+    raw = path.read_bytes()
+    return (f"data:{mime};base64," + base64.b64encode(raw).decode("ascii"), len(raw))
+
+
 def load_photos(images_dir):
     photos = {}
     if not images_dir.exists():
         return photos
+    total_bytes = 0
     for f in images_dir.iterdir():
         if f.is_file() and f.suffix.lower() in PHOTO_EXTS:
-            mime = MIME[f.suffix.lower()]
-            b64 = base64.b64encode(f.read_bytes()).decode("ascii")
-            uri = f"data:{mime};base64,{b64}"
+            uri, size = _encode_one(f)
+            total_bytes += size
             pid = f.stem.strip()
             photos[pid] = uri
             if pid.isdigit():
                 photos[str(int(pid))] = uri
+    if photos:
+        avg = total_bytes / len(set(photos.values())) if photos else 0
+        mode = "downscaled" if HAVE_PIL else "ORIGINAL (install Pillow to downscale)"
+        print(f"[ok] Photos {mode}: {len(set(photos.values()))} files, "
+              f"total {total_bytes/1024:.0f} KB, avg {avg/1024:.0f} KB/photo")
     return photos
 
 
@@ -192,7 +244,14 @@ def main():
     print(f"[ok] Employees:    {len(enriched)}")
     print(f"[ok] Skills rows:  {len(data['skills'])}")
     print(f"[ok] Util rows:    {len(data['utilization'])}")
-    print(f"[ok] Photos:       {len(set(photos.values()))}")
+    # Sanity check: anyone with no rows in Employee Skills?
+    ids_with_skills = {str(r.get("WorkdayID")) for r in data["skills"] if r.get("WorkdayID") not in (None, "")}
+    no_skill_emps = [e for e in enriched if str(e.get("WorkdayID")) not in ids_with_skills]
+    if no_skill_emps:
+        names = ", ".join(str(e.get("Name", "?")) for e in no_skill_emps[:5])
+        more = f" + {len(no_skill_emps) - 5} more" if len(no_skill_emps) > 5 else ""
+        print(f"[warn] {len(no_skill_emps)} employee(s) have NO rows in Employee Skills sheet: {names}{more}")
+        print(f"       They will not appear in the Skill Atlas / Staffing Match.")
     print(f"[ok] Logo found:   {'yes' if logo_uri else 'no'}")
     print(f"[ok] Output:       {OUTPUT_FILE.name}  ({size_kb:,.0f} KB)")
 
