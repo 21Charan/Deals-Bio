@@ -164,10 +164,6 @@
   .comp-card{background:var(--white);border-radius:8px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,0.08);border-top:4px solid var(--pwc-orange);display:flex;flex-direction:column}
   .comp-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border-bottom:1px solid var(--pwc-grey-100);padding-bottom:10px;margin-bottom:10px}
   .comp-card-title{font-size:15px;font-weight:700;color:var(--pwc-grey-900);margin:0;text-transform:uppercase;letter-spacing:0.4px}
-  .comp-card-strength{font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;flex-shrink:0}
-  .comp-card-strength.deep{background:rgba(208,74,2,0.12);color:var(--pwc-orange)}
-  .comp-card-strength.solid{background:rgba(235,140,0,0.14);color:#a06200}
-  .comp-card-strength.thin{background:rgba(224,48,30,0.10);color:var(--pwc-rose)}
   .comp-card-stats{font-size:11px;color:var(--pwc-grey-600);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.4px;font-weight:600}
   .comp-card-skills{display:flex;flex-direction:column;gap:5px;flex:1}
   .cc-skill{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--pwc-grey-900);padding:3px 4px;border-radius:3px;transition:background .12s}
@@ -179,8 +175,78 @@
   .comp-card-more{margin-top:10px;font-size:12px;color:var(--pwc-orange);font-weight:600;cursor:pointer;background:transparent;border:none;padding:6px 0 0;font-family:inherit;text-align:left;border-top:1px solid var(--pwc-grey-100)}
   .comp-card-more:hover{text-decoration:underline}
   .atlas-cards-empty{grid-column:1 / -1;text-align:center;color:var(--pwc-grey-600);padding:30px;font-size:13px;font-style:italic}
+
+  /* View toggle: Competency Cards vs full All Skills catalogue */
+  .atlas-view-toggle{display:flex;border:1px solid var(--pwc-grey-300);border-radius:4px;overflow:hidden;flex-shrink:0;background:var(--white)}
+  .atlas-view-toggle button{padding:9px 14px;border:none;background:transparent;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;color:var(--pwc-grey-700);transition:all .15s}
+  .atlas-view-toggle button + button{border-left:1px solid var(--pwc-grey-300)}
+  .atlas-view-toggle button.active{background:var(--pwc-orange);color:var(--white)}
+
+  /* All Skills cloud — every skill in one scrollable place, grouped by
+     competency, chip size scales with coverage. */
+  .atlas-cloud{display:flex;flex-direction:column;gap:14px}
+  .cloud-cat{background:var(--white);border-radius:8px;padding:14px 16px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.08);border-left:5px solid var(--pwc-orange)}
+  .cloud-cat-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--pwc-grey-100)}
+  .cloud-cat-name{font-size:14px;font-weight:700;color:var(--pwc-grey-900);text-transform:uppercase;letter-spacing:0.4px;margin:0}
+  .cloud-cat-meta{font-size:11px;color:var(--pwc-grey-600);text-transform:uppercase;letter-spacing:0.4px;font-weight:600}
+  .cloud-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .cloud-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--pwc-grey-300);border-radius:999px;background:var(--pwc-grey-50);cursor:pointer;transition:all .15s;font-weight:500;color:var(--pwc-grey-900);line-height:1}
+  .cloud-chip:hover{border-color:var(--pwc-orange);background:rgba(208,74,2,0.06);transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,0.08)}
+  .cloud-chip .cch-n{font-variant-numeric:tabular-nums;font-weight:700;border-radius:999px;color:var(--white);display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;font-size:10px}
+  .cloud-chip.s1{padding:5px 10px;font-size:12px}
+  .cloud-chip.s2{padding:7px 13px;font-size:13.5px;font-weight:600}
+  .cloud-chip.s3{padding:9px 16px;font-size:15px;font-weight:700}
+  .cloud-empty{text-align:center;color:var(--pwc-grey-600);padding:30px;font-size:13px;font-style:italic}
   .atlas-detail{background:var(--white);border-radius:6px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,0.08);max-height:680px;overflow-y:auto;position:sticky;top:20px}
   .atlas-detail-empty{text-align:center;color:var(--pwc-grey-600);padding:40px 20px;font-size:13px;line-height:1.6}
+
+  /* ---- Capability Risk ---- */
+  .cr-kpis{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 16px}
+  .cr-kpi{background:var(--white);border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.08);padding:14px 18px;min-width:150px;flex:1 1 150px;border-top:4px solid var(--pwc-grey-300)}
+  .cr-kpi-val{font-size:26px;font-weight:700;line-height:1}
+  .cr-kpi-lbl{font-size:11px;color:var(--pwc-grey-600);margin-top:6px;text-transform:uppercase;letter-spacing:.5px}
+  .cr-tick{fill:var(--pwc-grey-600);font-size:10.5px}
+  .cr-axlbl{fill:var(--pwc-grey-700);font-size:11.5px;font-weight:600}
+  .cr-quad{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.85}
+  .cr-bubble{cursor:pointer;transition:fill-opacity .12s}
+  .cr-bubble:hover{fill-opacity:1}
+  .cr-util{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:auto;flex-shrink:0}
+  .cr-table-wrap{background:var(--white);border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.08);overflow:hidden}
+  .cr-table{width:100%;border-collapse:collapse;font-size:13px}
+  .cr-table th{text-align:left;background:var(--pwc-grey-50);color:var(--pwc-grey-700);font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:10px 14px;border-bottom:1px solid var(--pwc-grey-300)}
+  .cr-table td{padding:9px 14px;border-bottom:1px solid var(--pwc-grey-100);vertical-align:top}
+  .cr-table tr:hover td{background:var(--pwc-grey-50)}
+  .cr-skill{font-weight:600;color:var(--pwc-grey-900)}
+  .cr-num{text-align:center;font-variant-numeric:tabular-nums;width:70px}
+  .cr-badge{display:inline-block;color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:3px;white-space:nowrap}
+  .cr-who{display:inline-block;color:var(--pwc-orange);cursor:pointer;margin:0 10px 3px 0;font-weight:600}
+  .cr-who:hover{text-decoration:underline}
+  .cr-empty{text-align:center;color:var(--pwc-grey-600);padding:26px;font-style:italic}
+
+  /* ---- Shared layout (filter bar / stage / detail panel) — used by Skill Atlas, Capability Risk, Pulse ---- */
+  .smap-controls{margin-bottom:14px}
+  .smap-controls select{flex:0 1 auto;min-width:150px}
+  .smap-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+  .smap-meta{font-size:12px;color:var(--pwc-grey-700)}
+  .smap-meta strong{color:var(--pwc-orange);font-weight:700}
+  .smap-grid{display:grid;grid-template-columns:1fr 360px;gap:20px;margin-bottom:28px}
+  @media (max-width:980px){.smap-grid{grid-template-columns:1fr}}
+  .smap-stage{background:var(--white);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);padding:10px 10px 4px;min-height:560px;display:flex;flex-direction:column}
+  .smap-caption{font-size:12px;color:var(--pwc-grey-700);padding:6px 10px 2px;line-height:1.5}
+  .smap-caption b{color:var(--pwc-grey-900)}
+  .smap-net-svgwrap{flex:1 1 auto;position:relative;min-height:380px}
+  .venn-empty{font-size:14px;fill:var(--pwc-grey-600);text-anchor:middle}
+  /* Detail panel people list */
+  .smap-people{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+  .smap-person{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:5px;cursor:pointer;transition:background .12s}
+  .smap-person:hover{background:var(--pwc-grey-100)}
+  .smap-person .sp-av{width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--pwc-orange);color:var(--white);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600}
+  .smap-person .sp-name{font-size:13px;font-weight:600;color:var(--pwc-grey-900);line-height:1.2}
+  .smap-person .sp-meta{font-size:11px;color:var(--pwc-grey-600)}
+  .smap-detail h3{font-size:16px;font-weight:700;color:var(--pwc-grey-900);margin:0 0 2px}
+  .smap-detail .sd-sub{font-size:12px;color:var(--pwc-grey-600);margin-bottom:12px}
+  .smap-tagrow{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 12px}
+  .smap-chip{font-size:11px;padding:3px 9px;border-radius:12px;background:var(--pwc-grey-100);color:var(--pwc-grey-700);font-weight:600}
   .adt-emoji{font-size:36px;margin-bottom:10px}
   .adt-head{display:flex;align-items:center;gap:12px;border-bottom:2px solid var(--pwc-grey-100);padding-bottom:12px;margin-bottom:14px}
   .adt-cat{width:6px;height:42px;border-radius:3px;flex-shrink:0}
@@ -304,64 +370,6 @@
   .insight-row-stat.bench{color:var(--pwc-tangerine)}
   .insight-empty{padding:20px;text-align:center;color:var(--pwc-grey-600);font-size:12px;font-style:italic}
 
-  /* ---- Boardroom ---- */
-  .boardroom-filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center;background:var(--white);padding:14px 16px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.06);position:sticky;top:60px;z-index:5}
-  .boardroom-filters select{padding:9px 12px;border:1px solid var(--pwc-grey-300);border-radius:4px;font-family:inherit;font-size:13px;background:var(--white);min-width:170px}
-  .boardroom-filters select:focus{outline:none;border-color:var(--pwc-orange);box-shadow:0 0 0 2px rgba(208,74,2,0.15)}
-  .br-kpis{margin-bottom:22px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
-  .boardroom-main{display:grid;grid-template-columns:minmax(0, 1fr) minmax(0, 1.2fr);gap:18px;margin-bottom:22px}
-  @media (max-width:960px){.boardroom-main{grid-template-columns:1fr}}
-  .bm-card{background:var(--white);border-radius:8px;padding:20px 22px;box-shadow:0 1px 3px rgba(0,0,0,0.08);min-height:380px}
-  .bm-card-head{margin-bottom:16px}
-  .bm-card-head h3{margin:0;font-size:15px;font-weight:700;color:var(--pwc-grey-900);text-transform:uppercase;letter-spacing:0.6px}
-  .bm-card-head .bm-card-sub{display:block;font-size:11px;color:var(--pwc-grey-600);margin-top:2px}
-
-  /* Talent funnel — centred bars with smooth grow-in animation */
-  .funnel{display:flex;flex-direction:column;gap:8px;padding:8px 4px}
-  .funnel-tier{display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform .15s}
-  .funnel-tier:hover{transform:translateY(-1px)}
-  .funnel-tier.active .funnel-bar{outline:3px solid var(--pwc-grey-900);outline-offset:2px}
-  .funnel-bar-wrap{width:100%;display:flex;justify-content:center}
-  .funnel-bar{height:46px;border-radius:4px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;color:var(--white);font-weight:700;font-size:14px;min-width:80px;box-shadow:0 1px 3px rgba(0,0,0,0.1);animation:funnelGrow .55s cubic-bezier(.2,.7,.3,1) both;position:relative}
-  @keyframes funnelGrow{from{transform:scaleX(.2);opacity:0}to{transform:scaleX(1);opacity:1}}
-  .funnel-bar .ftier-name{letter-spacing:0.5px;text-transform:uppercase;font-size:12px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,0.15)}
-  .funnel-bar .ftier-count{background:rgba(255,255,255,0.22);padding:2px 9px;border-radius:999px;font-size:12px;font-variant-numeric:tabular-nums}
-  .funnel-tier:nth-child(1) .funnel-bar{animation-delay:0s}
-  .funnel-tier:nth-child(2) .funnel-bar{animation-delay:.06s}
-  .funnel-tier:nth-child(3) .funnel-bar{animation-delay:.12s}
-  .funnel-tier:nth-child(4) .funnel-bar{animation-delay:.18s}
-  .funnel-tier:nth-child(5) .funnel-bar{animation-delay:.24s}
-  .funnel-tier:nth-child(6) .funnel-bar{animation-delay:.30s}
-  .funnel-empty{padding:30px;text-align:center;color:var(--pwc-grey-600);font-size:13px;font-style:italic}
-
-  /* Capability matrix */
-  .matrix-wrap{overflow-x:auto}
-  .matrix-table{width:100%;border-collapse:separate;border-spacing:3px;font-size:12px;font-family:inherit}
-  .matrix-table th{font-weight:700;color:var(--pwc-grey-700);text-align:center;padding:6px 4px;font-size:10px;letter-spacing:0.5px;text-transform:uppercase;background:var(--pwc-grey-50);border-radius:3px;white-space:nowrap}
-  .matrix-table thead th:first-child{background:transparent}
-  .matrix-table tbody th{text-align:right;background:var(--pwc-grey-50);padding:8px 10px;font-size:11px;font-weight:700;color:var(--pwc-grey-700);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .matrix-cell{aspect-ratio:1.5;min-width:48px;text-align:center;vertical-align:middle;cursor:pointer;color:var(--pwc-grey-900);font-weight:600;font-variant-numeric:tabular-nums;border-radius:3px;transition:transform .12s,box-shadow .12s}
-  .matrix-cell:hover{transform:scale(1.07);box-shadow:0 4px 12px rgba(0,0,0,0.18);position:relative;z-index:2}
-  .matrix-cell.zero{color:var(--pwc-grey-400);background:var(--pwc-grey-50);cursor:default}
-  .matrix-cell.zero:hover{transform:none;box-shadow:none}
-  .matrix-cell.dark{color:var(--white)}
-  .matrix-cell.active{outline:2px solid var(--pwc-grey-900);outline-offset:1px}
-
-  /* Drill panel */
-  .bm-drill{background:var(--white);border-radius:8px;padding:20px 22px;box-shadow:0 1px 3px rgba(0,0,0,0.08);min-height:140px}
-  .bm-drill-empty{text-align:center;color:var(--pwc-grey-600);padding:24px 16px;font-size:13px;line-height:1.6}
-  .bm-drill-header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--pwc-grey-100);padding-bottom:12px;margin-bottom:14px}
-  .bm-drill-title{font-size:15px;font-weight:700;color:var(--pwc-grey-900);margin:0}
-  .bm-drill-title .bm-drill-pill{display:inline-block;font-size:10px;font-weight:700;background:var(--pwc-orange);color:var(--white);padding:2px 8px;border-radius:999px;margin-right:8px;text-transform:uppercase;letter-spacing:0.5px}
-  .bm-drill-count{font-size:12px;color:var(--pwc-grey-600)}
-  .bm-drill-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;max-height:420px;overflow-y:auto}
-  .bm-person{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--pwc-grey-100);border-radius:4px;cursor:pointer;transition:all .15s}
-  .bm-person:hover{border-color:var(--pwc-orange);background:var(--pwc-grey-50)}
-  .bm-person-photo{width:36px;height:36px;border-radius:50%;overflow:hidden;background:var(--pwc-grey-100);flex-shrink:0;display:flex;align-items:center;justify-content:center}
-  .bm-person-photo img{width:100%;height:100%;object-fit:cover}
-  .bm-person-photo.fallback{background:var(--pwc-orange);color:var(--white);font-weight:600;font-size:12px}
-  .bm-person-name{font-size:13px;font-weight:600;color:var(--pwc-grey-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .bm-person-meta{font-size:11px;color:var(--pwc-grey-600);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   footer{text-align:center;color:var(--pwc-grey-600);font-size:12px;padding:24px}
   @media (max-width:600px){.bio-banner{flex-direction:column;text-align:center}main,header.brand,nav.tabs{padding-left:16px;padding-right:16px}}
 </style>
@@ -381,8 +389,8 @@
 <nav class="tabs">
   <button data-tab="directory" class="active">Directory</button>
   <button data-tab="skills">Skill Atlas</button>
+  <button data-tab="caprisk">Capability Risk</button>
   <button data-tab="pulse">Pulse</button>
-  <button data-tab="boardroom">Boardroom</button>
 </nav>
 
 <main>
@@ -427,25 +435,25 @@
     <div id="dir-content"></div>
   </section>
 
+  <!-- ===== PORTABLE MODULE START: Skill Atlas (HTML). Needs SHARED foundation — see INTEGRATION_GUIDE.md ===== -->
   <section class="tab-panel" id="tab-skills">
     <h1>Skill Atlas</h1>
-    <p class="subtitle">Every skill in the team, sized by coverage and coloured by competency. Click any tile to drill in.</p>
+    <p class="subtitle">Every skill in the team, sized by coverage and coloured by competency. Switch to <strong>All Skills</strong> to see the complete catalogue in one place &mdash; click anything to drill in.</p>
 
-    <section class="stats" id="skills-kpis">
-      <div class="stat-card"><div class="value" id="skp-unique">-</div><div class="label">Unique Skills</div></div>
-      <div class="stat-card t2"><div class="value" id="skp-avg">-</div><div class="label">Avg Skills / Person</div></div>
-      <div class="stat-card t3"><div class="value" id="skp-top">-</div><div class="label">Most Covered</div></div>
-      <div class="stat-card t5"><div class="value" id="skp-rare">-</div><div class="label">Single-Expert Skills</div></div>
-    </section>
 
     <div class="atlas-grid">
       <div class="atlas-explorer">
         <div class="atlas-insights" id="atlas-insights"></div>
         <div class="atlas-toolbar">
+          <div class="atlas-view-toggle" id="atlas-view-toggle">
+            <button data-view="cards" class="active">By Competency</button>
+            <button data-view="cloud">All Skills</button>
+          </div>
           <input type="text" id="atlas-search" placeholder="Search skills across competencies...">
           <div class="atlas-legend" id="atlas-legend"></div>
         </div>
         <div class="atlas-cards" id="atlas-cards"></div>
+        <div class="atlas-cloud" id="atlas-cloud" style="display:none"></div>
       </div>
       <aside class="atlas-detail" id="atlas-detail">
         <div class="atlas-detail-empty">
@@ -484,6 +492,55 @@
     </section>
   </section>
 
+  <!-- ===== PORTABLE MODULE END: Skill Atlas (HTML) ===== -->
+
+  <!-- ===== PORTABLE MODULE START: Capability Risk (HTML). Needs SHARED foundation — see INTEGRATION_GUIDE.md ===== -->
+  <section class="tab-panel" id="tab-caprisk">
+    <h1>Capability Risk</h1>
+    <p class="subtitle">Two lenses on capability exposure. <strong>Scarce vs Stretched</strong> matches each skill's depth against how busy its people are; <strong>Key-Person Risk</strong> surfaces skills that rest on one pair of shoulders.</p>
+
+    <div class="controls smap-controls">
+      <select id="cr-territory"><option value="">All territories</option></select>
+      <select id="cr-competency"><option value="">All competencies</option></select>
+      <select id="cr-cat"><option value="">All skill categories</option></select>
+      <select id="cr-role"><option value="">All roles</option></select>
+      <select id="cr-loc"><option value="">All locations</option></select>
+      <button class="reset-btn" id="cr-reset" title="Clear all filters">Reset</button>
+    </div>
+
+    <div class="smap-bar">
+      <div class="atlas-view-toggle" id="cr-view-toggle">
+        <button data-view="scarce" class="active">Scarce vs Stretched</button>
+        <button data-view="keyperson">Key-Person Risk</button>
+      </div>
+      <div class="smap-meta" id="cr-meta"></div>
+    </div>
+
+    <div id="cr-scarce-view">
+      <div class="cr-kpis" id="cr-scarce-kpis"></div>
+      <div class="smap-grid">
+        <div class="smap-stage">
+          <div class="smap-caption" id="cr-scarce-cap"></div>
+          <div class="smap-net-svgwrap" style="min-height:460px">
+            <svg id="cr-scatter" viewBox="0 0 760 520" preserveAspectRatio="xMidYMid meet"></svg>
+          </div>
+        </div>
+        <aside class="atlas-detail smap-detail" id="cr-scarce-detail">
+          <div class="atlas-detail-empty"><div class="adt-emoji">&#9889;</div><p>Click any skill bubble to see who holds it and how busy they are right now.</p></div>
+        </aside>
+      </div>
+    </div>
+
+    <div id="cr-keyperson-view" style="display:none">
+      <div class="cr-kpis" id="cr-kp-kpis"></div>
+      <p class="subtitle" style="margin:-6px 0 12px">&#9733; marks a holder at Manager level or above. Click any name to open their bio.</p>
+      <div class="cr-table-wrap"><table class="cr-table" id="cr-kp-table"></table></div>
+    </div>
+  </section>
+
+  <!-- ===== PORTABLE MODULE END: Capability Risk (HTML) ===== -->
+
+  <!-- ===== PORTABLE MODULE START: Pulse (HTML). Needs SHARED foundation — see INTEGRATION_GUIDE.md ===== -->
   <section class="tab-panel" id="tab-pulse">
     <h1>Workforce Pulse</h1>
     <p class="subtitle">A read on the team's current load. Hot cells are stretched, cool cells are available &mdash; click any to open the bio.</p>
@@ -541,54 +598,8 @@
     </div>
   </section>
 
-  <section class="tab-panel" id="tab-boardroom">
-    <h1>Boardroom</h1>
-    <p class="subtitle">A strategic read on team shape, capability coverage and leverage. Click any tier or cell to drill in.</p>
+  <!-- ===== PORTABLE MODULE END: Pulse (HTML) ===== -->
 
-    <div class="boardroom-filters">
-      <select id="br-competency"><option value="">All competencies</option></select>
-      <select id="br-experience">
-        <option value="">All experience bands</option>
-        <option value="0-3">0&ndash;3 yrs (early career)</option>
-        <option value="4-7">4&ndash;7 yrs (mid)</option>
-        <option value="8-12">8&ndash;12 yrs (senior)</option>
-        <option value="13+">13+ yrs (leadership)</option>
-      </select>
-      <select id="br-role"><option value="">All roles</option></select>
-      <button class="reset-btn" id="br-reset">Reset filters</button>
-    </div>
-
-    <section class="stats br-kpis">
-      <div class="stat-card"><div class="value" id="br-total">-</div><div class="label">Team Size</div></div>
-      <div class="stat-card t2"><div class="value" id="br-leverage">-</div><div class="label">Leverage Ratio (junior : senior)</div></div>
-      <div class="stat-card t3"><div class="value" id="br-median">-</div><div class="label">Median Experience (yrs)</div></div>
-      <div class="stat-card t4"><div class="value" id="br-coverage">-</div><div class="label">Capability Coverage</div></div>
-    </section>
-
-    <div class="boardroom-main">
-      <div class="bm-card">
-        <div class="bm-card-head">
-          <h3>Talent Funnel</h3>
-          <span class="bm-card-sub">Headcount by role tier &mdash; width shows scale</span>
-        </div>
-        <div class="funnel" id="br-funnel"></div>
-      </div>
-      <div class="bm-card">
-        <div class="bm-card-head">
-          <h3>Capability Matrix</h3>
-          <span class="bm-card-sub">Competency &times; role &mdash; darker = more people, white cells are gaps</span>
-        </div>
-        <div class="matrix-wrap"><table class="matrix-table" id="br-matrix"></table></div>
-      </div>
-    </div>
-
-    <div class="bm-drill" id="br-drill">
-      <div class="bm-drill-empty">
-        <div class="adt-emoji">&#127968;</div>
-        <p>Click a tier in the funnel or a cell in the matrix to see the people in that segment.</p>
-      </div>
-    </div>
-  </section>
 </main>
 
 <div class="modal-overlay" id="bio-modal" aria-hidden="true">
@@ -608,6 +619,15 @@
   const UTIL      = __UTIL_JSON__;
   const EXP_TOTAL = "__EXP_TOTAL__";
   const EXP_PWC   = "__EXP_PWC__";
+  // Share mode (team build): utilization data is stripped at build time and
+  // the Pulse tab is removed. PBI_URL optionally links each bio to the
+  // secured Power BI utilization report.
+  const SHARE_MODE = __SHARE_MODE__;
+  const PBI_URL    = "__PBI_URL__";
+  if (SHARE_MODE){
+    const pulseBtn = document.querySelector('button[data-tab="pulse"]');
+    if (pulseBtn) pulseBtn.remove();
+  }
 
   const ORANGE='#D04A02', TANGERINE='#EB8C00', YELLOW='#FFB600',
         ROSE='#E0301E', PINK='#E45C9F', BURGUNDY='#8C2D63',
@@ -691,6 +711,7 @@
   }
   setKpis();
 
+  // ===== SHARED FOUNDATION: skills index — required by Skill Atlas AND Capability Risk =====
   // ----- Skills index (canonical, from Employee Skills sheet only) -----
   // We use Employee Skills as the single source of truth because the free-text
   // Skills column on Employee Details has inconsistent delimiters and duplicates.
@@ -1163,8 +1184,12 @@
       +     '<div class="bio-description">' + esc(emp['Employee Description'] || 'No description provided.') + '</div>'
       +     '<div class="bio-section-title">Skills by Category</div>'
       +     '<div>' + skillsHtml + '</div>'
-      +     '<div class="bio-section-title">Monthly Utilization (FY)</div>'
-      +     utilHtml
+      +     (SHARE_MODE
+                ? (PBI_URL
+                    ? '<div class="bio-section-title">Monthly Utilization</div>'
+                      + '<p style="font-size:13px;margin:4px 0 0;"><a href="' + PBI_URL + '" target="_blank" rel="noopener" style="color:var(--pwc-orange);font-weight:600;">View utilization in Power BI &rarr;</a></p>'
+                    : '')
+                : ('<div class="bio-section-title">Monthly Utilization (FY)</div>' + utilHtml))
       +   '</div>'
       + '</div>';
 
@@ -1176,6 +1201,7 @@
     openModal();
   }
 
+  // ===== PORTABLE MODULE: Skill Atlas — JS (depends on shared skills index + showBio) =====
   // ----- Skill Atlas -----
   // SKILL_CATEGORY is already populated up above (when we ingested SKILLS).
   // Count per skill + headcount holders
@@ -1216,20 +1242,6 @@
       }
     }
   });
-
-  // ----- KPI strip -----
-  (function(){
-    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-    set('skp-unique', ALL_SKILLS.length);
-    const avg = EMPLOYEES.length
-      ? (EMPLOYEES.reduce((s, e) => s + e._skills.size, 0) / EMPLOYEES.length).toFixed(1)
-      : '0';
-    set('skp-avg', avg);
-    const top = ALL_SKILLS.slice().sort((a,b) => SKILL_COUNT[b] - SKILL_COUNT[a])[0];
-    set('skp-top', top ? (SKILL_DISPLAY[top] + ' (' + SKILL_COUNT[top] + ')') : '-');
-    const singles = ALL_SKILLS.filter(k => SKILL_COUNT[k] === 1).length;
-    set('skp-rare', singles);
-  })();
 
   // ----- Legend -----
   (function(){
@@ -1339,7 +1351,6 @@
       return '<div class="comp-card" data-cat="' + esc(c.name) + '" style="border-top-color:' + c.color + ';">'
            +   '<div class="comp-card-header">'
            +     '<h3 class="comp-card-title">' + esc(c.name) + '</h3>'
-           +     '<span class="comp-card-strength ' + c.strength + '">' + esc(strengthLabel(c.strength)) + '</span>'
            +   '</div>'
            +   '<div class="comp-card-stats">' + c.peopleCount + ' people &middot; ' + c.skillsCount + ' skill' + (c.skillsCount === 1 ? '' : 's') + '</div>'
            +   '<div class="comp-card-skills">' + skillsHtml + '</div>'
@@ -1364,11 +1375,72 @@
       });
     });
   }
-  renderCompetencyCards('');
+  // ----- All Skills cloud: the complete catalogue in one place -----
+  // Chips grouped by competency, sized by how many people hold the skill.
+  // Solves "too many skills to show at once": nothing is hidden behind
+  // a "+N more" button — every skill is on screen and clickable.
+  function chipSize(count, max){
+    if (max <= 1) return 's2';
+    const r = count / max;
+    if (r >= 0.66) return 's3';
+    if (r >= 0.33) return 's2';
+    return 's1';
+  }
+  function renderSkillCloud(q){
+    q = (q || '').toLowerCase().trim();
+    let cats = buildCategoryData();
+    if (q){
+      cats = cats.map(c => ({
+        ...c,
+        skills: c.skills.filter(s => (SKILL_DISPLAY[s.key] || '').toLowerCase().includes(q))
+      })).filter(c => c.skills.length > 0);
+    }
+    const wrap = document.getElementById('atlas-cloud');
+    if (!cats.length){
+      wrap.innerHTML = '<div class="cloud-empty">No skills match &mdash; try a different search.</div>';
+      return;
+    }
+    const globalMax = Math.max(1, ...cats.flatMap(c => c.skills.map(s => s.count)));
+    wrap.innerHTML = cats.map(c => {
+      const chips = c.skills.map(s =>
+        '<span class="cloud-chip ' + chipSize(s.count, globalMax) + '" data-skill="' + esc(s.key) + '" title="' + esc(SKILL_DISPLAY[s.key]) + ' &middot; ' + s.count + (s.count === 1 ? ' person' : ' people') + '">'
+        +   esc(SKILL_DISPLAY[s.key])
+        +   '<span class="cch-n" style="background:' + c.color + ';">' + s.count + '</span>'
+        + '</span>'
+      ).join('');
+      return '<div class="cloud-cat" style="border-left-color:' + c.color + ';">'
+           +   '<div class="cloud-cat-head">'
+           +     '<h3 class="cloud-cat-name">' + esc(c.name) + '</h3>'
+           +     '<span class="cloud-cat-meta">' + c.peopleCount + ' people &middot; ' + c.skillsCount + ' skill' + (c.skillsCount === 1 ? '' : 's') + '</span>'
+           +   '</div>'
+           +   '<div class="cloud-chips">' + chips + '</div>'
+           + '</div>';
+    }).join('');
+    wrap.querySelectorAll('.cloud-chip').forEach(el =>
+      el.addEventListener('click', () => renderSkillDetail(el.dataset.skill)));
+  }
 
-  // Search input filters cards live.
+  // ----- View toggle + shared render entry point -----
+  let atlasView = 'cards';
+  function renderAtlas(q){
+    document.getElementById('atlas-cards').style.display = atlasView === 'cards' ? '' : 'none';
+    document.getElementById('atlas-cloud').style.display = atlasView === 'cloud' ? '' : 'none';
+    if (atlasView === 'cards') renderCompetencyCards(q);
+    else renderSkillCloud(q);
+  }
+  document.querySelectorAll('#atlas-view-toggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      atlasView = btn.dataset.view;
+      document.querySelectorAll('#atlas-view-toggle button').forEach(b =>
+        b.classList.toggle('active', b === btn));
+      renderAtlas(document.getElementById('atlas-search').value);
+    });
+  });
+  renderAtlas('');
+
+  // Search input filters the active view live.
   document.getElementById('atlas-search').addEventListener('input', e => {
-    renderCompetencyCards(e.target.value);
+    renderAtlas(e.target.value);
   });
 
   // ----- Skill detail panel -----
@@ -1606,6 +1678,7 @@
   });
 
   // ============================================================
+  // ===== PORTABLE MODULE: Pulse — JS (utilization-derived fields below are also used by Capability Risk) =====
   // ===== Pulse — workforce capacity heatmap + insight cards ====
   // ============================================================
 
@@ -1851,284 +1924,157 @@
   renderPulse();
 
   // ============================================================
-  // ===== Boardroom — strategic talent view for MDs =============
   // ============================================================
+  //  Capability Risk tab  —  Scarce vs Stretched  +  Key-Person Risk
+  // ============================================================
+  (function(){
+    const $ = id => document.getElementById(id);
+    const HAS_UTIL = (typeof ALL_MONTHS !== 'undefined') && ALL_MONTHS.length > 0 && !SHARE_MODE;
+    const isSenior = r => isManagerRole(r);
+    let view = 'scarce';
 
-  // Role tiers in pyramid order (top = most senior).
-  const BR_TIERS = ['Managing Directors','Directors','Senior Managers','Managers','Senior Associates','Associates'];
-  // Senior tiers for the leverage + capability-coverage calculations.
-  const BR_SENIOR = new Set(['Managing Directors','Directors','Senior Managers','Managers']);
-  const BR_JUNIOR = new Set(['Senior Associates','Associates']);
-  // Tier colours — deep at top, warming as you descend.
-  const BR_TIER_COLOR = {
-    'Managing Directors': '#5C1A40',
-    'Directors':          '#8C2D63',
-    'Senior Managers':    '#B33D2C',
-    'Managers':           '#D04A02',
-    'Senior Associates':  '#EB8C00',
-    'Associates':         '#FFB600'
-  };
+    function fillSel(id, vals){ const el = $(id); if (!el) return; vals.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; el.appendChild(o); }); }
+    fillSel('cr-territory', uniqueValues('Territory'));
+    fillSel('cr-competency', uniqueValues('Competency'));
+    fillSel('cr-cat', ORDERED_CATS.filter(c => c !== 'Uncategorised'));
+    fillSel('cr-role', uniqueValues('Role'));
+    fillSel('cr-loc', uniqueValues('Location'));
 
-  // Experience-band helper. Returns label or null.
-  function expBand(yrs){
-    if (yrs == null || isNaN(yrs)) return null;
-    if (yrs <= 3)  return '0-3';
-    if (yrs <= 7)  return '4-7';
-    if (yrs <= 12) return '8-12';
-    return '13+';
-  }
-
-  // Populate filter dropdowns
-  fillSelect('br-competency', uniqueValues('Competency'));
-  fillSelect('br-role',       uniqueValues('Role'));
-
-  // Currently-selected segment (a {tier, competency} object or null)
-  let brSelection = null;
-
-  function brFiltered(){
-    const comp = document.getElementById('br-competency').value;
-    const band = document.getElementById('br-experience').value;
-    const role = document.getElementById('br-role').value;
-    return EMPLOYEES.filter(e => {
-      if (comp && String(e.Competency || '') !== comp) return false;
-      if (role && String(e.Role || '')        !== role) return false;
-      if (band){
-        const b = expBand(e[EXP_TOTAL]);
-        if (b !== band) return false;
-      }
-      return true;
-    });
-  }
-
-  // Median utility
-  function median(arr){
-    if (!arr.length) return null;
-    const s = arr.slice().sort((a,b) => a - b);
-    const mid = Math.floor(s.length / 2);
-    return s.length % 2 ? s[mid] : (s[mid-1] + s[mid]) / 2;
-  }
-
-  // ----- KPI strip -----
-  function renderBoardroomKpis(list){
-    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-    set('br-total', list.length);
-
-    const seniors = list.filter(e => BR_SENIOR.has(groupForRole(e.Role))).length;
-    const juniors = list.filter(e => BR_JUNIOR.has(groupForRole(e.Role))).length;
-    set('br-leverage', seniors ? (juniors / seniors).toFixed(2) + ' : 1' : '—');
-
-    const exps = list.map(e => Number(e[EXP_TOTAL])).filter(v => !isNaN(v));
-    const med = median(exps);
-    set('br-median', med != null ? med.toFixed(1) : '—');
-
-    // Capability coverage = fraction of (Competency × senior-tier) pairs that
-    // have at least one person. 100% means every competency has senior cover.
-    const comps = [...new Set(list.map(e => String(e.Competency || '').trim()).filter(Boolean))];
-    const seniorTiers = ['Managing Directors','Directors','Senior Managers','Managers'];
-    if (comps.length === 0){
-      set('br-coverage', '—');
-    } else {
-      const filled = new Set();
-      list.forEach(e => {
-        const c = String(e.Competency || '').trim();
-        const t = groupForRole(e.Role);
-        if (c && seniorTiers.includes(t)) filled.add(c + '|' + t);
+    function pool(){
+      const ter = $('cr-territory').value, comp = $('cr-competency').value, role = $('cr-role').value, loc = $('cr-loc').value;
+      return EMPLOYEES.filter(e => {
+        if (ter  && String(e.Territory  || '') !== ter)  return false;
+        if (comp && String(e.Competency || '') !== comp) return false;
+        if (role && String(e.Role       || '') !== role) return false;
+        if (loc  && String(e.Location   || '') !== loc)  return false;
+        return true;
       });
-      const possible = comps.length * seniorTiers.length;
-      const pct = Math.round((filled.size / possible) * 100);
-      set('br-coverage', pct + '%');
     }
-  }
+    function skillStats(p){
+      const cat = $('cr-cat').value, map = new Map();
+      p.forEach(e => e._skills.forEach(k => {
+        if (cat && SKILL_CATEGORY[k] !== cat) return;
+        let s = map.get(k); if (!s){ s = { key: k, holders: [], senior: 0, utils: [] }; map.set(k, s); }
+        s.holders.push(e);
+        if (isSenior(e.Role)) s.senior++;
+        if (typeof e._latestUtil === 'number') s.utils.push(e._latestUtil);
+      }));
+      return [...map.values()];
+    }
+    const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
+    function kpi(label, val, col){ return '<div class="cr-kpi" style="border-top-color:' + col + '"><div class="cr-kpi-val" style="color:' + col + '">' + val + '</div><div class="cr-kpi-lbl">' + esc(label) + '</div></div>'; }
+    function peopleRows(arr, withUtil){
+      const sorted = arr.slice().sort((a, b) => withUtil ? ((b._latestUtil || -1) - (a._latestUtil || -1)) : String(a.Name).localeCompare(String(b.Name)));
+      return '<div class="smap-people">' + sorted.map(e => {
+        const av = e._photo ? '<div class="sp-av" style="background-image:url(' + e._photo + ');background-size:cover;color:transparent">' + esc(e._initials || '') + '</div>' : '<div class="sp-av">' + esc(e._initials || '?') + '</div>';
+        let u = '';
+        if (withUtil && typeof e._latestUtil === 'number'){ const c = utilColor(e._latestUtil); u = '<span class="cr-util" style="background:' + c.bg + ';color:' + (c.dark ? '#2D2D2D' : '#fff') + '">' + Math.round(e._latestUtil) + '%</span>'; }
+        return '<div class="smap-person" data-wid="' + esc(String(e.WorkdayID)) + '">' + av + '<div style="flex:1 1 auto"><div class="sp-name">' + esc(e.Name) + (isSenior(e.Role) ? ' ★' : '') + '</div><div class="sp-meta">' + esc([e.Role, e.Territory].filter(Boolean).join(' · ')) + '</div></div>' + u + '</div>';
+      }).join('') + '</div>';
+    }
+    function wirePeople(c){ c.querySelectorAll('.smap-person').forEach(r => r.addEventListener('click', () => showBio(r.dataset.wid))); }
 
-  // ----- Talent Funnel -----
-  function renderFunnel(list){
-    const counts = BR_TIERS.map(t => ({
-      tier: t,
-      count: list.filter(e => groupForRole(e.Role) === t).length
+    // ---------- Scarce vs Stretched ----------
+    const SCARCE = 3, HOT = 100;
+    function quad(supply, demand){
+      if (supply <= SCARCE && demand > HOT) return { key: 'ss', label: 'Scarce & stretched', col: '#E0301E' };
+      if (supply >  SCARCE && demand > HOT) return { key: 'demand', label: 'In demand', col: '#EB8C00' };
+      if (supply <= SCARCE && demand <= HOT) return { key: 'niche', label: 'Niche / watch', col: '#FFB600' };
+      return { key: 'ok', label: 'Healthy depth', col: '#A6A6A6' };
+    }
+    function renderScarce(){
+      const p = pool(), stats = skillStats(p), cap = $('cr-scarce-cap'), svg = $('cr-scatter');
+      if (!HAS_UTIL){
+        svg.innerHTML = '<text x="380" y="250" class="venn-empty">Utilization data is not included in this build.</text>';
+        cap.innerHTML = 'This view needs monthly utilization, which is stripped from shared / team builds.';
+        $('cr-scarce-kpis').innerHTML = ''; $('cr-meta').innerHTML = '';
+        return;
+      }
+      const pts = stats.filter(s => s.utils.length).map(s => ({ s, supply: s.holders.length, demand: avg(s.utils) }));
+      const W = 760, H = 520, padL = 66, padR = 22, padT = 24, padB = 56;
+      const maxSupply = Math.max(5, ...pts.map(q => q.supply));
+      const maxDemand = Math.max(120, ...pts.map(q => q.demand));
+      const X = v => padL + (v / maxSupply) * (W - padL - padR);
+      const Y = v => H - padB - (v / maxDemand) * (H - padT - padB);
+      const dx = X(SCARCE + 0.5), dy = Y(HOT);
+      let s = '';
+      s += '<rect x="' + padL + '" y="' + padT + '" width="' + (dx - padL) + '" height="' + (dy - padT) + '" fill="#E0301E" opacity="0.07"></rect>';
+      s += '<rect x="' + dx + '" y="' + padT + '" width="' + (W - padR - dx) + '" height="' + (dy - padT) + '" fill="#EB8C00" opacity="0.06"></rect>';
+      s += '<rect x="' + padL + '" y="' + dy + '" width="' + (dx - padL) + '" height="' + (H - padB - dy) + '" fill="#FFB600" opacity="0.06"></rect>';
+      s += '<line x1="' + padL + '" y1="' + (H - padB) + '" x2="' + (W - padR) + '" y2="' + (H - padB) + '" stroke="#A6A6A6"></line>';
+      s += '<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + (H - padB) + '" stroke="#A6A6A6"></line>';
+      s += '<line x1="' + dx + '" y1="' + padT + '" x2="' + dx + '" y2="' + (H - padB) + '" stroke="#A6A6A6" stroke-dasharray="4 4"></line>';
+      s += '<line x1="' + padL + '" y1="' + dy + '" x2="' + (W - padR) + '" y2="' + dy + '" stroke="#A6A6A6" stroke-dasharray="4 4"></line>';
+      for (let v = 0; v <= maxDemand; v += 25) s += '<text class="cr-tick" x="' + (padL - 8) + '" y="' + (Y(v) + 3) + '" text-anchor="end">' + v + '%</text>';
+      const xs = Math.max(1, Math.round(maxSupply / 6));
+      for (let v = 0; v <= maxSupply; v += xs) s += '<text class="cr-tick" x="' + X(v) + '" y="' + (H - padB + 16) + '" text-anchor="middle">' + v + '</text>';
+      s += '<text class="cr-axlbl" x="' + ((padL + W - padR) / 2) + '" y="' + (H - 12) + '" text-anchor="middle">People who have the skill  (supply →)</text>';
+      s += '<text class="cr-axlbl" transform="translate(15,' + ((padT + H - padB) / 2) + ') rotate(-90)" text-anchor="middle">Avg utilization of those people  (demand →)</text>';
+      s += '<text class="cr-quad" x="' + (padL + 6) + '" y="' + (padT + 14) + '" fill="#E0301E">Scarce &amp; stretched</text>';
+      s += '<text class="cr-quad" x="' + (W - padR - 6) + '" y="' + (padT + 14) + '" fill="#C77400" text-anchor="end">In demand</text>';
+      s += '<text class="cr-quad" x="' + (padL + 6) + '" y="' + (H - padB - 8) + '" fill="#B98300">Niche / watch</text>';
+      s += '<text class="cr-quad" x="' + (W - padR - 6) + '" y="' + (H - padB - 8) + '" fill="#7A7A7A" text-anchor="end">Healthy depth</text>';
+      pts.forEach((q, i) => {
+        const r = 5 + Math.sqrt(q.supply) * 2.4, jx = ((i * 37) % 11) - 5;
+        const qd = quad(q.supply, q.demand);
+        s += '<circle class="cr-bubble" data-k="' + esc(q.s.key) + '" cx="' + (X(q.supply) + jx).toFixed(1) + '" cy="' + Y(q.demand).toFixed(1) + '" r="' + r.toFixed(1) + '" fill="' + qd.col + '" fill-opacity="0.78" stroke="#fff"><title>' + esc(SKILL_DISPLAY[q.s.key]) + ' — ' + q.supply + (q.supply === 1 ? ' person' : ' people') + ', avg ' + Math.round(q.demand) + '% util (' + qd.label + ')</title></circle>';
+      });
+      svg.innerHTML = s;
+      svg.querySelectorAll('.cr-bubble').forEach(b => b.addEventListener('click', () => {
+        const st = stats.find(x => x.key === b.dataset.k), dm = avg(st.utils), qd = quad(st.holders.length, dm), d = $('cr-scarce-detail');
+        d.innerHTML = '<h3>' + esc(SKILL_DISPLAY[st.key]) + '</h3><div class="sd-sub">' + esc(SKILL_CATEGORY[st.key]) + ' · ' + st.holders.length + ' ' + (st.holders.length === 1 ? 'person' : 'people') + ' · avg ' + Math.round(dm) + '% util</div><div class="smap-tagrow"><span class="cr-badge" style="background:' + qd.col + '">' + esc(qd.label) + '</span></div>' + peopleRows(st.holders, true);
+        wirePeople(d);
+      }));
+      const ssN = pts.filter(q => quad(q.supply, q.demand).key === 'ss').length;
+      const okN = pts.filter(q => quad(q.supply, q.demand).key === 'ok').length;
+      const benchN = p.filter(e => typeof e._latestUtil === 'number' && e._latestUtil < 60).length;
+      const avgU = Math.round(avg(p.map(e => e._latestUtil).filter(v => typeof v === 'number')));
+      $('cr-scarce-kpis').innerHTML = kpi('Scarce & stretched skills', ssN, '#E0301E') + kpi('Healthy-depth skills', okN, '#A6A6A6') + kpi('People on the bench (<60%)', benchN, '#EB8C00') + kpi('Avg utilization', avgU + '%', '#2D2D2D');
+      cap.innerHTML = 'Each bubble is a <b>skill</b> among the <b>' + p.length + '</b> people in scope. <b>Left</b> = few people have it; <b>high</b> = those people are heavily utilised. <span style="color:#E0301E;font-weight:700">Top-left</span> skills are scarce <em>and</em> stretched — first to hire or cross-train. Click a bubble to see who holds it and how busy they are.';
+      $('cr-meta').innerHTML = '<strong>' + pts.length + '</strong> skills plotted · <strong>' + p.length + '</strong> people in scope';
+    }
+
+    // ---------- Key-Person Risk ----------
+    function renderKeyPerson(){
+      const p = pool(), stats = skillStats(p), rows = [];
+      stats.forEach(s => {
+        const n = s.holders.length; let risk = null, rank = 9;
+        if (n === 1){ risk = 'Single expert'; rank = 0; }
+        else if (n === 2){ risk = 'Fragile (2 people)'; rank = 1; }
+        else if (s.senior === 0){ risk = 'No senior cover'; rank = 2; }
+        if (risk) rows.push({ s, n, sen: s.senior, risk, rank });
+      });
+      rows.sort((a, b) => a.rank - b.rank || a.n - b.n || SKILL_DISPLAY[a.s.key].localeCompare(SKILL_DISPLAY[b.s.key]));
+      const cnt = r => rows.filter(x => x.rank === r).length;
+      $('cr-kp-kpis').innerHTML = kpi('Single-expert skills', cnt(0), '#E0301E') + kpi('Fragile (2 people)', cnt(1), '#EB8C00') + kpi('No senior cover', cnt(2), '#FFB600') + kpi('Skills in scope', stats.length, '#2D2D2D');
+      const badge = (risk, rank) => { const c = rank === 0 ? '#E0301E' : rank === 1 ? '#EB8C00' : '#FFB600'; return '<span class="cr-badge" style="background:' + c + '">' + esc(risk) + '</span>'; };
+      let h = '<thead><tr><th>Risk</th><th>Skill</th><th>Category</th><th>People</th><th>Senior</th><th>Who holds it</th></tr></thead><tbody>';
+      if (!rows.length) h += '<tr><td colspan="6" class="cr-empty">No key-person risks in this slice — capability is well spread.</td></tr>';
+      rows.forEach(r => {
+        const who = r.s.holders.slice().sort((a, b) => String(a.Name).localeCompare(String(b.Name))).map(e => '<span class="cr-who" data-wid="' + esc(String(e.WorkdayID)) + '">' + esc(e.Name) + (isSenior(e.Role) ? ' ★' : '') + '</span>').join('');
+        h += '<tr><td>' + badge(r.risk, r.rank) + '</td><td class="cr-skill">' + esc(SKILL_DISPLAY[r.s.key]) + '</td><td>' + esc(SKILL_CATEGORY[r.s.key]) + '</td><td class="cr-num">' + r.n + '</td><td class="cr-num">' + r.sen + '</td><td>' + who + '</td></tr>';
+      });
+      h += '</tbody>';
+      const tbl = $('cr-kp-table'); tbl.innerHTML = h;
+      tbl.querySelectorAll('.cr-who').forEach(el => el.addEventListener('click', () => showBio(el.dataset.wid)));
+      $('cr-meta').innerHTML = '<strong>' + rows.length + '</strong> at-risk skills of <strong>' + stats.length + '</strong> in scope';
+    }
+
+    function render(){ if (view === 'scarce') renderScarce(); else renderKeyPerson(); }
+
+    $('cr-view-toggle').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      $('cr-view-toggle').querySelectorAll('button').forEach(x => x.classList.remove('active')); b.classList.add('active');
+      view = b.dataset.view;
+      $('cr-scarce-view').style.display = view === 'scarce' ? 'block' : 'none';
+      $('cr-keyperson-view').style.display = view === 'keyperson' ? 'block' : 'none';
+      render();
     }));
-    const max = Math.max(1, ...counts.map(c => c.count));
-    const funnel = document.getElementById('br-funnel');
-    const present = counts.filter(c => c.count > 0);
-    if (!present.length){
-      funnel.innerHTML = '<div class="funnel-empty">No employees in this slice.</div>';
-      return;
-    }
-    // Every tier renders (even with 0) so leverage gaps are visible — but render
-    // an obvious thin "missing tier" line for zeros.
-    funnel.innerHTML = counts.map(c => {
-      const w = c.count === 0 ? 12 : Math.max(15, (c.count / max) * 100);
-      const bg = c.count === 0 ? 'var(--pwc-grey-300)' : BR_TIER_COLOR[c.tier];
-      const cls = c.count === 0 ? ' funnel-tier-empty' : '';
-      const inner = c.count === 0
-        ? '<span class="ftier-name" style="color:var(--pwc-grey-600);text-shadow:none;font-style:italic;">' + esc(c.tier) + ' &mdash; none</span>'
-        : '<span class="ftier-name">' + esc(c.tier) + '</span><span class="ftier-count">' + c.count + '</span>';
-      return '<div class="funnel-tier' + cls + '" data-tier="' + esc(c.tier) + '">'
-           +   '<div class="funnel-bar-wrap">'
-           +     '<div class="funnel-bar" style="width:' + w + '%; background:' + bg + ';">' + inner + '</div>'
-           +   '</div>'
-           + '</div>';
-    }).join('');
+    ['cr-territory', 'cr-competency', 'cr-cat', 'cr-role', 'cr-loc'].forEach(id => $(id).addEventListener('change', render));
+    $('cr-reset').addEventListener('click', () => { ['cr-territory', 'cr-competency', 'cr-cat', 'cr-role', 'cr-loc'].forEach(id => $(id).value = ''); render(); });
 
-    funnel.querySelectorAll('.funnel-tier').forEach(el => {
-      el.addEventListener('click', () => {
-        if (el.classList.contains('funnel-tier-empty')) return;
-        brSelection = { tier: el.dataset.tier };
-        // Visual highlight
-        funnel.querySelectorAll('.funnel-tier').forEach(t => t.classList.remove('active'));
-        el.classList.add('active');
-        document.querySelectorAll('#br-matrix .matrix-cell').forEach(c => c.classList.remove('active'));
-        renderDrill(list);
-      });
-    });
-  }
+    render();
+  })();
 
-  // ----- Capability Matrix -----
-  function renderMatrix(list){
-    const comps = [...new Set(list.map(e => String(e.Competency || '').trim()).filter(Boolean))]
-      .sort((a, b) => {
-        const ca = list.filter(e => String(e.Competency || '').trim() === a).length;
-        const cb = list.filter(e => String(e.Competency || '').trim() === b).length;
-        return cb - ca;
-      });
-    const matrix = document.getElementById('br-matrix');
-    if (!comps.length){
-      matrix.innerHTML = '<tr><td colspan="' + (BR_TIERS.length + 1) + '" class="funnel-empty">No competency data in this slice.</td></tr>';
-      return;
-    }
-    // Build counts: comp -> tier -> count
-    const cells = {};
-    let maxCell = 0;
-    comps.forEach(c => { cells[c] = {}; BR_TIERS.forEach(t => cells[c][t] = 0); });
-    list.forEach(e => {
-      const c = String(e.Competency || '').trim();
-      const t = groupForRole(e.Role);
-      if (cells[c] && BR_TIERS.includes(t)){
-        cells[c][t]++;
-        if (cells[c][t] > maxCell) maxCell = cells[c][t];
-      }
-    });
-
-    function cellColor(v){
-      if (v === 0) return { bg: '', cls: 'zero' };
-      const intensity = maxCell ? v / maxCell : 0;
-      // PwC orange ramped from very pale to full
-      const alpha = 0.18 + intensity * 0.82;
-      const dark = intensity > 0.55;
-      return { bg: 'rgba(208,74,2,' + alpha.toFixed(2) + ')', cls: dark ? 'dark' : '' };
-    }
-
-    let html = '<thead><tr><th></th>';
-    BR_TIERS.forEach(t => {
-      // Short header labels
-      const short = t === 'Managing Directors' ? 'MD'
-                  : t === 'Directors' ? 'D'
-                  : t === 'Senior Managers' ? 'SM'
-                  : t === 'Managers' ? 'M'
-                  : t === 'Senior Associates' ? 'SA'
-                  : 'A';
-      html += '<th title="' + esc(t) + '">' + short + '</th>';
-    });
-    html += '</tr></thead><tbody>';
-    comps.forEach(c => {
-      html += '<tr><th title="' + esc(c) + '">' + esc(c) + '</th>';
-      BR_TIERS.forEach(t => {
-        const v = cells[c][t];
-        const col = cellColor(v);
-        const style = col.bg ? ' style="background:' + col.bg + ';"' : '';
-        html += '<td class="matrix-cell ' + col.cls + '"' + style
-              + ' data-competency="' + esc(c) + '" data-tier="' + esc(t) + '"'
-              + ' title="' + esc(c) + ' · ' + esc(t) + ' · ' + v + '">' + v + '</td>';
-      });
-      html += '</tr>';
-    });
-    html += '</tbody>';
-    matrix.innerHTML = html;
-
-    matrix.querySelectorAll('.matrix-cell:not(.zero)').forEach(el => {
-      el.addEventListener('click', () => {
-        brSelection = { competency: el.dataset.competency, tier: el.dataset.tier };
-        matrix.querySelectorAll('.matrix-cell').forEach(c => c.classList.remove('active'));
-        el.classList.add('active');
-        document.querySelectorAll('#br-funnel .funnel-tier').forEach(t => t.classList.remove('active'));
-        renderDrill(list);
-      });
-    });
-  }
-
-  // ----- Drill panel (people in selected segment) -----
-  function renderDrill(list){
-    const drill = document.getElementById('br-drill');
-    if (!brSelection){
-      drill.innerHTML = '<div class="bm-drill-empty"><div class="adt-emoji">&#127968;</div>'
-                     + '<p>Click a tier in the funnel or a cell in the matrix to see the people in that segment.</p></div>';
-      return;
-    }
-    let people = list.slice();
-    if (brSelection.tier){
-      people = people.filter(e => groupForRole(e.Role) === brSelection.tier);
-    }
-    if (brSelection.competency){
-      people = people.filter(e => String(e.Competency || '').trim() === brSelection.competency);
-    }
-    const titlePills = [];
-    if (brSelection.competency) titlePills.push('<span class="bm-drill-pill">' + esc(brSelection.competency) + '</span>');
-    if (brSelection.tier)       titlePills.push('<span class="bm-drill-pill">' + esc(brSelection.tier) + '</span>');
-
-    people.sort((a, b) => String(a.Name).localeCompare(String(b.Name)));
-    let html = '<div class="bm-drill-header">'
-             +   '<h3 class="bm-drill-title">' + titlePills.join('') + 'Selected segment</h3>'
-             +   '<span class="bm-drill-count">' + people.length + ' ' + (people.length === 1 ? 'person' : 'people') + '</span>'
-             + '</div>';
-    if (people.length === 0){
-      html += '<div class="bm-drill-empty"><p>Nobody in this segment with current filters.</p></div>';
-    } else {
-      html += '<div class="bm-drill-grid">';
-      people.forEach(e => {
-        const ph = e._photo
-          ? '<div class="bm-person-photo"><img loading="lazy" src="' + e._photo + '" alt="' + esc(e.Name) + '"></div>'
-          : '<div class="bm-person-photo fallback">' + esc(e._initials) + '</div>';
-        html += '<div class="bm-person" data-id="' + esc(e.WorkdayID) + '">'
-              +   ph
-              +   '<div style="min-width:0;flex:1;">'
-              +     '<div class="bm-person-name">' + esc(e.Name) + '</div>'
-              +     '<div class="bm-person-meta">' + esc(e.Role || '') + ' &middot; ' + esc(e.Location || '') + ' &middot; ' + esc(e[EXP_TOTAL] || '?') + ' yrs</div>'
-              +   '</div>'
-              + '</div>';
-      });
-      html += '</div>';
-    }
-    drill.innerHTML = html;
-    drill.querySelectorAll('.bm-person').forEach(p =>
-      p.addEventListener('click', () => showBio(p.dataset.id)));
-  }
-
-  function renderBoardroom(){
-    const list = brFiltered();
-    renderBoardroomKpis(list);
-    renderFunnel(list);
-    renderMatrix(list);
-    // If a selection no longer exists in the filtered set, clear it.
-    if (brSelection){
-      const stillInList = list.some(e => {
-        const okTier = !brSelection.tier || groupForRole(e.Role) === brSelection.tier;
-        const okComp = !brSelection.competency || String(e.Competency || '').trim() === brSelection.competency;
-        return okTier && okComp;
-      });
-      if (!stillInList) brSelection = null;
-    }
-    renderDrill(list);
-  }
-
-  ['br-competency','br-experience','br-role'].forEach(id =>
-    document.getElementById(id).addEventListener('change', renderBoardroom));
-  document.getElementById('br-reset').addEventListener('click', () => {
-    document.getElementById('br-competency').value = '';
-    document.getElementById('br-experience').value = '';
-    document.getElementById('br-role').value = '';
-    brSelection = null;
-    renderBoardroom();
-  });
-  renderBoardroom();
 </script>
 </body>
 </html>
