@@ -173,12 +173,18 @@ def load_photos(images_dir):
 
 
 def photo_for(rec, photos):
-    pid = rec.get("PhotoID", "")
-    if pid in (None, ""):
-        return ""
-    if isinstance(pid, float) and pid.is_integer():
-        pid = int(pid)
-    return photos.get(str(pid).strip(), "")
+    # Photos are matched by the image filename stem. Real data names images by
+    # Employee ID, so try that first; fall back to PhotoID / WorkdayID.
+    for key in ("Employee ID", "PhotoID", "WorkdayID"):
+        pid = rec.get(key, "")
+        if pid in (None, ""):
+            continue
+        if isinstance(pid, float) and pid.is_integer():
+            pid = int(pid)
+        uri = photos.get(str(pid).strip(), "")
+        if uri:
+            return uri
+    return ""
 
 
 def load_logo():
