@@ -40,11 +40,15 @@ PHOTO_MAX_DIM = 240
 PHOTO_JPEG_QUALITY = 72
 
 # ---- Configuration -------------------------------------------------------
-SCRIPT_DIR   = Path(__file__).resolve().parent
-INPUT_FILE   = SCRIPT_DIR / "Employee Details.xlsx"
-IMAGES_DIR   = SCRIPT_DIR / "Images"
+SCRIPT_DIR   = Path(__file__).resolve().parent          # 02_Scripts & ETL
+ROOT         = SCRIPT_DIR.parent                         # Deals Skills and Bio
+SOURCE_DIR   = ROOT / "01_source"                        # raw input files + Images + logo
+OUTPUT_DIR   = ROOT / "03_Output files"                  # generated HTML
+OUTPUT_DIR.mkdir(exist_ok=True)
+INPUT_FILE   = OUTPUT_DIR / "Employee Details.xlsx"      # master file (built by your ETL) lives with the outputs
+IMAGES_DIR   = SOURCE_DIR / "Images"
 TEMPLATE     = SCRIPT_DIR / "template.html"
-OUTPUT_FILE  = SCRIPT_DIR / "Employee_Dashboard.html"
+OUTPUT_FILE  = OUTPUT_DIR / "Employee_Dashboard.html"
 
 # PwC logo lives in the working folder. Looked up by stem in this order.
 LOGO_CANDIDATES = ["PwC Logo", "pwc logo", "PwC_Logo", "logo"]
@@ -181,7 +185,7 @@ def load_logo():
     """Find the PwC logo in the working folder and return a base64 data URI."""
     for stem in LOGO_CANDIDATES:
         for ext in PHOTO_EXTS:
-            p = SCRIPT_DIR / f"{stem}{ext}"
+            p = SOURCE_DIR / f"{stem}{ext}"
             if p.exists():
                 b64 = base64.b64encode(p.read_bytes()).decode("ascii")
                 return f"data:{MIME[ext.lower()]};base64,{b64}"
@@ -256,8 +260,8 @@ def main():
             .replace("__PBI_URL__",        args.pbi_url))
 
     builds = [
-        (False, SCRIPT_DIR / "Employee_Dashboard.html",        "MD / full (all data)"),
-        (True,  SCRIPT_DIR / "Employee_Dashboard_Shared.html", "Restricted (no utilization, Address redacted)"),
+        (False, OUTPUT_DIR / "Employee_Dashboard.html",        "MD / full (all data)"),
+        (True,  OUTPUT_DIR / "Employee_Dashboard_Shared.html", "Restricted (no utilization, Address redacted)"),
     ]
 
     print(f"[ok] Employees: {len(enriched)} | Skill rows: {len(data['skills'])} | Util rows: {len(data['utilization'])}")
