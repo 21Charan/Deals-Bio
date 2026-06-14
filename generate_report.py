@@ -151,6 +151,19 @@ def _encode_one(path):
     return (f"data:{mime};base64," + base64.b64encode(raw).decode("ascii"), len(raw))
 
 
+def _norm_id(v):
+    """Normalise an id (number or text) to a plain string for matching.
+    Handles int/float (534034.0 -> '534034') and stray whitespace."""
+    if v is None:
+        return ""
+    if isinstance(v, float) and v.is_integer():
+        v = int(v)
+    s = str(v).strip()
+    if s.endswith(".0") and s[:-2].isdigit():
+        s = s[:-2]
+    return s
+
+
 def load_photos(images_dir):
     photos = {}
     if not images_dir.exists():
@@ -160,10 +173,9 @@ def load_photos(images_dir):
         if f.is_file() and f.suffix.lower() in PHOTO_EXTS:
             uri, size = _encode_one(f)
             total_bytes += size
-            pid = f.stem.strip()
-            photos[pid] = uri
-            if pid.isdigit():
-                photos[str(int(pid))] = uri
+            stem = f.stem.strip()
+            photos[_norm_id(stem)] = uri   # normalised (matches numeric Employee ID)
+            photos[stem] = uri             # also keep the raw filename stem
     if photos:
         avg = total_bytes / len(set(photos.values())) if photos else 0
         mode = "downscaled" if HAVE_PIL else "ORIGINAL (install Pillow to downscale)"
@@ -176,12 +188,10 @@ def photo_for(rec, photos):
     # Photos are matched by the image filename stem. Real data names images by
     # Employee ID, so try that first; fall back to PhotoID / WorkdayID.
     for key in ("Employee ID", "PhotoID", "WorkdayID"):
-        pid = rec.get(key, "")
-        if pid in (None, ""):
+        nid = _norm_id(rec.get(key, ""))
+        if not nid:
             continue
-        if isinstance(pid, float) and pid.is_integer():
-            pid = int(pid)
-        uri = photos.get(str(pid).strip(), "")
+        uri = photos.get(nid, "")
         if uri:
             return uri
     return ""
@@ -223,6 +233,16 @@ def main():
         c["_photo"] = photo_for(r, photos)
         c["_initials"] = initials(r.get("Name"))
         enriched.append(c)
+
+    # Photo-match diagnostic (helps spot Employee ID vs image-name mismatches)
+    if photos:
+        matched = sum(1 for e in enriched if e.get("_photo"))
+        print(f"[ok] Photos matched to employees: {matched} / {len(enriched)} (by Employee ID)")
+        if matched < len(enriched):
+            unmatched = [_norm_id(e.get("Employee ID")) for e in enriched if not e.get("_photo")]
+            avail = sorted({_norm_id(k) for k in photos})
+            print(f"[warn] Unmatched Employee IDs (sample): {unmatched[:8]}")
+            print(f"       Image file names available (sample): {avail[:8]}")
 
     # Stats
     exps = [e.get(EXP_TOTAL) for e in enriched if isinstance(e.get(EXP_TOTAL), (int, float))]
