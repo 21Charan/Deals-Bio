@@ -17,6 +17,7 @@ then rerun:
     python generate_report.py
 """
 
+import argparse
 import base64
 import json
 import datetime
@@ -100,6 +101,7 @@ def load_workbook_data(path):
     keymap = {
         "Employee Details": "details",
         "Employee Skills": "skills",
+        "Skill Mapping": "skills",          # real-file sheet name
         "Employee Monthly Utilization": "utilization",
     }
     data = {"details": [], "skills": [], "utilization": []}
@@ -196,6 +198,11 @@ def initials(name):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Build the employee dashboard HTML.")
+    parser.add_argument("--pbi-url", default="",
+                        help="Optional Power BI report URL linked from bios in the restricted build")
+    args = parser.parse_args()
+
     data = load_workbook_data(INPUT_FILE)
     photos = load_photos(IMAGES_DIR)
     logo_uri = load_logo()
@@ -222,38 +229,49 @@ def main():
     generated_str = f"{today.day} {today.strftime('%B %Y')}"
 
     template = TEMPLATE.read_text(encoding="utf-8")
-    html = (template
-        .replace("__EMPLOYEES_JSON__", json.dumps(enriched, default=str))
-        .replace("__SKILLS_JSON__",    json.dumps(data["skills"], default=str))
-        .replace("__UTIL_JSON__",      json.dumps(data["utilization"], default=str))
-        .replace("__TOTAL__",          str(len(enriched)))
-        .replace("__AVG_EXP__",        str(avg_exp))
-        .replace("__NUM_OUS__",        str(len(ous)))
-        .replace("__NUM_LOCS__",       str(len(locs)))
-        .replace("__OU_OPTIONS__",     opts(ous))
-        .replace("__ROLE_OPTIONS__",   opts(roles))
-        .replace("__LOC_OPTIONS__",    opts(locs))
-        .replace("__GENERATED__",      generated_str)
-        .replace("__LOGO_URI__",       logo_uri)
-        .replace("__EXP_TOTAL__",      EXP_TOTAL)
-        .replace("__EXP_PWC__",        EXP_PWC)
-    )
-    OUTPUT_FILE.write_text(html, encoding="utf-8")
 
-    size_kb = OUTPUT_FILE.stat().st_size / 1024
-    print(f"[ok] Employees:    {len(enriched)}")
-    print(f"[ok] Skills rows:  {len(data['skills'])}")
-    print(f"[ok] Util rows:    {len(data['utilization'])}")
-    # Sanity check: anyone with no rows in Employee Skills?
+    def render(share):
+        """share=True -> restricted build: utilization stripped + full Address redacted."""
+        emp = enriched
+        util = data["utilization"]
+        if share:
+            util = []                                      # no utilization anywhere
+            emp = [{k: v for k, v in e.items() if k != "Address"} for e in enriched]  # redact full address
+        return (template
+            .replace("__EMPLOYEES_JSON__", json.dumps(emp, default=str))
+            .replace("__SKILLS_JSON__",    json.dumps(data["skills"], default=str))
+            .replace("__UTIL_JSON__",      json.dumps(util, default=str))
+            .replace("__TOTAL__",          str(len(enriched)))
+            .replace("__AVG_EXP__",        str(avg_exp))
+            .replace("__NUM_OUS__",        str(len(ous)))
+            .replace("__NUM_LOCS__",       str(len(locs)))
+            .replace("__OU_OPTIONS__",     opts(ous))
+            .replace("__ROLE_OPTIONS__",   opts(roles))
+            .replace("__LOC_OPTIONS__",    opts(locs))
+            .replace("__GENERATED__",      generated_str)
+            .replace("__LOGO_URI__",       logo_uri)
+            .replace("__EXP_TOTAL__",      EXP_TOTAL)
+            .replace("__EXP_PWC__",        EXP_PWC)
+            .replace("__SHARE_MODE__",     "true" if share else "false")
+            .replace("__PBI_URL__",        args.pbi_url))
+
+    builds = [
+        (False, SCRIPT_DIR / "Employee_Dashboard.html",        "MD / full (all data)"),
+        (True,  SCRIPT_DIR / "Employee_Dashboard_Shared.html", "Restricted (no utilization, Address redacted)"),
+    ]
+
+    print(f"[ok] Employees: {len(enriched)} | Skill rows: {len(data['skills'])} | Util rows: {len(data['utilization'])}")
     ids_with_skills = {str(r.get("WorkdayID")) for r in data["skills"] if r.get("WorkdayID") not in (None, "")}
     no_skill_emps = [e for e in enriched if str(e.get("WorkdayID")) not in ids_with_skills]
     if no_skill_emps:
         names = ", ".join(str(e.get("Name", "?")) for e in no_skill_emps[:5])
         more = f" + {len(no_skill_emps) - 5} more" if len(no_skill_emps) > 5 else ""
-        print(f"[warn] {len(no_skill_emps)} employee(s) have NO rows in Employee Skills sheet: {names}{more}")
-        print(f"       They will not appear in the Skill Atlas / Staffing Match.")
-    print(f"[ok] Logo found:   {'yes' if logo_uri else 'no'}")
-    print(f"[ok] Output:       {OUTPUT_FILE.name}  ({size_kb:,.0f} KB)")
+        print(f"[warn] {len(no_skill_emps)} employee(s) have NO rows in the skills sheet: {names}{more}")
+    print(f"[ok] Logo found: {'yes' if logo_uri else 'no'}")
+    for share, out_file, label in builds:
+        out_file.write_text(render(share), encoding="utf-8")
+        size_kb = out_file.stat().st_size / 1024
+        print(f"[ok] {label:46s} -> {out_file.name}  ({size_kb:,.0f} KB)")
 
 
 if __name__ == "__main__":

@@ -43,12 +43,45 @@
   .stat-card.t5{border-top-color:var(--pwc-pink)}
   .stat-card .value{font-size:28px;font-weight:700}
   .stat-card .label{font-size:12px;color:var(--pwc-grey-600);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
-  .controls{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 18px}
+  .controls{display:flex;column-gap:12px;row-gap:5px;flex-wrap:wrap;margin:0 0 18px}
   .controls input,.controls select{padding:10px 14px;border:1px solid var(--pwc-grey-300);border-radius:4px;font-size:14px;font-family:inherit;background:var(--white)}
   .controls input{flex:1 1 280px}
+  #dir-search{flex:0 1 240px;min-width:170px}
   .controls input:focus,.controls select:focus{outline:none;border-color:var(--pwc-orange);box-shadow:0 0 0 2px rgba(208,74,2,0.15)}
   .controls .reset-btn{padding:10px 16px;background:var(--white);color:var(--pwc-grey-700);border:1px solid var(--pwc-grey-300);border-radius:4px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;transition:all .15s}
   .controls .reset-btn:hover{border-color:var(--pwc-rose);color:var(--pwc-rose)}
+  .exp-filter{display:flex;align-items:center;gap:6px;padding:4px 10px;flex:0 0 auto;border:1px solid var(--pwc-grey-300);border-radius:4px;background:var(--white);height:42px;box-sizing:border-box}
+  .exp-label{font-size:13px;color:var(--pwc-grey-700);font-weight:600;white-space:nowrap}
+  .exp-range{position:relative;flex:0 0 120px;width:120px;height:20px;cursor:pointer}
+  .exp-track{position:absolute;left:8px;right:8px;height:4px;background:var(--white);border-radius:2px;top:50%;transform:translateY(-50%)}
+  .exp-fill{position:absolute;height:3px;background:var(--pwc-orange);border-radius:2px;top:50%;transform:translateY(-50%);pointer-events:none}
+  .exp-dot{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--pwc-orange);transform:translate(-50%,-50%);cursor:grab;z-index:2;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .exp-dot:active{cursor:grabbing}
+  .exp-range input[type=range]{position:absolute;left:0;width:100%;margin:0;background:transparent;pointer-events:none;-webkit-appearance:none;appearance:none;height:24px;outline:none;border:none}
+  .exp-range input[type=range]:focus,.exp-range input[type=range]:focus-visible,.exp-range input[type=range]:active{outline:none;box-shadow:none}
+  .exp-range input[type=range]::-webkit-slider-runnable-track{height:4px;background:transparent}
+  .exp-range input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;pointer-events:auto;width:16px;height:16px;border-radius:50%;background:var(--pwc-orange);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3);cursor:pointer;margin-top:-6px}
+  .exp-range input[type=range]::-moz-range-track{height:4px;background:transparent}
+  .exp-range input[type=range]::-moz-range-thumb{pointer-events:auto;width:14px;height:14px;border-radius:50%;background:var(--pwc-orange);border:2px solid #fff;cursor:pointer}
+  .exp-val{font-size:12px;color:var(--pwc-orange);font-weight:700;white-space:nowrap;min-width:40px;text-align:right}
+  .ctrl-break{flex-basis:100%;width:100%;height:0}
+  #dir-skills-ms{flex:1 1 320px;min-width:240px}
+  #dir-skills-ms .ms-trigger{width:100%;flex-wrap:wrap;height:auto;min-height:42px;align-items:center;padding:5px 10px}
+  .controls .ms-search{flex:0 0 auto;height:auto}   /* stop .controls input from stretching search boxes */
+  .ms-compact{position:relative;display:inline-block}
+  .ms-compact .ms-trigger{min-width:128px;padding:9px 12px;flex-wrap:wrap;height:auto;min-height:42px;gap:6px;font-size:14px}
+  .ms-compact .ms-label{display:flex;flex-wrap:wrap;gap:3px;align-items:center;text-align:left}
+  .dir-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .export-btn{background:var(--pwc-orange);color:#fff;border:none;border-radius:4px;padding:9px 16px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .export-btn:hover{background:#b8420a}
+  .scroll-nav{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:6px;z-index:90;opacity:0;pointer-events:none;transition:opacity .2s}
+  .scroll-nav.show{opacity:1;pointer-events:auto}
+  .scroll-nav button{width:40px;height:40px;border-radius:50%;border:none;background:var(--pwc-orange);color:#fff;font-size:18px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+  .scroll-nav button:hover{background:#b8420a}
+  #dir-skills-ms .ms-label{display:flex;flex-wrap:wrap;gap:3px;align-items:center;flex:1 1 auto;text-align:left}
+  .ms-chip{display:inline-flex;align-items:center;gap:4px;background:rgba(208,74,2,0.1);color:var(--pwc-orange);border:1px solid rgba(208,74,2,0.3);border-radius:12px;padding:1px 6px 1px 9px;font-size:12px;font-weight:600}
+  .ms-chip-x{cursor:pointer;font-style:normal;font-size:15px;line-height:1;opacity:.55}
+  .ms-chip-x:hover{opacity:1}
   /* Multi-select checkbox dropdown (used for Skills) */
   .multiselect{position:relative;display:inline-block}
   .ms-trigger{padding:10px 14px;border:1px solid var(--pwc-grey-300);border-radius:4px;background:var(--white);font-family:inherit;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px;min-width:180px;color:var(--pwc-grey-900)}
@@ -59,7 +92,7 @@
   .ms-panel.open{display:flex}
   /* Explicit flex/sizing so the global .controls input rule doesn't bleed in */
   .ms-search{display:block;width:100%;box-sizing:border-box;flex:0 0 auto;padding:10px 12px;border:none;border-bottom:1px solid var(--pwc-grey-300);font-family:inherit;font-size:13px;outline:none;border-radius:4px 4px 0 0;background:var(--white);color:var(--pwc-grey-900)}
-  .ms-options{flex:1 1 auto;max-height:280px;overflow-y:auto;padding:6px 0}
+  .ms-options{flex:1 1 auto;max-height:240px;overflow-y:auto;padding:6px 0}
   .ms-option{display:flex;align-items:center;gap:10px;padding:7px 12px;cursor:pointer;font-size:13px;color:var(--pwc-grey-900);text-align:left;justify-content:flex-start}
   .ms-option:hover{background:var(--pwc-grey-100)}
   .ms-option input[type="checkbox"]{flex:0 0 14px;width:14px;height:14px;min-width:14px;max-width:14px;margin:0;accent-color:var(--pwc-orange);cursor:pointer}
@@ -115,6 +148,18 @@
   .bio-grid .field .val{font-size:15px;color:var(--pwc-grey-900);line-height:1.5}
   .bio-grid .field .val a.team-link{color:var(--pwc-orange);text-decoration:none;cursor:pointer}
   .bio-grid .field .val a.team-link:hover{text-decoration:underline}
+  .bio-cluster{position:absolute;top:14px;right:60px;display:flex;align-items:center;gap:8px;z-index:3;max-width:72%}
+  .bio-rl{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.22);color:var(--white);font-size:12px;padding:7px 14px;border-radius:999px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px;max-width:340px}
+  .bio-rl[data-id]{cursor:pointer;transition:background .15s}
+  .bio-rl[data-id]:hover{background:rgba(255,255,255,0.24)}
+  .bio-back{background:var(--pwc-orange);border:none;color:#fff;font-family:inherit;font-size:12px;font-weight:600;padding:7px 13px;border-radius:999px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+  .bio-back:hover{background:#b8420a}
+  .bio-rl b{margin-left:6px;color:var(--pwc-tangerine)}
+  .bio-rl .rl-ico{opacity:.8}
+  .bio-reports{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-bottom:8px}
+  .bio-report{display:flex;align-items:center;gap:10px;border:1px solid var(--pwc-grey-100);border-radius:6px;padding:8px 10px;cursor:pointer;transition:all .15s}
+  .bio-report:hover{border-color:var(--pwc-orange);background:var(--pwc-grey-50)}
+  @media (max-width:760px){.bio-cluster{position:static;margin:0 0 10px;max-width:none;flex-wrap:wrap}}
   /* Skill category sections */
   .skill-cat-block{margin-bottom:14px;border-left:3px solid var(--pwc-orange);padding:8px 12px;background:var(--pwc-grey-50);border-radius:0 4px 4px 0}
   .skill-cat-block .cat-header{font-size:11px;font-weight:700;color:var(--pwc-orange);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px}
@@ -210,6 +255,12 @@
   .cr-quad{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.85}
   .cr-bubble{cursor:pointer;transition:fill-opacity .12s}
   .cr-bubble:hover{fill-opacity:1}
+  .cr-bubble.sel{stroke:#2D2D2D;stroke-width:3.5}
+  .cr-criteria{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--pwc-grey-300)}
+  .cr-q{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--pwc-grey-700);font-weight:600}
+  .cr-q i{width:11px;height:11px;border-radius:50%;display:inline-block}
+  .cr-crit-note{font-size:11px;color:var(--pwc-grey-600);flex:1 1 100%}
+  .cr-crit-note b{color:var(--pwc-grey-900)}
   .cr-util{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:auto;flex-shrink:0}
   .cr-table-wrap{background:var(--white);border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.08);overflow:hidden}
   .cr-table{width:100%;border-collapse:collapse;font-size:13px}
@@ -333,14 +384,14 @@
   .heatmap{display:grid;gap:2px;min-width:600px}
   .heatmap .hm-corner,.heatmap .hm-month-header{background:var(--pwc-grey-900);color:var(--white);padding:8px 6px;font-size:11px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:0.4px}
   .heatmap .hm-name-row{display:contents}
-  .heatmap .hm-name{background:var(--pwc-grey-50);padding:6px 10px;display:flex;align-items:center;gap:8px;border-radius:3px;cursor:pointer;min-width:0}
+  .heatmap .hm-name{background:var(--pwc-grey-50);padding:3px 8px;display:flex;align-items:center;gap:7px;border-radius:3px;cursor:pointer;min-width:0}
   .heatmap .hm-name:hover{background:var(--pwc-grey-100)}
-  .heatmap .hm-name-photo{width:24px;height:24px;border-radius:50%;overflow:hidden;background:var(--pwc-grey-200,#e5e5e5);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .heatmap .hm-name-photo{width:20px;height:20px;border-radius:50%;overflow:hidden;background:var(--pwc-grey-200,#e5e5e5);flex-shrink:0;display:flex;align-items:center;justify-content:center}
   .heatmap .hm-name-photo img{width:100%;height:100%;object-fit:cover}
   .heatmap .hm-name-photo.fallback{background:var(--pwc-orange);color:var(--white);font-size:10px;font-weight:600}
   .heatmap .hm-name-text{font-size:12px;font-weight:600;color:var(--pwc-grey-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .heatmap .hm-name-meta{font-size:10px;color:var(--pwc-grey-600);text-transform:uppercase;letter-spacing:0.3px}
-  .heatmap .hm-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--white);cursor:pointer;border-radius:3px;transition:transform .1s}
+  .heatmap .hm-cell{height:24px;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:600;color:var(--white);cursor:pointer;border-radius:3px;transition:transform .1s}
   .heatmap .hm-cell:hover{transform:scale(1.1);outline:2px solid var(--pwc-grey-900);outline-offset:1px;z-index:2;position:relative}
   .heatmap .hm-cell.empty{background:var(--pwc-grey-100);color:var(--pwc-grey-400);cursor:default}
   .heatmap .hm-cell.empty:hover{transform:none;outline:none}
@@ -372,6 +423,46 @@
 
   footer{text-align:center;color:var(--pwc-grey-600);font-size:12px;padding:24px}
   @media (max-width:600px){.bio-banner{flex-direction:column;text-align:center}main,header.brand,nav.tabs{padding-left:16px;padding-right:16px}}
+  /* ---- Mobile / phone responsiveness ---- */
+  @media (max-width:760px){
+    header.brand{padding:10px 16px}
+    .header-title{font-size:15px}
+    .header-meta{display:none}
+    nav.tabs{padding:0 6px;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:0}
+    nav.tabs button{flex:0 0 auto;white-space:nowrap;padding:13px 14px;font-size:13px}
+    main{padding:16px}
+    h1{font-size:20px}
+    .subtitle{font-size:13px}
+    .controls,.smap-controls{flex-direction:column;align-items:stretch}
+    .controls > *,.smap-controls > *{width:100%}
+    .controls input,.controls select,.smap-controls select,.reset-btn,.multiselect,.ms-trigger{width:100%;box-sizing:border-box}
+    .ms-panel{min-width:0;width:100%;max-width:none}
+    .smap-bar{gap:10px}
+    .atlas-view-toggle,.atlas-toolbar{width:100%}
+    .atlas-view-toggle button{flex:1}
+    .stats,.cr-kpis{gap:8px}
+    .stat-card,.cr-kpi{flex:1 1 calc(50% - 8px);min-width:calc(50% - 8px);padding:12px 14px}
+    .cr-kpi-val,.stat-card .value{font-size:22px}
+    .smap-grid{grid-template-columns:1fr}
+    .smap-stage{min-height:380px}
+    .atlas-detail,.smap-detail{position:static;max-height:none;top:auto}
+    .atlas-cards{grid-template-columns:1fr}
+    .dir-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+    .cr-table-wrap{overflow-x:auto}
+    .cr-table{min-width:560px}
+    .modal-overlay{padding:0}
+    .modal{max-width:100%;border-radius:0;min-height:100vh}
+    .modal-nav{display:none}
+    .bio-banner{flex-direction:column;text-align:center;padding:24px 18px}
+    .bio-banner .photo{width:104px;height:104px}
+    .bio-banner .who h2{font-size:22px}
+    .bio-grid{grid-template-columns:1fr 1fr;gap:12px 18px}
+  }
+  @media (max-width:430px){
+    .stat-card,.cr-kpi{flex-basis:100%;min-width:100%}
+    .bio-grid{grid-template-columns:1fr}
+    nav.tabs button{padding:12px 11px;font-size:12px}
+  }
 </style>
 </head>
 <body>
@@ -395,21 +486,16 @@
 
 <main>
   <section class="tab-panel active" id="tab-directory">
-    <h1>Team Directory</h1>
+    <div class="dir-head"><h1>Team Directory</h1><button class="export-btn" id="dir-export" title="Download the filtered list as a spreadsheet">&#8681; Export to Excel</button></div>
     <section class="stats">
-      <div class="stat-card"><div class="value" id="kpi-total">-</div><div class="label">Total Employees</div></div>
-      <div class="stat-card t2"><div class="value" id="kpi-ous">-</div><div class="label">Operating Units</div></div>
+      <div class="stat-card"><div class="value" id="kpi-total">-</div><div class="label">Active Employees</div></div>
       <div class="stat-card t3"><div class="value" id="kpi-locs">-</div><div class="label">Locations</div></div>
       <div class="stat-card t4"><div class="value" id="kpi-comps">-</div><div class="label">Competencies</div></div>
       <div class="stat-card t5"><div class="value" id="kpi-managers">-</div><div class="label">Managers &amp; above</div></div>
     </section>
     <div class="controls">
-      <input type="text" id="dir-search" placeholder="Search by name, role, skill, location...">
-      <select id="dir-ou-filter"><option value="">All operating units</option></select>
-      <select id="dir-role-filter"><option value="">All roles</option></select>
-      <select id="dir-loc-filter"><option value="">All locations</option></select>
-      <select id="dir-territory-filter"><option value="">All territories</option></select>
-      <select id="dir-competency-filter"><option value="">All competencies</option></select>
+      <input type="text" id="dir-search" placeholder="Search by employee name...">
+      <div class="multiselect ms-compact" id="dir-cat-ms"></div>
       <div class="multiselect" id="dir-skills-ms">
         <button class="ms-trigger" type="button" id="dir-skills-trigger">
           <span class="ms-label">All skills</span>
@@ -424,10 +510,23 @@
           </div>
         </div>
       </div>
+      <div class="ctrl-break"></div>
+      <div class="multiselect ms-compact" id="dir-role-ms"></div>
+      <div class="multiselect ms-compact" id="dir-loc-ms"></div>
+      <div class="multiselect ms-compact" id="dir-terr-ms"></div>
+      <div class="multiselect ms-compact" id="dir-comp-ms"></div>
+      <div class="exp-filter" id="dir-exp-wrap">
+        <label class="exp-label">Experience</label>
+        <div class="exp-range" id="dir-exp-range">
+          <div class="exp-fill" id="dir-exp-fill"></div>
+          <div class="exp-dot" id="dir-exp-dot-min"></div>
+          <div class="exp-dot" id="dir-exp-dot-max"></div>
+        </div>
+        <span class="exp-val" id="dir-exp-val">All</span>
+      </div>
       <select id="dir-sort">
         <option value="Name">Sort: Name</option>
         <option value="__EXP_TOTAL__">Sort: Experience</option>
-        <option value="OU">Sort: OU</option>
         <option value="Location">Sort: Location</option>
       </select>
       <button class="reset-btn" id="dir-reset" title="Clear all filters">Reset</button>
@@ -438,12 +537,18 @@
   <!-- ===== PORTABLE MODULE START: Skill Atlas (HTML). Needs SHARED foundation — see INTEGRATION_GUIDE.md ===== -->
   <section class="tab-panel" id="tab-skills">
     <h1>Skill Atlas</h1>
-    <p class="subtitle">Every skill in the team, sized by coverage and coloured by competency. Switch to <strong>All Skills</strong> to see the complete catalogue in one place &mdash; click anything to drill in.</p>
+    <p class="subtitle">Your team's skills grouped by category. Use <strong>By Competency</strong> for a strength-ranked overview or <strong>All Skills</strong> for the full catalogue. Narrow with the filters, then <strong>click any skill</strong> to see who has it, where they sit, and which skills it pairs with.</p>
 
 
     <div class="atlas-grid">
       <div class="atlas-explorer">
-        <div class="atlas-insights" id="atlas-insights"></div>
+        <div class="controls smap-controls" id="atlas-filters">
+          <div class="multiselect ms-compact" id="atlas-loc-ms"></div>
+          <div class="multiselect ms-compact" id="atlas-role-ms"></div>
+          <div class="multiselect ms-compact" id="atlas-cat-ms"></div>
+          <div class="multiselect ms-compact" id="atlas-terr-ms"></div>
+          <button class="reset-btn" id="atlas-reset" title="Clear filters">Reset</button>
+        </div>
         <div class="atlas-toolbar">
           <div class="atlas-view-toggle" id="atlas-view-toggle">
             <button data-view="cards" class="active">By Competency</button>
@@ -500,11 +605,11 @@
     <p class="subtitle">Two lenses on capability exposure. <strong>Scarce vs Stretched</strong> matches each skill's depth against how busy its people are; <strong>Key-Person Risk</strong> surfaces skills that rest on one pair of shoulders.</p>
 
     <div class="controls smap-controls">
-      <select id="cr-territory"><option value="">All territories</option></select>
-      <select id="cr-competency"><option value="">All competencies</option></select>
-      <select id="cr-cat"><option value="">All skill categories</option></select>
-      <select id="cr-role"><option value="">All roles</option></select>
-      <select id="cr-loc"><option value="">All locations</option></select>
+      <div class="multiselect ms-compact" id="cr-terr-ms"></div>
+      <div class="multiselect ms-compact" id="cr-comp-ms"></div>
+      <div class="multiselect ms-compact" id="cr-cat-ms"></div>
+      <div class="multiselect ms-compact" id="cr-role-ms"></div>
+      <div class="multiselect ms-compact" id="cr-loc-ms"></div>
       <button class="reset-btn" id="cr-reset" title="Clear all filters">Reset</button>
     </div>
 
@@ -543,21 +648,23 @@
   <!-- ===== PORTABLE MODULE START: Pulse (HTML). Needs SHARED foundation — see INTEGRATION_GUIDE.md ===== -->
   <section class="tab-panel" id="tab-pulse">
     <h1>Workforce Pulse</h1>
-    <p class="subtitle">A read on the team's current load. Hot cells are stretched, cool cells are available &mdash; click any to open the bio.</p>
+    <p class="subtitle">Monthly utilization per person &mdash; warmer cells are busier. <strong>On bench</strong> &lt;40% &middot; <strong>Healthy</strong> 80&ndash;100% &middot; <strong>Stretched</strong> &gt;100% &middot; <strong>Burnout watch</strong> = 3-month avg &gt;100%. Filter the team, then click any cell to open the bio.</p>
 
     <section class="stats" id="pulse-kpis">
       <div class="stat-card"><div class="value" id="pl-avg">-</div><div class="label">This-Month Avg Util</div></div>
-      <div class="stat-card t2"><div class="value" id="pl-bench">-</div><div class="label">On the Bench (&lt;60%)</div></div>
+      <div class="stat-card t2"><div class="value" id="pl-bench">-</div><div class="label">On the Bench (&lt;40%)</div></div>
       <div class="stat-card t3"><div class="value" id="pl-healthy">-</div><div class="label">Healthy (80&ndash;100%)</div></div>
       <div class="stat-card t4"><div class="value" id="pl-stretched">-</div><div class="label">Stretched (&gt;100%)</div></div>
       <div class="stat-card t5"><div class="value" id="pl-burnout">-</div><div class="label">Burnout Watch (3-mo &gt;100%)</div></div>
     </section>
 
     <div class="pulse-controls">
-      <input type="text" id="pulse-search" placeholder="Search name, role, OU, location...">
-      <select id="pulse-ou"><option value="">All operating units</option></select>
-      <select id="pulse-role"><option value="">All roles</option></select>
-      <select id="pulse-loc"><option value="">All locations</option></select>
+      <input type="text" id="pulse-search" placeholder="Search name, role, location...">
+      <div class="multiselect ms-compact" id="pulse-role-ms"></div>
+      <div class="multiselect ms-compact" id="pulse-loc-ms"></div>
+      <div class="multiselect ms-compact" id="pulse-comp-ms"></div>
+      <div class="multiselect ms-compact" id="pulse-terr-ms"></div>
+      <div class="multiselect ms-compact" id="pulse-cat-ms"></div>
       <select id="pulse-sort">
         <option value="avg-desc">Sort: avg util &#8595;</option>
         <option value="avg-asc">Sort: avg util &#8593;</option>
@@ -565,6 +672,7 @@
         <option value="latest-asc">Sort: latest month &#8593;</option>
         <option value="name">Sort: Name</option>
       </select>
+      <button class="reset-btn" id="pulse-reset" title="Clear filters">Reset</button>
       <div class="pulse-legend" id="pulse-legend"></div>
     </div>
 
@@ -601,6 +709,10 @@
   <!-- ===== PORTABLE MODULE END: Pulse (HTML) ===== -->
 
 </main>
+<div class="scroll-nav" id="scroll-nav">
+  <button id="scroll-up" type="button" title="Back to top">&#8593;</button>
+  <button id="scroll-down" type="button" title="Go to bottom">&#8595;</button>
+</div>
 
 <div class="modal-overlay" id="bio-modal" aria-hidden="true">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="bio-modal-title">
@@ -617,6 +729,16 @@
   const EMPLOYEES = __EMPLOYEES_JSON__;
   const SKILLS    = __SKILLS_JSON__;
   const UTIL      = __UTIL_JSON__;
+  // Normalise any Month-Year value -> "YYYY-MM" (handles 'Jul-2025', 'July 2025', ISO dates, '2025-07').
+  const _MN = { jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12' };
+  function monthKey(raw){
+    if (raw == null) return '';
+    const s = String(raw).trim();
+    let m = s.match(/^(\d{4})-(\d{2})/);                 if (m) return m[1] + '-' + m[2];
+    m = s.match(/([A-Za-z]{3,})[\s\-\/]+(\d{4})/);       if (m && _MN[m[1].slice(0,3).toLowerCase()]) return m[2] + '-' + _MN[m[1].slice(0,3).toLowerCase()];
+    m = s.match(/^(\d{1,2})[\-\/](\d{4})$/);            if (m) return m[2] + '-' + String(m[1]).padStart(2,'0');
+    return s.slice(0,7);
+  }
   const EXP_TOTAL = "__EXP_TOTAL__";
   const EXP_PWC   = "__EXP_PWC__";
   // Share mode (team build): utilization data is stripped at build time and
@@ -644,6 +766,7 @@
   // the modal's prev/next buttons walk this filtered/sorted list.
   let visibleOrder = [];
   let currentBioId = null;
+  let bioStack = [];   // back-navigation stack of WorkdayIDs
 
   // Pre-index SKILLS and UTIL by WorkdayID so each modal open is O(1)
   // instead of scanning the full sheets (matters at 1500+ employees).
@@ -678,12 +801,9 @@
       opt.value = v; opt.textContent = v;
       el.appendChild(opt);
     });
+    el.style.display = values.length ? '' : 'none';   // hide filters with no data (e.g. OU absent)
   }
-  fillSelect('dir-ou-filter',        uniqueValues('OU'));
-  fillSelect('dir-role-filter',      uniqueValues('Role'));
-  fillSelect('dir-loc-filter',       uniqueValues('Location'));
-  fillSelect('dir-territory-filter', uniqueValues('Territory'));
-  fillSelect('dir-competency-filter',uniqueValues('Competency'));
+
 
   // ----- KPI cards (computed from data) -----
   function isManagerRole(role){
@@ -692,7 +812,7 @@
   }
   function competencyCount(){
     // Prefer the dedicated Competency column; fall back to the Skill Category sheet.
-    const c = uniqueValues('Competency');
+    const c = uniqueValues('Competency Group');
     if (c.length) return c.length;
     const s = new Set();
     SKILLS.forEach(r => {
@@ -703,8 +823,7 @@
   }
   function setKpis(){
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-    set('kpi-total',    EMPLOYEES.length);
-    set('kpi-ous',      uniqueValues('OU').length);
+    set('kpi-total',    EMPLOYEES.filter(e => { const s = String(e.Status || '').trim().toLowerCase(); return s === '' || s === 'active' || s === 'in leave'; }).length);
     set('kpi-locs',     uniqueValues('Location').length);
     set('kpi-comps',    competencyCount());
     set('kpi-managers', EMPLOYEES.filter(e => isManagerRole(e.Role)).length);
@@ -771,15 +890,21 @@
 
   function updateSkillsTrigger(){
     if (selectedSkills.size === 0){
-      skillsLabel.textContent = 'All skills';
+      skillsLabel.innerHTML = 'All skills';
       skillsTrigger.classList.remove('has-selection');
-    } else if (selectedSkills.size === 1){
-      skillsLabel.textContent = SKILL_DISPLAY[[...selectedSkills][0]];
-      skillsTrigger.classList.add('has-selection');
-    } else {
-      skillsLabel.textContent = selectedSkills.size + ' skills selected';
-      skillsTrigger.classList.add('has-selection');
+      return;
     }
+    skillsTrigger.classList.add('has-selection');
+    skillsLabel.innerHTML = [...selectedSkills].map(k =>
+      '<span class="ms-chip">' + esc(SKILL_DISPLAY[k] || k) + '<i class="ms-chip-x" data-skill="' + esc(k) + '">&times;</i></span>').join('');
+    skillsLabel.querySelectorAll('.ms-chip-x').forEach(x => x.addEventListener('click', ev => {
+      ev.stopPropagation();
+      selectedSkills.delete(x.dataset.skill);
+      const opts = document.getElementById('dir-skills-options');
+      if (opts) opts.querySelectorAll('input').forEach(cb => { if (cb.value === x.dataset.skill) cb.checked = false; });
+      updateSkillsTrigger();
+      renderDirectory();
+    }));
   }
 
   // Toggle panel open/close
@@ -873,19 +998,18 @@
 
   function renderDirectory(){
     const q       = document.getElementById('dir-search').value.toLowerCase().trim();
-    const ou      = document.getElementById('dir-ou-filter').value;
-    const role    = document.getElementById('dir-role-filter').value;
-    const loc     = document.getElementById('dir-loc-filter').value;
-    const terr    = document.getElementById('dir-territory-filter').value;
-    const comp    = document.getElementById('dir-competency-filter').value;
+    const roleSel = msRole.selected, locSel = msLoc.selected, terrSel = msTerr.selected, compSel = msComp.selected, catSel = msCat.selected;
+    const _er = (window.__expRange && window.__expRange()) || { lo: 0, hi: Infinity, dmax: Infinity };
+    const expLo = _er.lo, expHi = _er.hi, expFull = (expLo === 0 && expHi === _er.dmax);
     const sortKey = document.getElementById('dir-sort').value;
 
     let list = EMPLOYEES.filter(e => {
-      if (ou   && String(e['OU']         || '') !== ou)   return false;
-      if (role && String(e['Role']       || '') !== role) return false;
-      if (loc  && String(e['Location']   || '') !== loc)  return false;
-      if (terr && String(e['Territory']  || '') !== terr) return false;
-      if (comp && String(e['Competency'] || '') !== comp) return false;
+      if (roleSel.size && !roleSel.has(String(e['Role'] || ''))) return false;
+      if (locSel.size  && !locSel.has(String(e['Location'] || ''))) return false;
+      if (terrSel.size && !terrSel.has(String(e['Territory Filter'] || ''))) return false;
+      if (compSel.size && !compSel.has(String(e['Competency Filter'] || ''))) return false;
+      if (catSel.size){ let _h = false; for (const k of (e._skills || [])){ if (catSel.has(SKILL_CATEGORY[k])){ _h = true; break; } } if (!_h) return false; }
+      if (!expFull){ const _v = parseFloat(e[EXP_TOTAL]); if (isNaN(_v) || _v < expLo || _v > expHi) return false; }
       // Skills filter — OR match (employee has ANY of the selected skills).
       if (selectedSkills.size > 0){
         let any = false;
@@ -896,7 +1020,7 @@
       // Searches both regular fields and the canonical skills index
       // (Employee Skills sheet, not the messy free-text Skills column).
       if ((e._skillsSearchable || '').includes(q)) return true;
-      return ['Name','Role','OU','Location','Territory','Competency','Qualification','emailid','Team']
+      return ['Name','Role','Location','Territory Group','Competency Group','Qualification','emailid','Employee ID']
         .some(k => String(e[k] ?? '').toLowerCase().includes(q));
     });
     list.sort((a, b) => {
@@ -933,24 +1057,139 @@
           + '</section>';
       }).join('');
 
-    // Remember the order shown — modal prev/next walks this filtered/sorted list
-    visibleOrder = list.map(e => e.WorkdayID);
+    // Remember the order shown — modal prev/next walks the SAME order as on screen
+    // (role groups in hierarchy order, members sorted within each group).
+    visibleOrder = ROLE_GROUPS
+      .filter(g => buckets[g.title] && buckets[g.title].length)
+      .flatMap(g => buckets[g.title].map(e => e.WorkdayID));
 
     dirContent.querySelectorAll('.dir-card').forEach(card => {
       card.addEventListener('click', () => showBio(card.dataset.id));
     });
   }
-  ['dir-search','dir-ou-filter','dir-role-filter','dir-loc-filter',
-   'dir-territory-filter','dir-competency-filter','dir-sort'].forEach(id =>
+  // ----- Directory filter multi-selects (Role / Location / Territory / Competency / Skill Category) -----
+  // Role hierarchy order:
+  const ROLE_ORDER = ['md','managing director','director','d','sm','senior manager','m','manager',
+                      'sa3','sa2','sa1','senior associate','sa','a3','a2','a1','associate','a'];
+  // >>> Competency display order. Paste your exact list between the brackets to control the order,
+  //     e.g. ['FDD','CMAAS','Valuation','BRS','Forensics','Deals Strategy','Corporate Finance',
+  //           'Deals IQ','Others - AU Modelling','Others - CP&I','Others - E&D','Others - Research',
+  //           'Others - Review Pod - FDD','RM/Admin']. Anything not listed falls to the end (A-Z).
+  const COMPETENCY_ORDER = [];
+  function orderBy(vals, orderList){
+    const idx = v => { const i = orderList.findIndex(x => x.toLowerCase() === String(v).trim().toLowerCase()); return i < 0 ? 9999 : i; };
+    return vals.slice().sort((a, b) => idx(a) - idx(b) || String(a).localeCompare(String(b)));
+  }
+  function buildMS(hostId, allLabel, items, onChange){
+    const host = document.getElementById(hostId);
+    const sel = new Set();
+    if (!host) return { selected: sel, refresh(){} };
+    if (!items.length){ host.style.display = 'none'; return { selected: sel, refresh(){} }; }
+    host.innerHTML =
+      '<button class="ms-trigger" type="button"><span class="ms-label">' + esc(allLabel) + '</span><span class="ms-caret">&#9662;</span></button>'
+      + '<div class="ms-panel"><input type="text" class="ms-search" placeholder="Search..."><div class="ms-options"></div>'
+      + '<div class="ms-actions"><button type="button" class="ms-clear">Clear</button><button type="button" class="ms-done">Done</button></div></div>';
+    const trigger = host.querySelector('.ms-trigger'), label = host.querySelector('.ms-label'),
+          panel = host.querySelector('.ms-panel'), search = host.querySelector('.ms-search'),
+          optsBox = host.querySelector('.ms-options');
+    function renderOpts(f){
+      f = (f || '').toLowerCase();
+      const vis = items.filter(it => String(it).toLowerCase().includes(f));
+      optsBox.innerHTML = vis.length ? vis.map(it =>
+        '<label class="ms-option"><input type="checkbox" value="' + esc(it) + '"' + (sel.has(it) ? ' checked' : '') + '><span>' + esc(it) + '</span></label>').join('')
+        : '<div class="ms-no-results">No matches</div>';
+      optsBox.querySelectorAll('input').forEach(cb => cb.addEventListener('change', () => {
+        if (cb.checked) sel.add(cb.value); else sel.delete(cb.value);
+        updLabel(); onChange();
+      }));
+    }
+    function updLabel(){
+      if (!sel.size){ label.innerHTML = esc(allLabel); trigger.classList.remove('has-selection'); return; }
+      trigger.classList.add('has-selection');
+      label.innerHTML = [...sel].map(v => '<span class="ms-chip">' + esc(v) + '<i class="ms-chip-x" data-v="' + esc(v) + '">&times;</i></span>').join('');
+      label.querySelectorAll('.ms-chip-x').forEach(x => x.addEventListener('click', ev => {
+        ev.stopPropagation(); sel.delete(x.dataset.v);
+        optsBox.querySelectorAll('input').forEach(cb => { if (cb.value === x.dataset.v) cb.checked = false; });
+        updLabel(); onChange();
+      }));
+    }
+    trigger.addEventListener('click', ev => {
+      ev.stopPropagation();
+      const open = panel.classList.contains('open');
+      document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open'));
+      if (!open){ panel.classList.add('open'); renderOpts(search.value); setTimeout(() => search.focus(), 20); }
+    });
+    search.addEventListener('input', () => renderOpts(search.value));
+    host.querySelector('.ms-clear').addEventListener('click', () => { sel.clear(); renderOpts(search.value); updLabel(); onChange(); });
+    host.querySelector('.ms-done').addEventListener('click', () => panel.classList.remove('open'));
+    panel.addEventListener('click', ev => ev.stopPropagation());
+    renderOpts(''); updLabel();
+    return { selected: sel, refresh(){ renderOpts(search.value); updLabel(); } };
+  }
+  document.addEventListener('click', () => document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open')));
+  const _cats = [...new Set(Object.values(SKILL_CATEGORY))].filter(c => c && c !== 'Uncategorised').sort();
+  const msRole = buildMS('dir-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), renderDirectory);
+  const msLoc  = buildMS('dir-loc-ms',  'All locations',        uniqueValues('Location'),                   renderDirectory);
+  const msTerr = buildMS('dir-terr-ms', 'All territories',      uniqueValues('Territory Filter'),            renderDirectory);
+  const msComp = buildMS('dir-comp-ms', 'All competencies',     orderBy(uniqueValues('Competency Filter'), COMPETENCY_ORDER), renderDirectory);
+  const msCat  = buildMS('dir-cat-ms',  'All skill categories', _cats,                                       renderDirectory);
+  // Experience dual-range slider (custom: two dots + connecting line)
+  (function(){
+    const range = document.getElementById('dir-exp-range');
+    if (!range) return;
+    const dotMin = document.getElementById('dir-exp-dot-min');
+    const dotMax = document.getElementById('dir-exp-dot-max');
+    const fill = document.getElementById('dir-exp-fill');
+    const valEl = document.getElementById('dir-exp-val');
+    const exps = EMPLOYEES.map(e => parseFloat(e[EXP_TOTAL])).filter(v => !isNaN(v));
+    const dmax = Math.max(1, Math.ceil(exps.length ? Math.max(...exps) : 40));
+    const W = 120, R = 7, USABLE = W - 2 * R;        // width, dot radius, travel
+    let lo = 0, hi = dmax, dragging = null;
+    const xOf = v => R + (v / dmax) * USABLE;
+    function paint(){
+      const xl = xOf(lo), xh = xOf(hi);
+      dotMin.style.left = xl + 'px'; dotMax.style.left = xh + 'px';
+      fill.style.left = xl + 'px'; fill.style.width = Math.max(0, xh - xl) + 'px';
+      valEl.textContent = (lo === 0 && hi === dmax) ? 'All' : (lo + '–' + hi + ' yrs');
+    }
+    function valFromX(clientX){
+      const r = range.getBoundingClientRect();
+      let x = Math.max(R, Math.min(W - R, clientX - r.left));
+      return Math.round(((x - R) / USABLE) * dmax);
+    }
+    function move(clientX){
+      if (!dragging) return;
+      const v = valFromX(clientX);
+      if (dragging === 'min') lo = Math.min(v, hi); else hi = Math.max(v, lo);
+      paint(); renderDirectory();
+    }
+    dotMin.addEventListener('mousedown', e => { dragging = 'min'; e.preventDefault(); });
+    dotMax.addEventListener('mousedown', e => { dragging = 'max'; e.preventDefault(); });
+    dotMin.addEventListener('touchstart', e => { dragging = 'min'; e.preventDefault(); }, { passive: false });
+    dotMax.addEventListener('touchstart', e => { dragging = 'max'; e.preventDefault(); }, { passive: false });
+    range.addEventListener('mousedown', e => {
+      if (e.target.classList.contains('exp-dot')) return;
+      const v = valFromX(e.clientX);
+      if (Math.abs(v - lo) <= Math.abs(v - hi)){ lo = Math.min(v, hi); dragging = 'min'; }
+      else { hi = Math.max(v, lo); dragging = 'max'; }
+      paint(); renderDirectory();
+    });
+    window.addEventListener('mousemove', e => move(e.clientX));
+    window.addEventListener('touchmove', e => { if (dragging && e.touches[0]){ move(e.touches[0].clientX); e.preventDefault(); } }, { passive: false });
+    window.addEventListener('mouseup', () => dragging = null);
+    window.addEventListener('touchend', () => dragging = null);
+    window.__expRange = () => ({ lo, hi, dmax });
+    window.__resetExp = () => { lo = 0; hi = dmax; paint(); };
+    paint();
+  })();
+  ['dir-search','dir-sort'].forEach(id =>
     document.getElementById(id).addEventListener('input', renderDirectory));
 
   // Reset clears search, all filters (including the Skills multi-select), and sort.
   document.getElementById('dir-reset').addEventListener('click', () => {
     document.getElementById('dir-search').value = '';
-    ['dir-ou-filter','dir-role-filter','dir-loc-filter',
-     'dir-territory-filter','dir-competency-filter'].forEach(id => {
-      document.getElementById(id).value = '';
-    });
+    [msRole, msLoc, msTerr, msComp, msCat].forEach(ms => { ms.selected.clear(); ms.refresh(); });
+    if (window.__resetExp) window.__resetExp();
     document.getElementById('dir-sort').value = 'Name';
     selectedSkills.clear();
     updateSkillsTrigger();
@@ -995,9 +1234,10 @@
     showBio(next);
   }
 
-  function showBio(workdayId){
+  function showBio(workdayId, keepStack){
     const emp = EMPLOYEES.find(e => String(e.WorkdayID) === String(workdayId));
     if (!emp) return;
+    if (!keepStack) bioStack = [];   // fresh open (directory / arrows) clears history
     currentBioId = workdayId;
 
     // Categorised skills — group by Skill Category, dedupe within each category.
@@ -1025,7 +1265,7 @@
 
     // Utilization — smooth area+line chart (SVG, Catmull-Rom-style bezier).
     const utilRows = (UTIL_BY_EMP[String(workdayId)] || []).slice()
-      .sort((a, b) => String(a['Month Year']).localeCompare(String(b['Month Year'])));
+      .sort((a, b) => monthKey(a['Month Year']).localeCompare(monthKey(b['Month Year'])));
     let utilHtml;
     if (utilRows.length){
       const W = 720, H = 200, padL = 40, padR = 16, padT = 24, padB = 36;
@@ -1035,7 +1275,7 @@
         const v = Number(u.Utilization) || 0;
         const x = padL + (utilRows.length === 1 ? innerW / 2 : (i / (utilRows.length - 1)) * innerW);
         const y = padT + innerH - (v / yMax) * innerH;
-        return { x, y, v, label: String(u['Month Year']).slice(0, 7) };
+        return { x, y, v, label: monthKey(u['Month Year']) };
       });
       // Catmull-Rom to cubic bezier for smooth curves through points
       function smoothPath(points){
@@ -1119,6 +1359,7 @@
     // except ones already in the banner or stored internally.
     const SKIP_FIELDS = new Set([
       'Name','Role','OU','PhotoID','Employee Description','Team',
+      'Territory','Territory Filter','Competency Group','Competency Filter',
       // Skills is intentionally hidden — categorised skills are shown below
       // via the Employee Skills sheet (authoritative source). The free-text
       // column on Employee Details has inconsistent delimiters and would
@@ -1128,13 +1369,14 @@
     ]);
     // Preferred display order; anything else comes after alphabetically.
     const PREFERRED_ORDER = [
-      'WorkdayID','emailid','Qualification','Join Date','Location',
-      'Territory','Competency','Team Lead'
+      'WorkdayID','Employee ID','emailid','Qualification','Join Date','Status',
+      'Location','Emp Location','Current Location','Work Mode','Competency',
+      'Job Family Group','RL Manager','RL Manager Email','Talent Consultant','Coach','Territory Group'
     ];
     // Friendly labels for known fields
     const LABELS = {
       'WorkdayID':'Workday ID', 'emailid':'Email', 'OU':'Operating Unit',
-      'Join Date':'Join Date', 'Team Lead':'Team Lead'
+      'Join Date':'Join Date', 'Team Lead':'Team Lead', 'Emp Location':'Office Location'
     };
     function fieldHtml(key, value, opts){
       opts = opts || {};
@@ -1153,25 +1395,46 @@
 
     const allKeys = Object.keys(emp);
     const ordered = PREFERRED_ORDER.filter(k => allKeys.includes(k));
-    const extras  = allKeys.filter(k => !SKIP_FIELDS.has(k) && !PREFERRED_ORDER.includes(k) && !k.startsWith('_')).sort();
+    const extras  = allKeys.filter(k => !SKIP_FIELDS.has(k) && !PREFERRED_ORDER.includes(k) && !k.startsWith('_') && k !== 'Address').sort();
     const gridFields = [...ordered, ...extras]
       .filter(k => emp[k] !== '' && emp[k] !== null && emp[k] !== undefined)
       .map(k => fieldHtml(k, emp[k]))
       .join('');
-    // Team field appended last, full-width because it can be long
-    const teamField = fieldHtml('Team', teamVal, { raw: true, fullWidth: true });
+    // Team + Address appended full-width (can be long)
+    const teamField = (teamRaw ? fieldHtml('Team', teamVal, { raw: true, fullWidth: true }) : '')
+                    + (emp['Address'] ? fieldHtml('Address', emp['Address'], { fullWidth: true }) : '');
+    // Direct reports (employees whose RL Manager is this person)
+    const _norm = s => String(s || '').trim().toLowerCase();
+    const reports = EMPLOYEES.filter(x => _norm(x['RL Manager']) === _norm(emp.Name) && String(x.WorkdayID) !== String(emp.WorkdayID))
+      .sort((a, b) => String(a.Name).localeCompare(String(b.Name)));
+    const reportCards = reports.map(e => {
+      const av = e._photo ? '<div class="adt-person-photo"><img loading="lazy" src="' + e._photo + '"></div>' : '<div class="adt-person-photo fallback">' + esc(e._initials) + '</div>';
+      return '<div class="bio-report" data-id="' + esc(e.WorkdayID) + '">' + av + '<div style="min-width:0"><div class="adt-person-name">' + esc(e.Name) + '</div><div class="adt-person-meta">' + esc([e.Role, (e['Competency Group'] || e['Competency'])].filter(Boolean).join(' \u00b7 ')) + '</div></div></div>';
+    }).join('');
+    const reportsBlock = reports.length ? ('<div class="bio-section-title">Employees Under This RL Manager (' + reports.length + ')</div><div class="bio-reports">' + reportCards + '</div>') : '';
+    const rlName = String(emp['RL Manager'] || '').trim();
+    const rlEmp = rlName ? EMPLOYEES.find(x => _norm(x.Name) === _norm(rlName) && String(x.WorkdayID) !== String(emp.WorkdayID)) : null;
+    const backTo = bioStack.length ? (EMPLOYEES.find(e => String(e.WorkdayID) === String(bioStack[bioStack.length - 1])) || {}).Name : '';
+    const backBtn = backTo ? '<button class="bio-back" type="button">&#8592; Back to ' + esc(backTo) + '</button>' : '';
+    const rlChip = rlName
+      ? (rlEmp
+          ? '<div class="bio-rl" data-id="' + esc(rlEmp.WorkdayID) + '" role="button" tabindex="0" title="Open ' + esc(rlName) + '"><span class="rl-ico">&#8599;</span> Relationship Leader <b>' + esc(rlName) + '</b></div>'
+          : '<div class="bio-rl bio-rl-static"><span class="rl-ico">&#8599;</span> Relationship Leader <b>' + esc(rlName) + '</b></div>')
+      : '';
+    const chipCluster = (backBtn || rlChip) ? '<div class="bio-cluster">' + backBtn + rlChip + '</div>' : '';
 
     bioContent.innerHTML = ''
       + '<div class="bio-card">'
       +   '<div class="bio-banner">'
+      +     chipCluster
       +     '<div class="photo">' + photo + '</div>'
       +     '<div class="who">'
       +       '<h2 id="bio-modal-title">' + esc(emp.Name) + '</h2>'
-      +       '<div class="sub">' + esc(emp.Role || '') + ' &middot; ' + esc(emp.OU || '') + '</div>'
+      +       '<div class="sub">' + esc(emp.Role || '') + ((emp['Competency Group'] || emp['Competency']) ? ' &middot; ' + esc(emp['Competency Group'] || emp['Competency']) : '') + '</div>'
       +       '<div class="pills">'
-      +         '<span class="pill">' + esc(emp.Location || '') + '</span>'
+      +         (emp.Location ? '<span class="pill">' + esc(emp.Location) + '</span>' : '')
       +         '<span class="pill">' + esc(emp[EXP_TOTAL] || 0) + ' yrs total experience</span>'
-      +         '<span class="pill">' + esc(emp[EXP_PWC] || 0) + ' yrs at PwC</span>'
+      +         (emp[EXP_PWC] ? '<span class="pill">' + esc(emp[EXP_PWC]) + ' yrs at PwC</span>' : '')
       +       '</div>'
       +     '</div>'
       +   '</div>'
@@ -1182,6 +1445,7 @@
       +     '</div>'
       +     '<div class="bio-section-title">About</div>'
       +     '<div class="bio-description">' + esc(emp['Employee Description'] || 'No description provided.') + '</div>'
+      +     reportsBlock
       +     '<div class="bio-section-title">Skills by Category</div>'
       +     '<div>' + skillsHtml + '</div>'
       +     (SHARE_MODE
@@ -1193,10 +1457,14 @@
       +   '</div>'
       + '</div>';
 
-    // Wire up clickable Team names -> jump to that bio (stays inside modal)
-    bioContent.querySelectorAll('a.team-link[data-id]').forEach(a => {
-      a.addEventListener('click', () => showBio(a.dataset.id));
-    });
+    // In-modal navigation: push current onto the back stack, then open target.
+    const navTo = id => { bioStack.push(currentBioId); showBio(id, true); };
+    bioContent.querySelectorAll('a.team-link[data-id]').forEach(a => a.addEventListener('click', () => navTo(a.dataset.id)));
+    bioContent.querySelectorAll('.bio-report[data-id]').forEach(c => c.addEventListener('click', () => navTo(c.dataset.id)));
+    const rlBox = bioContent.querySelector('.bio-rl[data-id]');
+    if (rlBox) rlBox.addEventListener('click', () => navTo(rlBox.dataset.id));
+    const backB = bioContent.querySelector('.bio-back');
+    if (backB) backB.addEventListener('click', () => { const prev = bioStack.pop(); if (prev) showBio(prev, true); });
 
     openModal();
   }
@@ -1263,22 +1531,40 @@
   }
 
   // Per-category roll-up: unique people, skill list with counts.
-  function buildCategoryData(){
-    const cats = Object.create(null);
-    ALL_SKILLS.forEach(k => {
-      const cat = SKILL_CATEGORY[k] || 'Uncategorised';
-      if (!cats[cat]) cats[cat] = { skills: [], people: new Set() };
-      cats[cat].skills.push({ key: k, count: SKILL_COUNT[k] });
-      (SKILL_HOLDERS[k] || []).forEach(p => cats[cat].people.add(p.WorkdayID));
+  // ----- Atlas filters (Location / Role / Skill Category / Territory) -----
+  const aChange = () => renderAtlas(document.getElementById('atlas-search').value);
+  const aRole = buildMS('atlas-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), aChange);
+  const aLoc  = buildMS('atlas-loc-ms',  'All locations',        uniqueValues('Location'),                  aChange);
+  const aTerr = buildMS('atlas-terr-ms', 'All territories',      uniqueValues('Territory Filter'),           aChange);
+  const aCat  = buildMS('atlas-cat-ms',  'All skill categories', ORDERED_CATS.filter(c => c !== 'Uncategorised'), aChange);
+  function atlasPoolIds(){
+    const ids = new Set();
+    EMPLOYEES.forEach(e => {
+      if (aLoc.selected.size  && !aLoc.selected.has(String(e.Location || ''))) return;
+      if (aRole.selected.size && !aRole.selected.has(String(e.Role || ''))) return;
+      if (aTerr.selected.size && !aTerr.selected.has(String(e['Territory Filter'] || ''))) return;
+      ids.add(String(e.WorkdayID));
     });
-    return Object.entries(cats).map(([name, data]) => ({
-      name,
-      color: CAT_COLOR[name] || '#9C9C9C',
-      peopleCount: data.people.size,
-      skillsCount: data.skills.length,
-      skills: data.skills.sort((a,b) => b.count - a.count),
-      strength: categoryStrength(data.people.size)
-    })).sort((a,b) => b.peopleCount - a.peopleCount);
+    return ids;
+  }
+
+  function buildCategoryData(){
+    const ids = atlasPoolIds(), catSel = aCat.selected;
+    const cats = Object.create(null);
+    EMPLOYEES.forEach(e => {
+      if (!ids.has(String(e.WorkdayID))) return;
+      e._skills.forEach(k => {
+        const cat = SKILL_CATEGORY[k] || 'Uncategorised';
+        if (catSel.size && !catSel.has(cat)) return;
+        if (!cats[cat]) cats[cat] = { skills: Object.create(null), people: new Set() };
+        cats[cat].people.add(e.WorkdayID);
+        cats[cat].skills[k] = (cats[cat].skills[k] || 0) + 1;
+      });
+    });
+    return Object.entries(cats).map(([name, data]) => {
+      const skills = Object.entries(data.skills).map(([key, count]) => ({ key, count })).sort((a, b) => b.count - a.count);
+      return { name, color: CAT_COLOR[name] || '#9C9C9C', peopleCount: data.people.size, skillsCount: skills.length, skills, strength: categoryStrength(data.people.size) };
+    }).sort((a, b) => b.peopleCount - a.peopleCount);
   }
 
   // Three auto-generated executive callouts.
@@ -1313,7 +1599,6 @@
     }
     banner.innerHTML = html;
   }
-  renderExecutiveInsights();
 
   // Render the cards grid. `q` filters skill names; categories with no
   // matching skills hide entirely.
@@ -1442,6 +1727,11 @@
   document.getElementById('atlas-search').addEventListener('input', e => {
     renderAtlas(e.target.value);
   });
+  document.getElementById('atlas-reset').addEventListener('click', () => {
+    [aRole, aLoc, aTerr, aCat].forEach(ms => { ms.selected.clear(); ms.refresh(); });
+    document.getElementById('atlas-search').value = '';
+    renderAtlas('');
+  });
 
   // ----- Skill detail panel -----
   function bucketBy(employees, key){
@@ -1473,11 +1763,11 @@
     const display = SKILL_DISPLAY[skillKey];
     const cat = SKILL_CATEGORY[skillKey];
     const color = CAT_COLOR[cat];
-    const holders = SKILL_HOLDERS[skillKey] || [];
+    const _ids = atlasPoolIds();
+    const holders = (SKILL_HOLDERS[skillKey] || []).filter(e => _ids.has(String(e.WorkdayID)));
 
-    const byCat   = bucketBy(holders, 'Competency');
-    const byTerr  = bucketBy(holders, 'Territory');
-    const byLoc   = bucketBy(holders, 'Location');
+    const byCat   = bucketBy(holders, 'Competency Group');
+    const byTerr  = bucketBy(holders, 'Territory Group');
     const byRole  = bucketBy(holders, 'Role');
 
     const adj = Object.entries(COOCCUR[skillKey] || {})
@@ -1499,7 +1789,7 @@
         return '<div class="adt-person" data-id="' + esc(e.WorkdayID) + '">'
              +   photoWrap
              +   '<div><div class="adt-person-name">' + esc(e.Name) + '</div>'
-             +     '<div class="adt-person-meta">' + esc(e.Role || '') + ' · ' + esc(e.OU || '') + ' · ' + esc(e.Location || '') + '</div>'
+             +     '<div class="adt-person-meta">' + esc([e.Role, (e['Competency Group'] || e['Competency']), e.Location].filter(Boolean).join(' · ')) + '</div>'
              +   '</div></div>';
       }).join('');
 
@@ -1512,7 +1802,6 @@
       + '</div>'
       + barBlock('By Competency', byCat,  holders.length, '')
       + barBlock('By Territory',  byTerr, holders.length, 'c1')
-      + barBlock('By Location',   byLoc,  holders.length, 'c2')
       + barBlock('By Role',       byRole, holders.length, 'c3')
       + (adj ? ('<div class="adt-section-title">Often paired with</div><div class="adt-adj">' + adj + '</div>') : '')
       + (peopleHtml ? ('<div class="adt-section-title">People (' + holders.length + ')</div><div class="adt-people">' + peopleHtml + '</div>') : '')
@@ -1683,11 +1972,11 @@
   // ============================================================
 
   // Collect all unique months from UTIL, sorted chronologically.
-  const ALL_MONTHS = [...new Set(UTIL.map(u => String(u['Month Year']).slice(0, 7)))].sort();
+  const ALL_MONTHS = [...new Set(UTIL.map(u => monthKey(u['Month Year'])))].sort();
   // Map of "WorkdayID|YYYY-MM" -> utilization value
   const UTIL_LOOKUP = Object.create(null);
   UTIL.forEach(u => {
-    const m = String(u['Month Year']).slice(0, 7);
+    const m = monthKey(u['Month Year']);
     UTIL_LOOKUP[String(u.WorkdayID) + '|' + m] = Number(u.Utilization) || 0;
   });
   const LATEST_MONTH = ALL_MONTHS[ALL_MONTHS.length - 1] || '';
@@ -1701,7 +1990,7 @@
     // 3-month sustained: avg of the most recent 3 months for this employee
     const last3 = (UTIL_BY_EMP[id] || [])
       .slice()
-      .sort((a,b) => String(b['Month Year']).localeCompare(String(a['Month Year'])))
+      .sort((a,b) => monthKey(b['Month Year']).localeCompare(monthKey(a['Month Year'])))
       .slice(0, 3)
       .map(r => Number(r.Utilization) || 0);
     e._sustained3 = last3.length ? last3.reduce((s,v) => s+v, 0) / last3.length : null;
@@ -1725,7 +2014,7 @@
     const monthVals = EMPLOYEES.map(e => e._latestUtil).filter(v => typeof v === 'number');
     const avg = monthVals.length ? Math.round(monthVals.reduce((s,v) => s+v, 0) / monthVals.length) : 0;
     set('pl-avg', monthVals.length ? avg + '%' : '-');
-    set('pl-bench',     EMPLOYEES.filter(e => e._latestUtil !== undefined && e._latestUtil < 60).length);
+    set('pl-bench',     EMPLOYEES.filter(e => e._latestUtil !== undefined && e._latestUtil < 40).length);
     set('pl-healthy',   EMPLOYEES.filter(e => e._latestUtil !== undefined && e._latestUtil >= 80 && e._latestUtil <= 100).length);
     set('pl-stretched', EMPLOYEES.filter(e => e._latestUtil !== undefined && e._latestUtil > 100).length);
     set('pl-burnout',   EMPLOYEES.filter(e => e._sustained3 !== null && e._sustained3 > 100).length);
@@ -1748,9 +2037,12 @@
   })();
 
   // Filter dropdowns — share the same data as Directory but for the Pulse tab.
-  fillSelect('pulse-ou',   uniqueValues('OU'));
-  fillSelect('pulse-role', uniqueValues('Role'));
-  fillSelect('pulse-loc',  uniqueValues('Location'));
+  const pChange = () => { pulsePage = 0; renderPulse(); };
+  const pRole = buildMS('pulse-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), pChange);
+  const pLoc  = buildMS('pulse-loc-ms',  'All locations',        uniqueValues('Location'),                  pChange);
+  const pComp = buildMS('pulse-comp-ms', 'All competencies',     orderBy(uniqueValues('Competency Filter'), COMPETENCY_ORDER), pChange);
+  const pTerr = buildMS('pulse-terr-ms', 'All territories',      uniqueValues('Territory Filter'),           pChange);
+  const pCat  = buildMS('pulse-cat-ms',  'All skill categories', ORDERED_CATS.filter(c => c !== 'Uncategorised'), pChange);
 
   // Pagination state
   const PULSE_PAGE_SIZE = 60;
@@ -1765,17 +2057,16 @@
 
   function renderPulse(){
     const q   = document.getElementById('pulse-search').value.toLowerCase().trim();
-    const ou  = document.getElementById('pulse-ou').value;
-    const rol = document.getElementById('pulse-role').value;
-    const loc = document.getElementById('pulse-loc').value;
     const srt = document.getElementById('pulse-sort').value;
 
     let list = EMPLOYEES.filter(e => {
-      if (ou  && String(e['OU']       || '') !== ou)  return false;
-      if (rol && String(e['Role']     || '') !== rol) return false;
-      if (loc && String(e['Location'] || '') !== loc) return false;
+      if (pRole.selected.size && !pRole.selected.has(String(e['Role'] || ''))) return false;
+      if (pLoc.selected.size  && !pLoc.selected.has(String(e['Location'] || ''))) return false;
+      if (pComp.selected.size && !pComp.selected.has(String(e['Competency Filter'] || ''))) return false;
+      if (pTerr.selected.size && !pTerr.selected.has(String(e['Territory Filter'] || ''))) return false;
+      if (pCat.selected.size){ let has = false; for (const k of (e._skills || [])){ if (pCat.selected.has(SKILL_CATEGORY[k])){ has = true; break; } } if (!has) return false; }
       if (!q) return true;
-      return ['Name','Role','OU','Location','Team Lead','Qualification']
+      return ['Name','Role','Location','Territory Group','Competency Group','Qualification']
         .some(k => String(e[k] ?? '').toLowerCase().includes(q));
     });
 
@@ -1819,7 +2110,7 @@
             +   ph
             +   '<div style="min-width:0;flex:1;">'
             +     '<div class="hm-name-text" title="' + esc(e.Name) + '">' + esc(e.Name) + '</div>'
-            +     '<div class="hm-name-meta">' + esc(e.Role || '') + ' &middot; ' + esc(e.OU || '') + '</div>'
+            +     '<div class="hm-name-meta">' + esc([e.Role, (e['Competency Group'] || e['Competency'])].filter(Boolean).join(' · ')) + '</div>'
             +   '</div></div>';
       ALL_MONTHS.forEach(m => {
         const v = UTIL_LOOKUP[String(e.WorkdayID) + '|' + m];
@@ -1871,7 +2162,7 @@
            +   ph
            +   '<div style="min-width:0;flex:1;">'
            +     '<div class="insight-row-name">' + esc(e.Name) + '</div>'
-           +     '<div class="insight-row-meta">' + esc(e.Role || '') + ' &middot; ' + esc(e.OU || '') + ' &middot; ' + esc(e.Location || '') + '</div>'
+           +     '<div class="insight-row-meta">' + esc([e.Role, (e['Competency Group'] || e['Competency']), e.Location].filter(Boolean).join(' · ')) + '</div>'
            +   '</div>'
            +   '<div class="insight-row-stat ' + statClass + '">' + statText + '</div>'
            + '</div>';
@@ -1918,8 +2209,14 @@
   renderInsights();
 
   // Wire filter inputs (reset page on change)
-  ['pulse-search','pulse-ou','pulse-role','pulse-loc','pulse-sort'].forEach(id =>
+  ['pulse-search','pulse-sort'].forEach(id =>
     document.getElementById(id).addEventListener('input', () => { pulsePage = 0; renderPulse(); }));
+  document.getElementById('pulse-reset').addEventListener('click', () => {
+    document.getElementById('pulse-search').value = '';
+    [pRole, pLoc, pComp, pTerr, pCat].forEach(ms => { ms.selected.clear(); ms.refresh(); });
+    document.getElementById('pulse-sort').value = 'avg-desc';
+    pulsePage = 0; renderPulse();
+  });
 
   renderPulse();
 
@@ -1933,27 +2230,26 @@
     const isSenior = r => isManagerRole(r);
     let view = 'scarce';
 
-    function fillSel(id, vals){ const el = $(id); if (!el) return; vals.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; el.appendChild(o); }); }
-    fillSel('cr-territory', uniqueValues('Territory'));
-    fillSel('cr-competency', uniqueValues('Competency'));
-    fillSel('cr-cat', ORDERED_CATS.filter(c => c !== 'Uncategorised'));
-    fillSel('cr-role', uniqueValues('Role'));
-    fillSel('cr-loc', uniqueValues('Location'));
+    function fillSel(id, vals){ const el = $(id); if (!el) return; vals.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; el.appendChild(o); }); el.style.display = vals.length ? '' : 'none'; }
+    const crTerr = buildMS('cr-terr-ms', 'All territories',      uniqueValues('Territory Filter'),           render);
+    const crComp = buildMS('cr-comp-ms', 'All competencies',     orderBy(uniqueValues('Competency Filter'), COMPETENCY_ORDER), render);
+    const crCat  = buildMS('cr-cat-ms',  'All skill categories', ORDERED_CATS.filter(c => c !== 'Uncategorised'), render);
+    const crRole = buildMS('cr-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), render);
+    const crLoc  = buildMS('cr-loc-ms',  'All locations',        uniqueValues('Location'),                  render);
 
     function pool(){
-      const ter = $('cr-territory').value, comp = $('cr-competency').value, role = $('cr-role').value, loc = $('cr-loc').value;
       return EMPLOYEES.filter(e => {
-        if (ter  && String(e.Territory  || '') !== ter)  return false;
-        if (comp && String(e.Competency || '') !== comp) return false;
-        if (role && String(e.Role       || '') !== role) return false;
-        if (loc  && String(e.Location   || '') !== loc)  return false;
+        if (crTerr.selected.size && !crTerr.selected.has(String(e['Territory Filter'] || ''))) return false;
+        if (crComp.selected.size && !crComp.selected.has(String(e['Competency Filter'] || ''))) return false;
+        if (crRole.selected.size && !crRole.selected.has(String(e.Role || ''))) return false;
+        if (crLoc.selected.size  && !crLoc.selected.has(String(e.Location || ''))) return false;
         return true;
       });
     }
     function skillStats(p){
-      const cat = $('cr-cat').value, map = new Map();
+      const catSel = crCat.selected, map = new Map();
       p.forEach(e => e._skills.forEach(k => {
-        if (cat && SKILL_CATEGORY[k] !== cat) return;
+        if (catSel.size && !catSel.has(SKILL_CATEGORY[k])) return;
         let s = map.get(k); if (!s){ s = { key: k, holders: [], senior: 0, utils: [] }; map.set(k, s); }
         s.holders.push(e);
         if (isSenior(e.Role)) s.senior++;
@@ -2021,16 +2317,25 @@
       });
       svg.innerHTML = s;
       svg.querySelectorAll('.cr-bubble').forEach(b => b.addEventListener('click', () => {
+        svg.querySelectorAll('.cr-bubble.sel').forEach(x => x.classList.remove('sel'));
+        b.classList.add('sel');
         const st = stats.find(x => x.key === b.dataset.k), dm = avg(st.utils), qd = quad(st.holders.length, dm), d = $('cr-scarce-detail');
         d.innerHTML = '<h3>' + esc(SKILL_DISPLAY[st.key]) + '</h3><div class="sd-sub">' + esc(SKILL_CATEGORY[st.key]) + ' · ' + st.holders.length + ' ' + (st.holders.length === 1 ? 'person' : 'people') + ' · avg ' + Math.round(dm) + '% util</div><div class="smap-tagrow"><span class="cr-badge" style="background:' + qd.col + '">' + esc(qd.label) + '</span></div>' + peopleRows(st.holders, true);
         wirePeople(d);
       }));
       const ssN = pts.filter(q => quad(q.supply, q.demand).key === 'ss').length;
       const okN = pts.filter(q => quad(q.supply, q.demand).key === 'ok').length;
-      const benchN = p.filter(e => typeof e._latestUtil === 'number' && e._latestUtil < 60).length;
+      const benchN = p.filter(e => typeof e._latestUtil === 'number' && e._latestUtil < 40).length;
       const avgU = Math.round(avg(p.map(e => e._latestUtil).filter(v => typeof v === 'number')));
-      $('cr-scarce-kpis').innerHTML = kpi('Scarce & stretched skills', ssN, '#E0301E') + kpi('Healthy-depth skills', okN, '#A6A6A6') + kpi('People on the bench (<60%)', benchN, '#EB8C00') + kpi('Avg utilization', avgU + '%', '#2D2D2D');
-      cap.innerHTML = 'Each bubble is a <b>skill</b> among the <b>' + p.length + '</b> people in scope. <b>Left</b> = few people have it; <b>high</b> = those people are heavily utilised. <span style="color:#E0301E;font-weight:700">Top-left</span> skills are scarce <em>and</em> stretched — first to hire or cross-train. Click a bubble to see who holds it and how busy they are.';
+      $('cr-scarce-kpis').innerHTML = kpi('Scarce & stretched skills', ssN, '#E0301E') + kpi('Healthy-depth skills', okN, '#A6A6A6') + kpi('People on the bench (<40%)', benchN, '#EB8C00') + kpi('Avg utilization', avgU + '%', '#2D2D2D');
+      cap.innerHTML = 'Each bubble is a <b>skill</b> among the <b>' + p.length + '</b> people in scope. <b>Left</b> = few people have it; <b>high</b> = those people are heavily utilised. <span style="color:#E0301E;font-weight:700">Top-left</span> skills are scarce <em>and</em> stretched.'
+        + '<div class="cr-criteria">'
+        +   '<span class="cr-q"><i style="background:#E0301E"></i>Scarce &amp; stretched</span>'
+        +   '<span class="cr-q"><i style="background:#EB8C00"></i>In demand</span>'
+        +   '<span class="cr-q"><i style="background:#FFB600"></i>Niche / watch</span>'
+        +   '<span class="cr-q"><i style="background:#A6A6A6"></i>Healthy depth</span>'
+        +   '<span class="cr-crit-note">Bubble size = people with the skill &nbsp;·&nbsp; <b>Scarce</b> = \u2264 ' + SCARCE + ' people &nbsp;·&nbsp; <b>Stretched</b> = avg utilization &gt; ' + HOT + '%</span>'
+        + '</div>';
       $('cr-meta').innerHTML = '<strong>' + pts.length + '</strong> skills plotted · <strong>' + p.length + '</strong> people in scope';
     }
 
@@ -2069,12 +2374,47 @@
       $('cr-keyperson-view').style.display = view === 'keyperson' ? 'block' : 'none';
       render();
     }));
-    ['cr-territory', 'cr-competency', 'cr-cat', 'cr-role', 'cr-loc'].forEach(id => $(id).addEventListener('change', render));
-    $('cr-reset').addEventListener('click', () => { ['cr-territory', 'cr-competency', 'cr-cat', 'cr-role', 'cr-loc'].forEach(id => $(id).value = ''); render(); });
+    $('cr-reset').addEventListener('click', () => { [crTerr, crComp, crCat, crRole, crLoc].forEach(ms => { ms.selected.clear(); ms.refresh(); }); render(); });
 
+    // Restricted build (no utilization): drop the Scarce-vs-Stretched view, show Key-Person Risk only.
+    if (!HAS_UTIL){
+      const sb = $('cr-view-toggle').querySelector('button[data-view="scarce"]');
+      const kb = $('cr-view-toggle').querySelector('button[data-view="keyperson"]');
+      if (sb){ sb.style.display = 'none'; sb.classList.remove('active'); }
+      if (kb) kb.classList.add('active');
+      view = 'keyperson';
+      $('cr-scarce-view').style.display = 'none';
+      $('cr-keyperson-view').style.display = 'block';
+    }
     render();
   })();
 
+  // ----- Back-to-top / bottom scroll nav -----
+  (function(){
+    const nav = document.getElementById('scroll-nav'); if (!nav) return;
+    document.getElementById('scroll-up').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    document.getElementById('scroll-down').addEventListener('click', () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }));
+    const onScroll = () => nav.classList.toggle('show', window.scrollY > 240);
+    window.addEventListener('scroll', onScroll); onScroll();
+  })();
+
+  // ----- Export the current (filtered) directory list to a spreadsheet (CSV, opens in Excel) -----
+  (function(){
+    const btn = document.getElementById('dir-export'); if (!btn) return;
+    function cell(v){ v = (v == null ? '' : String(v)); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+    btn.addEventListener('click', () => {
+      const emps = (visibleOrder || []).map(id => EMPLOYEES.find(e => String(e.WorkdayID) === String(id))).filter(Boolean);
+      if (!emps.length){ alert('No employees to export with the current filters.'); return; }
+      const cols = Object.keys(emps[0]).filter(k => !k.startsWith('_'));
+      const lines = [cols.map(cell).join(',')].concat(emps.map(e => cols.map(c => cell(e[c])).join(',')));
+      const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'Team_Directory_' + new Date().toISOString().slice(0, 10) + '.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    });
+  })();
 </script>
 </body>
 </html>
