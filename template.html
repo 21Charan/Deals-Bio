@@ -170,8 +170,8 @@
   .skill-group{margin-bottom:8px}
   .skill-group .grp-label{display:inline-block;font-size:11px;font-weight:700;color:var(--pwc-orange);background:rgba(208,74,2,0.08);padding:3px 8px;border-radius:3px;margin-right:8px;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
   /* Smooth line chart for utilization */
-  .util-chart{background:var(--pwc-grey-50);border-radius:4px;padding:16px 12px;margin-top:8px}
-  .util-svg{width:100%;height:200px;display:block;overflow:visible}
+  .util-chart{background:linear-gradient(180deg,var(--pwc-grey-50),var(--white));border:1px solid var(--pwc-grey-100);border-radius:10px;padding:18px 16px;margin-top:8px}
+  .util-svg{width:100%;height:auto;display:block;overflow:visible}
   .util-svg .util-grid{stroke:var(--pwc-grey-300);stroke-width:1;stroke-dasharray:3 3}
   .util-svg .util-axis-label{fill:var(--pwc-grey-600);font-size:10px;font-family:inherit}
   .util-svg .util-area{fill:url(#util-grad);opacity:.35}
@@ -739,6 +739,8 @@
     m = s.match(/^(\d{1,2})[\-\/](\d{4})$/);            if (m) return m[2] + '-' + String(m[1]).padStart(2,'0');
     return s.slice(0,7);
   }
+  const _MABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function monthLabelLong(key){ const m = String(key).match(/^(\d{4})-(\d{2})/); return m ? _MABBR[+m[2]-1] + '-' + m[1] : String(key); }
   const EXP_TOTAL = "__EXP_TOTAL__";
   const EXP_PWC   = "__EXP_PWC__";
   // Share mode (team build): utilization data is stripped at build time and
@@ -1268,7 +1270,7 @@
       .sort((a, b) => monthKey(a['Month Year']).localeCompare(monthKey(b['Month Year'])));
     let utilHtml;
     if (utilRows.length){
-      const W = 720, H = 200, padL = 40, padR = 16, padT = 24, padB = 36;
+      const W = 960, H = 220, padL = 46, padR = 22, padT = 32, padB = 44;
       const innerW = W - padL - padR, innerH = H - padT - padB;
       const yMax = Math.max(120, Math.ceil(Math.max(...utilRows.map(u => Number(u.Utilization) || 0)) / 20) * 20);
       const pts = utilRows.map((u, i) => {
@@ -1314,7 +1316,7 @@
         '<text class="util-dot-label" x="' + p.x + '" y="' + (p.y - 12) + '">' + p.v + '%</text>'
       ).join('');
       const monthLabels = pts.map(p =>
-        '<text class="util-month-label" x="' + p.x + '" y="' + (H - 12) + '">' + esc(p.label) + '</text>'
+        '<text class="util-month-label" x="' + p.x + '" y="' + (H - 14) + '">' + esc(monthLabelLong(p.label)) + '</text>'
       ).join('');
       utilHtml = '<div class="util-chart">'
         + '<svg class="util-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">'
@@ -2199,7 +2201,7 @@
       .sort((a,b) => new Date(b['Join Date']) - new Date(a['Join Date']))
       .slice(0, 10);
     document.getElementById('insight-new').innerHTML = joiners.length
-      ? joiners.map(e => rowHtml(e, String(e['Join Date']).slice(0, 10), '')).join('')
+      ? joiners.map(e => rowHtml(e, String(e['Join Date']).split('T')[0], '')).join('')
       : '<div class="insight-empty">No recent joiners.</div>';
 
     // Wire clicks across the three lists
