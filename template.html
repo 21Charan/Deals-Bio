@@ -120,7 +120,7 @@
   .dir-card .view-hint{position:absolute;top:10px;right:10px;background:var(--pwc-orange);color:var(--white);font-size:10px;font-weight:600;padding:3px 8px;border-radius:3px;letter-spacing:0.5px;text-transform:uppercase;opacity:0;transition:opacity .15s;pointer-events:none}
   .dir-card:hover .view-hint{opacity:1}
   .dir-card .photo-wrap{height:160px;background:linear-gradient(135deg,var(--pwc-grey-100),var(--pwc-grey-300));display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
-  .dir-card .photo-wrap img{width:100%;height:100%;object-fit:contain}
+  .dir-card .photo-wrap img{width:100%;height:100%;object-fit:cover;object-position:center 22%}
   .dir-card .avatar-fallback{width:72px;height:72px;border-radius:50%;background:var(--pwc-orange);color:var(--white);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:600}
   .dir-card .info{padding:10px 12px 12px}
   .dir-card .name{font-size:14px;font-weight:600;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -142,7 +142,7 @@
   .bio-banner{background:linear-gradient(120deg,var(--pwc-grey-900) 0%,var(--pwc-grey-700) 100%);padding:30px 32px;display:flex;gap:24px;align-items:center;position:relative;overflow:hidden}
   .bio-banner::after{content:"";position:absolute;right:-60px;top:-60px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(208,74,2,0.25),transparent 70%)}
   .bio-banner .photo{width:130px;height:130px;border-radius:50%;overflow:hidden;border:4px solid var(--pwc-orange);background:var(--pwc-grey-100);flex-shrink:0;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,0.25);z-index:2}
-  .bio-banner .photo img{width:100%;height:100%;object-fit:contain}
+  .bio-banner .photo img{width:100%;height:100%;object-fit:cover;object-position:center 25%}
   .bio-banner .photo .avatar-fallback{width:100%;height:100%;font-size:48px;border-radius:0}
   .bio-banner .who{color:var(--white);z-index:2}
   .bio-banner .who h2{margin:0;font-size:28px;color:var(--white)}
@@ -1168,7 +1168,7 @@
   //     e.g. ['FDD','CMAAS','Valuation','BRS','Forensics','Deals Strategy','Corporate Finance',
   //           'Deals IQ','Others - AU Modelling','Others - CP&I','Others - E&D','Others - Research',
   //           'Others - Review Pod - FDD','RM/Admin']. Anything not listed falls to the end (A-Z).
-  const COMPETENCY_ORDER = [];
+  const COMPETENCY_ORDER = ['FDD','CMAAS','Valuation','BRS','Forensic','Deals Strategy','Corporate Finance','Deals IQ','Others - Au Modeling','Others - CP&I','Others - E&D','Others - Research','Others - Review Pod - FDD','RM/Admin'];
   function orderBy(vals, orderList){
     const idx = v => { const i = orderList.findIndex(x => x.toLowerCase() === String(v).trim().toLowerCase()); return i < 0 ? 9999 : i; };
     return vals.slice().sort((a, b) => idx(a) - idx(b) || String(a).localeCompare(String(b)));
