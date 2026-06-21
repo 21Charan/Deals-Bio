@@ -657,6 +657,7 @@
       <div class="multiselect ms-compact" id="cr-cat-ms"></div>
       <div class="multiselect ms-compact" id="cr-role-ms"></div>
       <div class="multiselect ms-compact" id="cr-loc-ms"></div>
+      <div class="multiselect ms-compact" id="cr-skill-ms"></div>
       <button class="reset-btn" id="cr-reset" title="Clear all filters">Reset</button>
     </div>
 
@@ -1168,7 +1169,7 @@
   //     e.g. ['FDD','CMAAS','Valuation','BRS','Forensics','Deals Strategy','Corporate Finance',
   //           'Deals IQ','Others - AU Modelling','Others - CP&I','Others - E&D','Others - Research',
   //           'Others - Review Pod - FDD','RM/Admin']. Anything not listed falls to the end (A-Z).
-  const COMPETENCY_ORDER = ['FDD','CMAAS','Valuation','BRS','Forensic','Deals Strategy','Corporate Finance','Deals IQ','Others - Au Modeling','Others - CP&I','Others - E&D','Others - Research','Others - Review Pod - FDD','RM/Admin'];
+  const COMPETENCY_ORDER = ['FDD','CMAAS','Valuation','BRS','Forensics','Deals Strategy','Corporate Finance','Deals IQ','Others - AU Modelling','Others - CP&I','Others - E&D','Others - Research','Others - Review Pod - FDD','RM/Admin'];
   function orderBy(vals, orderList){
     const idx = v => { const i = orderList.findIndex(x => x.toLowerCase() === String(v).trim().toLowerCase()); return i < 0 ? 9999 : i; };
     return vals.slice().sort((a, b) => idx(a) - idx(b) || String(a).localeCompare(String(b)));
@@ -1605,6 +1606,15 @@
     if (c === 'Uncategorised') CAT_COLOR[c] = '#9C9C9C';
     else { CAT_COLOR[c] = CAT_PALETTE[pi % CAT_PALETTE.length]; pi++; }
   });
+  // Competency colour assignment (for the By-Competency card view), ordered by COMPETENCY_ORDER.
+  const empComp = e => String(e['Competency'] || 'Other').trim() || 'Other';
+  const compRank = n => { const i = COMPETENCY_ORDER.findIndex(x => x.toLowerCase() === String(n).trim().toLowerCase()); return i < 0 ? 9999 : i; };
+  const COMP_COLOR = Object.create(null);
+  (function(){
+    const comps = orderBy([...new Set(EMPLOYEES.map(empComp))].filter(Boolean), COMPETENCY_ORDER);
+    let ci = 0;
+    comps.forEach(c => { COMP_COLOR[c] = (c === 'Other') ? '#9C9C9C' : CAT_PALETTE[ci++ % CAT_PALETTE.length]; });
+  })();
 
   // Co-occurrence: how often each pair of skills appears together
   // Stored compactly: COOCCUR[a][b] = count, symmetric.
@@ -1655,27 +1665,29 @@
   }
 
   function buildCategoryData(){
+    // Cards are grouped by the employee's COMPETENCY (FDD, Valuation, ...). The
+    // skill-category multiselect still filters which skills are counted.
     const ids = atlasPoolIds(), catSel = aCat.selected;
     const cats = Object.create(null);
     EMPLOYEES.forEach(e => {
       if (!ids.has(String(e.WorkdayID))) return;
+      const comp = empComp(e);
       e._skills.forEach(k => {
-        const cat = SKILL_CATEGORY[k] || 'Uncategorised';
-        if (catSel.size && !catSel.has(cat)) return;
-        if (!cats[cat]) cats[cat] = { skills: Object.create(null), people: new Set() };
-        cats[cat].people.add(e.WorkdayID);
-        cats[cat].skills[k] = (cats[cat].skills[k] || 0) + 1;
+        if (catSel.size && !catSel.has(SKILL_CATEGORY[k] || 'Uncategorised')) return;
+        if (!cats[comp]) cats[comp] = { skills: Object.create(null), people: new Set() };
+        cats[comp].people.add(e.WorkdayID);
+        cats[comp].skills[k] = (cats[comp].skills[k] || 0) + 1;
       });
     });
     return Object.entries(cats).map(([name, data]) => {
       const skills = Object.entries(data.skills).map(([key, count]) => ({ key, count })).sort((a, b) => b.count - a.count);
-      return { name, color: CAT_COLOR[name] || '#9C9C9C', peopleCount: data.people.size, skillsCount: skills.length, skills, strength: categoryStrength(data.people.size) };
-    }).sort((a, b) => b.peopleCount - a.peopleCount);
+      return { name, color: COMP_COLOR[name] || '#9C9C9C', peopleCount: data.people.size, skillsCount: skills.length, skills, strength: categoryStrength(data.people.size) };
+    }).sort((a, b) => compRank(a.name) - compRank(b.name) || b.peopleCount - a.peopleCount);
   }
   // Skill Atlas export: every in-scope skill with its category and headcount.
   PAGE_EXPORTS.skills = function(){
     const cats = buildCategoryData().filter(c => c.name !== 'Uncategorised');
-    const rows = [['Skill Category', 'Skill', 'People With Skill', 'People In Category']];
+    const rows = [['Competency', 'Skill', 'People With Skill', 'People In Competency']];
     cats.forEach(c => c.skills.forEach(s => rows.push([c.name, SKILL_DISPLAY[s.key] || s.key, s.count, c.peopleCount])));
     downloadCSV('Skill_Atlas', rows);
   };
@@ -2214,8 +2226,9 @@
     else if (srt === 'latest-asc')  list.sort((a,b) => cmpVal(a, b, '_latestUtil'));
     else                            list.sort((a,b) => String(a.Name).localeCompare(String(b.Name)));
 
-    // KPI cards reflect the current filter selection.
+    // KPI cards + insight boxes reflect the current filter selection.
     setPulseKpis(list);
+    renderInsights(list);
 
     // Pagination
     const totalPages = Math.max(1, Math.ceil(list.length / PULSE_PAGE_SIZE));
@@ -2293,7 +2306,8 @@
   }
 
   // Insight panels — independent of heatmap filters; always show the team picture.
-  function renderInsights(){
+  function renderInsights(list){
+    list = list || EMPLOYEES;
     function rowHtml(e, statText, statClass){
       const ph = e._photo
         ? '<div class="insight-row-photo"><img loading="lazy" src="' + e._photo + '" alt="' + esc(e.Name) + '"></div>'
@@ -2309,7 +2323,7 @@
     }
 
     // On the bench — lowest latest-month util
-    const bench = EMPLOYEES
+    const bench = list
       .filter(e => typeof e._latestUtil === 'number')
       .sort((a,b) => a._latestUtil - b._latestUtil)
       .slice(0, 10);
@@ -2318,7 +2332,7 @@
       : '<div class="insight-empty">No utilization data yet.</div>';
 
     // Watch list — sustained 3-month avg > 100, ranked by intensity
-    const watch = EMPLOYEES
+    const watch = list
       .filter(e => e._sustained3 !== null && e._sustained3 > 100)
       .sort((a,b) => b._sustained3 - a._sustained3)
       .slice(0, 10);
@@ -2329,7 +2343,7 @@
     // New joiners — last 12 months by Join Date
     const cutoff = new Date();
     cutoff.setFullYear(cutoff.getFullYear() - 1);
-    const joiners = EMPLOYEES
+    const joiners = list
       .filter(e => {
         const d = e['Join Date'];
         if (!d) return false;
@@ -2342,9 +2356,15 @@
       ? joiners.map(e => rowHtml(e, String(e['Join Date']).split('T')[0], '')).join('')
       : '<div class="insight-empty">No recent joiners.</div>';
 
-    // Wire clicks across the three lists
-    document.querySelectorAll('.pulse-insights .insight-row').forEach(r =>
-      r.addEventListener('click', () => showBio(r.dataset.id)));
+    // Wire clicks per list so the modal arrows walk THAT list, not the directory.
+    function wireList(containerId, arr){
+      const ids = arr.map(e => e.WorkdayID);
+      document.querySelectorAll('#' + containerId + ' .insight-row').forEach(r =>
+        r.addEventListener('click', () => showBio(r.dataset.id, false, ids)));
+    }
+    wireList('insight-bench', bench);
+    wireList('insight-watch', watch);
+    wireList('insight-new', joiners);
   }
   renderInsights();
 
@@ -2411,6 +2431,7 @@
     const crCat  = buildMS('cr-cat-ms',  'All skill categories', ORDERED_CATS.filter(c => c !== 'Uncategorised'), render);
     const crRole = buildMS('cr-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), render);
     const crLoc  = buildMS('cr-loc-ms',  'All locations',        uniqueValues('Location'),                  render);
+    const crSkill = buildMS('cr-skill-ms', 'All skills',          ALL_SKILLS.map(k => SKILL_DISPLAY[k]).sort((a, b) => a.localeCompare(b)), render);
 
     function pool(){
       return EMPLOYEES.filter(e => {
@@ -2422,9 +2443,10 @@
       });
     }
     function skillStats(p){
-      const catSel = crCat.selected, map = new Map();
+      const catSel = crCat.selected, skillSel = crSkill.selected, map = new Map();
       p.forEach(e => e._skills.forEach(k => {
         if (catSel.size && !catSel.has(SKILL_CATEGORY[k])) return;
+        if (skillSel.size && !skillSel.has(SKILL_DISPLAY[k])) return;
         let s = map.get(k); if (!s){ s = { key: k, holders: [], senior: 0, utils: [] }; map.set(k, s); }
         s.holders.push(e);
         if (isSenior(e.Role)) s.senior++;
@@ -2558,7 +2580,7 @@
       $('cr-keyperson-view').style.display = view === 'keyperson' ? 'block' : 'none';
       render();
     }));
-    $('cr-reset').addEventListener('click', () => { [crTerr, crComp, crCat, crRole, crLoc].forEach(ms => { ms.selected.clear(); ms.refresh(); }); render(); });
+    $('cr-reset').addEventListener('click', () => { [crTerr, crComp, crCat, crRole, crLoc, crSkill].forEach(ms => { ms.selected.clear(); ms.refresh(); }); render(); });
 
     // Tunable thresholds: re-classify live as the user drags the sliders.
     ['cr-scarce-slider', 'cr-hot-slider'].forEach(id => { const el = $(id); if (el) el.addEventListener('input', () => { if (view === 'scarce') renderScarce(); }); });
