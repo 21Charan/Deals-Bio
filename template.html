@@ -1174,6 +1174,18 @@
     const idx = v => { const i = orderList.findIndex(x => x.toLowerCase() === String(v).trim().toLowerCase()); return i < 0 ? 9999 : i; };
     return vals.slice().sort((a, b) => idx(a) - idx(b) || String(a).localeCompare(String(b)));
   }
+  // Territory: keep any "Others..." bucket at the very end, rest A-Z.
+  function orderTerritory(vals){
+    const isOther = v => String(v).trim().toLowerCase().startsWith('other');
+    return vals.slice().sort((a, b) => (isOther(a) ? 1 : 0) - (isOther(b) ? 1 : 0) || String(a).localeCompare(String(b)));
+  }
+  // Competency Filter: main competencies first (COMPETENCY_ORDER), then any
+  // "Others..." second-last, then RM/Admin absolute last.
+  function orderCompetency(vals){
+    const tier = v => { const s = String(v).trim().toLowerCase(); return s === 'rm/admin' ? 2 : (s.startsWith('other') ? 1 : 0); };
+    const idx = v => { const i = COMPETENCY_ORDER.findIndex(x => x.toLowerCase() === String(v).trim().toLowerCase()); return i < 0 ? 9999 : i; };
+    return vals.slice().sort((a, b) => tier(a) - tier(b) || idx(a) - idx(b) || String(a).localeCompare(String(b)));
+  }
   // Rank an employee by role seniority (via ROLE_ORDER), then by experience.
   function roleRank(role){
     const i = ROLE_ORDER.findIndex(x => x === String(role || '').trim().toLowerCase());
@@ -1235,8 +1247,8 @@
   const _cats = [...new Set(Object.values(SKILL_CATEGORY))].filter(c => c && c !== 'Uncategorised').sort();
   const msRole = buildMS('dir-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), renderDirectory);
   const msLoc  = buildMS('dir-loc-ms',  'All locations',        uniqueValues('Location'),                   renderDirectory);
-  const msTerr = buildMS('dir-terr-ms', 'All territories',      uniqueValues('Territory Filter'),            renderDirectory);
-  const msComp = buildMS('dir-comp-ms', 'All competencies',     orderBy(uniqueValues('Competency Filter'), COMPETENCY_ORDER), renderDirectory);
+  const msTerr = buildMS('dir-terr-ms', 'All territories',      orderTerritory(uniqueValues('Territory Filter')),            renderDirectory);
+  const msComp = buildMS('dir-comp-ms', 'All competencies',     orderCompetency(uniqueValues('Competency Filter')), renderDirectory);
   const msCat  = buildMS('dir-cat-ms',  'All skill categories', _cats,                                       renderDirectory);
   // Experience dual-range slider (custom: two dots + connecting line)
   (function(){
@@ -1651,7 +1663,7 @@
   const aChange = () => renderAtlas(document.getElementById('atlas-search').value);
   const aRole = buildMS('atlas-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), aChange);
   const aLoc  = buildMS('atlas-loc-ms',  'All locations',        uniqueValues('Location'),                  aChange);
-  const aTerr = buildMS('atlas-terr-ms', 'All territories',      uniqueValues('Territory Filter'),           aChange);
+  const aTerr = buildMS('atlas-terr-ms', 'All territories',      orderTerritory(uniqueValues('Territory Filter')),           aChange);
   const aCat  = buildMS('atlas-cat-ms',  'All skill categories', ORDERED_CATS.filter(c => c !== 'Uncategorised'), aChange);
   function atlasPoolIds(){
     const ids = new Set();
@@ -2181,8 +2193,8 @@
   const pChange = () => { pulsePage = 0; renderPulse(); };
   const pRole = buildMS('pulse-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), pChange);
   const pLoc  = buildMS('pulse-loc-ms',  'All locations',        uniqueValues('Location'),                  pChange);
-  const pComp = buildMS('pulse-comp-ms', 'All competencies',     orderBy(uniqueValues('Competency Filter'), COMPETENCY_ORDER), pChange);
-  const pTerr = buildMS('pulse-terr-ms', 'All territories',      uniqueValues('Territory Filter'),           pChange);
+  const pComp = buildMS('pulse-comp-ms', 'All competencies',     orderCompetency(uniqueValues('Competency Filter')), pChange);
+  const pTerr = buildMS('pulse-terr-ms', 'All territories',      orderTerritory(uniqueValues('Territory Filter')),           pChange);
   const pCat  = buildMS('pulse-cat-ms',  'All skill categories', ORDERED_CATS.filter(c => c !== 'Uncategorised'), pChange);
 
   // Pagination state
@@ -2426,8 +2438,8 @@
     let view = 'scarce';
 
     function fillSel(id, vals){ const el = $(id); if (!el) return; vals.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; el.appendChild(o); }); el.style.display = vals.length ? '' : 'none'; }
-    const crTerr = buildMS('cr-terr-ms', 'All territories',      uniqueValues('Territory Filter'),           render);
-    const crComp = buildMS('cr-comp-ms', 'All competencies',     orderBy(uniqueValues('Competency Filter'), COMPETENCY_ORDER), render);
+    const crTerr = buildMS('cr-terr-ms', 'All territories',      orderTerritory(uniqueValues('Territory Filter')),           render);
+    const crComp = buildMS('cr-comp-ms', 'All competencies',     orderCompetency(uniqueValues('Competency Filter')), render);
     const crCat  = buildMS('cr-cat-ms',  'All skill categories', ORDERED_CATS.filter(c => c !== 'Uncategorised'), render);
     const crRole = buildMS('cr-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), render);
     const crLoc  = buildMS('cr-loc-ms',  'All locations',        uniqueValues('Location'),                  render);
