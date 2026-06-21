@@ -186,35 +186,9 @@ def load_workbook_data(path):
 
 
 def _encode_one(path):
-    """Return (data_uri, bytes_size) for a single image file.
-
-    With Pillow: re-encode to a JPEG thumbnail (max 240px) for huge savings.
-    Without Pillow: embed the original bytes (with a warning printed by caller).
-    """
-    if HAVE_PIL:
-        try:
-            with Image.open(path) as img:
-                # Respect EXIF orientation (phone/passport photos are often
-                # stored rotated with an orientation flag) so they're upright.
-                img = ImageOps.exif_transpose(img)
-                # Flatten alpha onto white so JPEG (no alpha) doesn't go black.
-                if img.mode in ("RGBA", "LA", "P"):
-                    if img.mode == "P":
-                        img = img.convert("RGBA")
-                    bg = Image.new("RGB", img.size, (255, 255, 255))
-                    bg.paste(img, mask=img.split()[-1] if img.mode == "RGBA" else None)
-                    img = bg
-                elif img.mode != "RGB":
-                    img = img.convert("RGB")
-                # Downscale (in-place, keeps aspect ratio). LANCZOS = high quality.
-                img.thumbnail((PHOTO_MAX_DIM, PHOTO_MAX_DIM), Image.LANCZOS)
-                buf = BytesIO()
-                img.save(buf, format="JPEG", quality=PHOTO_JPEG_QUALITY, optimize=True)
-                data = buf.getvalue()
-                return ("data:image/jpeg;base64," + base64.b64encode(data).decode("ascii"), len(data))
-        except Exception as e:
-            print(f"  [warn] Could not process {path.name}: {e}. Embedding original.")
-    # Fallback path
+    """Embed the image exactly as it is in the folder, with no re-encoding,
+    so quality is preserved. Sizing/compression is handled upstream by the
+    user's own image script, so we must not compress it again here."""
     ext = path.suffix.lower()
     mime = MIME.get(ext, "image/png")
     raw = path.read_bytes()
@@ -248,7 +222,7 @@ def load_photos(images_dir):
             photos[stem] = uri             # also keep the raw filename stem
     if photos:
         avg = total_bytes / len(set(photos.values())) if photos else 0
-        mode = "downscaled" if HAVE_PIL else "ORIGINAL (install Pillow to downscale)"
+        mode = "embedded as-is (original quality)"
         print(f"[ok] Photos {mode}: {len(set(photos.values()))} files, "
               f"total {total_bytes/1024:.0f} KB, avg {avg/1024:.0f} KB/photo")
     return photos
