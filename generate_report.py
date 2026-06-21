@@ -32,14 +32,14 @@ import openpyxl
 # Optional: Pillow for photo downscaling. Massive HTML-size win at scale.
 # pip install Pillow
 try:
-    from PIL import Image
+    from PIL import Image, ImageOps
     HAVE_PIL = True
 except ImportError:
     HAVE_PIL = False
 
 # Maximum dimension (px) for embedded photos. 240 covers both the directory
 # card and the bio modal at high-DPI quality while keeping file size tiny.
-PHOTO_MAX_DIM = 240
+PHOTO_MAX_DIM = 320
 PHOTO_JPEG_QUALITY = 72
 
 # ---- Configuration -------------------------------------------------------
@@ -194,6 +194,9 @@ def _encode_one(path):
     if HAVE_PIL:
         try:
             with Image.open(path) as img:
+                # Respect EXIF orientation (phone/passport photos are often
+                # stored rotated with an orientation flag) so they're upright.
+                img = ImageOps.exif_transpose(img)
                 # Flatten alpha onto white so JPEG (no alpha) doesn't go black.
                 if img.mode in ("RGBA", "LA", "P"):
                     if img.mode == "P":
