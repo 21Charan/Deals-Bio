@@ -21,6 +21,9 @@ import argparse
 import base64
 import json
 import datetime
+import struct
+import zlib
+import zipfile
 from io import BytesIO
 from pathlib import Path
 
@@ -62,6 +65,23 @@ MIME = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
 EXP_TOTAL = "Experience"
 EXP_PWC   = "PwC Experience"
 
+# Role grade codes -> full display names. Applied at load; a no-op if the
+# workbook already uses full names. Keeps display/filters/grouping consistent.
+ROLE_RENAME = {
+    "md": "Managing Director", "managing director": "Managing Director",
+    "d": "Director", "director": "Director",
+    "sm": "Senior Manager", "sr manager": "Senior Manager", "senior manager": "Senior Manager",
+    "m": "Manager", "manager": "Manager",
+    "sa": "Senior Associate", "sa1": "Senior Associate", "sa2": "Senior Associate",
+    "sa3": "Senior Associate", "senior associate": "Senior Associate",
+    "a2": "Associate 2", "associate 2": "Associate 2",
+    "a1": "Associate", "a": "Associate", "a3": "Associate", "associate": "Associate",
+}
+
+
+def rename_role(v):
+    return ROLE_RENAME.get(str(v or "").strip().lower(), v)
+
 
 def normalise_headers(raw):
     """De-duplicate header names. Second 'Experience' becomes 'PwC Experience'."""
@@ -98,23 +118,70 @@ def read_sheet(ws):
     return records
 
 
+def _recover_xlsx_bytes(raw):
+    """Rebuild a clean .xlsx when its zip central directory / end-of-archive
+    record is missing. This can happen when the file is read mid-save or the
+    sync layer truncates the tail. We scan the intact local file headers at the
+    front of the archive and re-zip every member we can fully decompress."""
+    out = BytesIO()
+    i, sig = 0, b"PK\x03\x04"
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+        while True:
+            j = raw.find(sig, i)
+            if j < 0:
+                break
+            try:
+                (_ver, _flag, method, _mt, _md, _crc, csize, usize,
+                 fnlen, eflen) = struct.unpack("<HHHHHIIIHH", raw[j + 4:j + 30])
+            except struct.error:
+                break
+            name = raw[j + 30:j + 30 + fnlen].decode("utf-8", "replace")
+            start = j + 30 + fnlen + eflen
+            comp = raw[start:start + csize] if csize else b""
+            i = j + 4
+            try:
+                data = zlib.decompress(comp, -15) if method == 8 else comp
+            except Exception:
+                continue
+            if usize and len(data) != usize:   # this member was itself truncated
+                continue
+            z.writestr(name, data)
+    out.seek(0)
+    return out
+
+
 def load_workbook_data(path):
     if not path.exists():
         raise FileNotFoundError(f"Could not find input file: {path}")
-    wb = openpyxl.load_workbook(path, data_only=True)
+    try:
+        wb = openpyxl.load_workbook(path, data_only=True)
+    except Exception as e:
+        print(f"[warn] Workbook archive looks truncated ({e}); recovering from local headers...")
+        wb = openpyxl.load_workbook(_recover_xlsx_bytes(path.read_bytes()), data_only=True)
     keymap = {
         "Employee Details": "details",
         "Employee Skills": "skills",
         "Skill Mapping": "skills",          # real-file sheet name
         "Employee Monthly Utilization": "utilization",
+        "Employee Utilization_Jul_Jun": "util_jj",   # FY Jul-Jun view (Pulse toggle)
+        "Employee Utilization_Apr_Mar": "util_am",   # FY Apr-Mar view (Pulse toggle)
     }
-    data = {"details": [], "skills": [], "utilization": []}
+    data = {"details": [], "skills": [], "utilization": [], "util_jj": [], "util_am": []}
     for ws in wb.worksheets:
         key = keymap.get(ws.title.strip())
         if key is None and not data["details"]:
             key = "details"  # fall back: first sheet is details
         if key:
             data[key] = read_sheet(ws)
+    # Fallbacks so the dashboard works whether or not the FY-specific sheets are
+    # present. If only the legacy monthly sheet exists, use it for both FY views;
+    # if only FY sheets exist, use Jul-Jun as the global utilization source.
+    if not data["utilization"]:
+        data["utilization"] = data["util_jj"] or data["util_am"]
+    if not data["util_jj"]:
+        data["util_jj"] = data["utilization"]
+    if not data["util_am"]:
+        data["util_am"] = data["utilization"]
     return data
 
 
@@ -224,6 +291,8 @@ def main():
     args = parser.parse_args()
 
     data = load_workbook_data(INPUT_FILE)
+    for _r in data["details"]:                     # normalise Role grade codes
+        _r["Role"] = rename_role(_r.get("Role"))
     photos = load_photos(IMAGES_DIR)
     logo_uri = load_logo()
 
@@ -264,13 +333,17 @@ def main():
         """share=True -> restricted build: utilization stripped + full Address redacted."""
         emp = enriched
         util = data["utilization"]
+        util_jj = data["util_jj"]
+        util_am = data["util_am"]
         if share:
-            util = []                                      # no utilization anywhere
+            util = util_jj = util_am = []                  # no utilization anywhere
             emp = [{k: v for k, v in e.items() if k != "Address"} for e in enriched]  # redact full address
         return (template
             .replace("__EMPLOYEES_JSON__", json.dumps(emp, default=str))
             .replace("__SKILLS_JSON__",    json.dumps(data["skills"], default=str))
             .replace("__UTIL_JSON__",      json.dumps(util, default=str))
+            .replace("__UTIL_JJ_JSON__",   json.dumps(util_jj, default=str))
+            .replace("__UTIL_AM_JSON__",   json.dumps(util_am, default=str))
             .replace("__TOTAL__",          str(len(enriched)))
             .replace("__AVG_EXP__",        str(avg_exp))
             .replace("__NUM_OUS__",        str(len(ous)))
