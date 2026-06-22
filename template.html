@@ -561,8 +561,8 @@
       <div class="ctrl-break"></div>
       <div class="multiselect ms-compact" id="dir-role-ms"></div>
       <div class="multiselect ms-compact" id="dir-loc-ms"></div>
-      <div class="multiselect ms-compact" id="dir-terr-ms"></div>
       <div class="multiselect ms-compact" id="dir-comp-ms"></div>
+      <div class="multiselect ms-compact" id="dir-terr-ms"></div>
       <div class="exp-filter" id="dir-exp-wrap">
         <label class="exp-label">Experience</label>
         <div class="exp-range" id="dir-exp-range">
@@ -591,10 +591,11 @@
     <div class="atlas-grid">
       <div class="atlas-explorer">
         <div class="controls smap-controls" id="atlas-filters">
-          <div class="multiselect ms-compact" id="atlas-loc-ms"></div>
           <div class="multiselect ms-compact" id="atlas-role-ms"></div>
-          <div class="multiselect ms-compact" id="atlas-cat-ms"></div>
+          <div class="multiselect ms-compact" id="atlas-loc-ms"></div>
+          <div class="multiselect ms-compact" id="atlas-comp-ms"></div>
           <div class="multiselect ms-compact" id="atlas-terr-ms"></div>
+          <div class="multiselect ms-compact" id="atlas-cat-ms"></div>
           <button class="reset-btn" id="atlas-reset" title="Clear filters">Reset</button>
         </div>
         <div class="atlas-toolbar">
@@ -652,11 +653,11 @@
     <p class="subtitle">Two lenses on capability exposure. <strong>Scarce vs Stretched</strong> matches each skill's depth against how busy its people are; <strong>Key-Person Risk</strong> surfaces skills that rest on one pair of shoulders.</p>
 
     <div class="controls smap-controls">
-      <div class="multiselect ms-compact" id="cr-terr-ms"></div>
-      <div class="multiselect ms-compact" id="cr-comp-ms"></div>
-      <div class="multiselect ms-compact" id="cr-cat-ms"></div>
       <div class="multiselect ms-compact" id="cr-role-ms"></div>
       <div class="multiselect ms-compact" id="cr-loc-ms"></div>
+      <div class="multiselect ms-compact" id="cr-comp-ms"></div>
+      <div class="multiselect ms-compact" id="cr-terr-ms"></div>
+      <div class="multiselect ms-compact" id="cr-cat-ms"></div>
       <div class="multiselect ms-compact" id="cr-skill-ms"></div>
       <button class="reset-btn" id="cr-reset" title="Clear all filters">Reset</button>
     </div>
@@ -1663,6 +1664,7 @@
   const aChange = () => renderAtlas(document.getElementById('atlas-search').value);
   const aRole = buildMS('atlas-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), aChange);
   const aLoc  = buildMS('atlas-loc-ms',  'All locations',        uniqueValues('Location'),                  aChange);
+  const aComp = buildMS('atlas-comp-ms', 'All competencies',     orderCompetency(uniqueValues('Competency Filter')), aChange);
   const aTerr = buildMS('atlas-terr-ms', 'All territories',      orderTerritory(uniqueValues('Territory Filter')),           aChange);
   const aCat  = buildMS('atlas-cat-ms',  'All skill categories', ORDERED_CATS.filter(c => c !== 'Uncategorised'), aChange);
   function atlasPoolIds(){
@@ -1670,6 +1672,7 @@
     EMPLOYEES.forEach(e => {
       if (aLoc.selected.size  && !aLoc.selected.has(String(e.Location || ''))) return;
       if (aRole.selected.size && !aRole.selected.has(String(e.Role || ''))) return;
+      if (aComp.selected.size && !aComp.selected.has(String(e['Competency Filter'] || ''))) return;
       if (aTerr.selected.size && !aTerr.selected.has(String(e['Territory Filter'] || ''))) return;
       ids.add(String(e.WorkdayID));
     });
@@ -1872,8 +1875,12 @@
     renderAtlas(e.target.value);
   });
   document.getElementById('atlas-reset').addEventListener('click', () => {
-    [aRole, aLoc, aTerr, aCat].forEach(ms => { ms.selected.clear(); ms.refresh(); });
+    [aRole, aLoc, aComp, aTerr, aCat].forEach(ms => { ms.selected.clear(); ms.refresh(); });
     document.getElementById('atlas-search').value = '';
+    // Also clear the right-hand skill detail panel back to its empty state.
+    document.getElementById('atlas-detail').innerHTML =
+      '<div class="atlas-detail-empty"><div class="adt-emoji">&#129504;</div>'
+      + '<p>Click any tile to see who knows that skill, where they sit, and which skills go with it.</p></div>';
     renderAtlas('');
   });
 
