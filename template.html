@@ -14,7 +14,7 @@
     --pwc-grey-100:#F2F2F2; --pwc-grey-50:#FAFAFA; --white:#FFFFFF;
   }
   *{box-sizing:border-box}
-  body{margin:0;font-family:'Helvetica Neue',Arial,sans-serif;color:var(--pwc-grey-900);background:var(--pwc-grey-100)}
+  body{margin:0;font-family:'Helvetica Neue',Arial,sans-serif;color:var(--pwc-grey-900);background:var(--pwc-grey-100);-webkit-text-size-adjust:100%;text-size-adjust:100%}
   header.brand{background:var(--pwc-grey-900);padding:18px 40px;display:flex;align-items:center;gap:16px}
   header.brand .logo-img{height:44px;width:auto;display:block;background:var(--white);padding:6px 10px;border-radius:4px}
   .logo{font-size:30px;font-weight:700;color:var(--white);letter-spacing:-1px;line-height:1}
@@ -477,9 +477,16 @@
     main{padding:16px}
     h1{font-size:20px}
     .subtitle{font-size:13px}
-    .controls,.smap-controls{flex-direction:column;align-items:stretch}
-    .controls > *,.smap-controls > *{width:100%}
-    .controls input,.controls select,.smap-controls select,.reset-btn,.multiselect,.ms-trigger{width:100%;box-sizing:border-box}
+    /* Mobile: plain BLOCK stacking, no flexbox. Eliminates every flex quirk
+       (flex-basis read as height, wrap creating columns, spacer gaps). Each
+       control becomes a simple full-width row with uniform spacing. */
+    .controls,.smap-controls{display:block;margin:0 0 18px}
+    .controls > *,.smap-controls > *{display:block;width:100%;box-sizing:border-box;min-width:0;flex:none;margin:0 0 8px}
+    .controls .exp-filter{display:flex}                 /* restore the experience slider's own row */
+    .controls .ms-trigger,.smap-controls .ms-trigger{width:100%;min-width:0;box-sizing:border-box}  /* dropdown buttons fill the full row */
+    .controls .ctrl-break,.smap-controls .ctrl-break{display:none;margin:0}
+    /* 16px fields stop iOS Safari from auto-zooming the page when a field gets focus. */
+    .controls input,.smap-controls input,.controls select,.smap-controls select,.ms-search{font-size:16px}
     .ms-panel{min-width:0;width:100%;max-width:none}
     .smap-bar{gap:10px}
     .atlas-view-toggle,.atlas-toolbar{width:100%}
@@ -600,8 +607,8 @@
         </div>
         <div class="atlas-toolbar">
           <div class="atlas-view-toggle" id="atlas-view-toggle">
-            <button data-view="cards" class="active">By Competency</button>
-            <button data-view="cloud">All Skills</button>
+            <button data-view="catcloud" class="active">Skill Category</button>
+            <button data-view="cards">By Competency</button>
           </div>
           <input type="text" id="atlas-search" placeholder="Search skills across competencies...">
         </div>
@@ -1528,7 +1535,14 @@
                     + (emp['Address'] ? fieldHtml('Address', emp['Address'], { fullWidth: true }) : '');
     // Direct reports (employees whose RL Manager is this person)
     const _norm = s => String(s || '').trim().toLowerCase();
-    const reports = EMPLOYEES.filter(x => _norm(x['RL Manager']) === _norm(emp.Name) && String(x.WorkdayID) !== String(emp.WorkdayID))
+    const _myMail = String(emp.emailid || '').trim();
+    const reports = EMPLOYEES.filter(x => {
+        if (String(x.WorkdayID) === String(emp.WorkdayID)) return false;
+        const xMail = String(x['RL Manager Email'] || '').trim();
+        // Prefer email match (unique & stable); fall back to name when an email is missing.
+        if (_myMail && xMail) return _norm(xMail) === _norm(_myMail);
+        return _norm(x['RL Manager']) === _norm(emp.Name);
+      })
       .sort((a, b) => String(a.Name).localeCompare(String(b.Name)));
     const reportCards = reports.map(e => {
       const av = e._photo ? '<div class="adt-person-photo"><img loading="lazy" src="' + e._photo + '"></div>' : '<div class="adt-person-photo fallback">' + esc(e._initials) + '</div>';
@@ -1536,7 +1550,10 @@
     }).join('');
     const reportsBlock = reports.length ? ('<div class="bio-section-title">Employees Under This RL Manager (' + reports.length + ')</div><div class="bio-reports">' + reportCards + '</div>') : '';
     const rlName = String(emp['RL Manager'] || '').trim();
-    const rlEmp = rlName ? EMPLOYEES.find(x => _norm(x.Name) === _norm(rlName) && String(x.WorkdayID) !== String(emp.WorkdayID)) : null;
+    const rlMail = String(emp['RL Manager Email'] || '').trim();
+    // Resolve the RL Manager by email first (unique), then fall back to matching on name.
+    const rlEmp = (rlMail && EMPLOYEES.find(x => x.emailid && _norm(x.emailid) === _norm(rlMail) && String(x.WorkdayID) !== String(emp.WorkdayID)))
+              || (rlName ? EMPLOYEES.find(x => _norm(x.Name) === _norm(rlName) && String(x.WorkdayID) !== String(emp.WorkdayID)) : null);
     const backTo = bioStack.length ? (EMPLOYEES.find(e => String(e.WorkdayID) === String(bioStack[bioStack.length - 1])) || {}).Name : '';
     const backBtn = backTo ? '<button class="bio-back" type="button">&#8592; Back to ' + esc(backTo) + '</button>' : '';
     const rlChip = rlName
@@ -1807,6 +1824,27 @@
       });
     });
   }
+  // Group skills by their SKILL CATEGORY (not competency) for the "Skill Category"
+  // cloud view. Returns the same shape as buildCategoryData so renderSkillCloud
+  // can consume it directly.
+  function buildSkillCategoryData(){
+    const ids = atlasPoolIds(), catSel = aCat.selected;
+    const cats = Object.create(null);
+    EMPLOYEES.forEach(e => {
+      if (!ids.has(String(e.WorkdayID))) return;
+      e._skills.forEach(k => {
+        const cat = SKILL_CATEGORY[k] || 'Uncategorised';
+        if (catSel.size && !catSel.has(cat)) return;
+        if (!cats[cat]) cats[cat] = { skills: Object.create(null), people: new Set() };
+        cats[cat].people.add(e.WorkdayID);
+        cats[cat].skills[k] = (cats[cat].skills[k] || 0) + 1;
+      });
+    });
+    return Object.entries(cats).map(([name, data]) => {
+      const skills = Object.entries(data.skills).map(([key, count]) => ({ key, count })).sort((a, b) => b.count - a.count);
+      return { name, color: CAT_COLOR[name] || '#9C9C9C', peopleCount: data.people.size, skillsCount: skills.length, skills };
+    }).sort((a, b) => (a.name === 'Uncategorised') - (b.name === 'Uncategorised') || b.peopleCount - a.peopleCount || a.name.localeCompare(b.name));
+  }
   // ----- All Skills cloud: the complete catalogue in one place -----
   // Chips grouped by competency, sized by how many people hold the skill.
   // Solves "too many skills to show at once": nothing is hidden behind
@@ -1818,9 +1856,9 @@
     if (r >= 0.33) return 's2';
     return 's1';
   }
-  function renderSkillCloud(q){
+  function renderSkillCloud(q, builder){
     q = (q || '').toLowerCase().trim();
-    let cats = buildCategoryData();
+    let cats = (builder || buildCategoryData)();
     if (q){
       cats = cats.map(c => ({
         ...c,
@@ -1853,11 +1891,13 @@
   }
 
   // ----- View toggle + shared render entry point -----
-  let atlasView = 'cards';
+  let atlasView = 'catcloud';
   function renderAtlas(q){
-    document.getElementById('atlas-cards').style.display = atlasView === 'cards' ? '' : 'none';
-    document.getElementById('atlas-cloud').style.display = atlasView === 'cloud' ? '' : 'none';
+    const showCards = atlasView === 'cards';
+    document.getElementById('atlas-cards').style.display = showCards ? '' : 'none';
+    document.getElementById('atlas-cloud').style.display = showCards ? 'none' : '';
     if (atlasView === 'cards') renderCompetencyCards(q);
+    else if (atlasView === 'catcloud') renderSkillCloud(q, buildSkillCategoryData);
     else renderSkillCloud(q);
   }
   document.querySelectorAll('#atlas-view-toggle button').forEach(btn => {
