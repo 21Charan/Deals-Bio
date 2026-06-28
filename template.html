@@ -217,6 +217,7 @@
   .comp-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border-bottom:1px solid var(--pwc-grey-100);padding-bottom:10px;margin-bottom:10px}
   .comp-card-title{font-size:15px;font-weight:700;color:var(--pwc-grey-900);margin:0;text-transform:uppercase;letter-spacing:0.4px}
   .comp-card-stats{font-size:11px;color:var(--pwc-grey-600);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.4px;font-weight:600}
+  .comp-card-count{font-size:11px;color:var(--pwc-grey-600);text-transform:uppercase;letter-spacing:0.4px;font-weight:600;white-space:nowrap;flex-shrink:0;margin-left:10px;padding-top:4px}
   .comp-card-skills{display:flex;flex-direction:column;gap:5px;flex:1}
   .cc-skill{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--pwc-grey-900);padding:3px 4px;border-radius:3px;transition:background .12s}
   .cc-skill:hover{background:var(--pwc-grey-100)}
@@ -1869,8 +1870,8 @@
       return '<div class="comp-card" data-cat="' + esc(c.name) + '" style="border-top-color:' + c.color + ';">'
            +   '<div class="comp-card-header">'
            +     '<h3 class="comp-card-title">' + esc(c.name) + '</h3>'
+           +     '<span class="comp-card-count">' + c.skillsCount + ' skill' + (c.skillsCount === 1 ? '' : 's') + '</span>'
            +   '</div>'
-           +   '<div class="comp-card-stats">' + c.peopleCount + ' people &middot; ' + c.skillsCount + ' skill' + (c.skillsCount === 1 ? '' : 's') + '</div>'
            +   '<div class="comp-card-skills">' + skillsHtml + '</div>'
            +   moreBtn
            + '</div>';
@@ -1948,7 +1949,7 @@
       return '<div class="cloud-cat" style="border-left-color:' + c.color + ';">'
            +   '<div class="cloud-cat-head">'
            +     '<h3 class="cloud-cat-name">' + esc(c.name) + '</h3>'
-           +     '<span class="cloud-cat-meta">' + c.peopleCount + ' people &middot; ' + c.skillsCount + ' skill' + (c.skillsCount === 1 ? '' : 's') + '</span>'
+           +     '<span class="cloud-cat-meta">' + c.skillsCount + ' skill' + (c.skillsCount === 1 ? '' : 's') + '</span>'
            +   '</div>'
            +   '<div class="cloud-chips">' + chips + '</div>'
            + '</div>';
@@ -2503,7 +2504,7 @@
 
     // On the bench — lowest latest-month util
     const bench = list
-      .filter(e => typeof e._latestUtil === 'number')
+      .filter(e => typeof e._latestUtil === 'number' && e._latestUtil < 40)
       .sort((a,b) => a._latestUtil - b._latestUtil)
       .slice(0, 20);
     document.getElementById('insight-bench').innerHTML = bench.length
