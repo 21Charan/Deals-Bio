@@ -771,6 +771,9 @@ document.getElementById('bio-next').addEventListener('click', () => stepBio(1));
   let sx = 0, sy = 0, on = false;
   bioSheet.addEventListener('touchstart', e => {
     if (e.touches.length !== 1){ on = false; return; }
+    // Don't hijack touches that start inside a horizontally-scrollable element
+    // (the utilization chart) — let it scroll instead of swiping to the next person.
+    if (e.target.closest && e.target.closest('.util-wrap')){ on = false; return; }
     sx = e.touches[0].clientX; sy = e.touches[0].clientY; on = true;
   }, { passive: true });
   bioSheet.addEventListener('touchend', e => {
