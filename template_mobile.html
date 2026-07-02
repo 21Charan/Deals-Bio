@@ -449,18 +449,25 @@ const _MABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 function monthLabel(key){ const m = String(key).match(/^(\d{4})-(\d{2})/); return m ? _MABBR[+m[2]-1] + "'" + m[1].slice(2) : String(key); }
 
 // ============ Indexes (same semantics as desktop) ============
+// Normalise a WorkdayID for cross-sheet joins: trims whitespace and strips a
+// trailing ".0" (Excel sometimes stores the same ID as text in one sheet and
+// as a number in another — read back they become "534034" vs "534034.0").
+function normId(v){
+  const t = String(v == null ? '' : v).trim();
+  return /^\d+\.0$/.test(t) ? t.slice(0, -2) : t;
+}
 const SKILLS_BY_EMP = Object.create(null);
-SKILLS.forEach(s => { const id = String(s.WorkdayID); (SKILLS_BY_EMP[id] = SKILLS_BY_EMP[id] || []).push(s); });
+SKILLS.forEach(s => { const id = normId(s.WorkdayID); (SKILLS_BY_EMP[id] = SKILLS_BY_EMP[id] || []).push(s); });
 const UTIL_BY_EMP = Object.create(null);
-UTIL.forEach(u => { const id = String(u.WorkdayID); (UTIL_BY_EMP[id] = UTIL_BY_EMP[id] || []).push(u); });
+UTIL.forEach(u => { const id = normId(u.WorkdayID); (UTIL_BY_EMP[id] = UTIL_BY_EMP[id] || []).push(u); });
 
 // Latest-month utilization per employee (same as desktop Pulse / Capability Risk)
 const ALL_MONTHS = [...new Set(UTIL.map(u => monthKey(u['Month Year'])))].sort();
 const LATEST_MONTH = ALL_MONTHS[ALL_MONTHS.length - 1] || '';
 const UTIL_LOOKUP = Object.create(null);
-UTIL.forEach(u => { UTIL_LOOKUP[String(u.WorkdayID) + '|' + monthKey(u['Month Year'])] = Number(u.Utilization) || 0; });
+UTIL.forEach(u => { UTIL_LOOKUP[normId(u.WorkdayID) + '|' + monthKey(u['Month Year'])] = Number(u.Utilization) || 0; });
 const HAS_UTIL = ALL_MONTHS.length > 0 && !SHARE_MODE;
-EMPLOYEES.forEach(e => { e._latestUtil = UTIL_LOOKUP[String(e.WorkdayID) + '|' + LATEST_MONTH]; });
+EMPLOYEES.forEach(e => { e._latestUtil = UTIL_LOOKUP[normId(e.WorkdayID) + '|' + LATEST_MONTH]; });
 // PwC colour ramp for utilization (same bands as desktop)
 function utilColor(v){
   if (v == null || isNaN(v)) return { bg: '#F7F7F7', dark: true };
@@ -474,9 +481,9 @@ const SKILL_DISPLAY  = Object.create(null);
 const SKILL_CATEGORY = Object.create(null);
 EMPLOYEES.forEach(e => { e._skills = new Set(); });
 const _EMP_BY_ID = Object.create(null);
-EMPLOYEES.forEach(e => { _EMP_BY_ID[String(e.WorkdayID)] = e; });
+EMPLOYEES.forEach(e => { _EMP_BY_ID[normId(e.WorkdayID)] = e; });
 SKILLS.forEach(row => {
-  const emp = _EMP_BY_ID[String(row.WorkdayID)];
+  const emp = _EMP_BY_ID[normId(row.WorkdayID)];
   if (!emp) return;
   const cat = String(row['Skill Category'] || '').trim() || 'Uncategorised';
   String(row.Skills || '').split(/[,;]/).map(s => s.trim()).filter(Boolean).forEach(s => {
@@ -489,6 +496,18 @@ SKILLS.forEach(row => {
 EMPLOYEES.forEach(e => {
   e._skillsSearchable = [...e._skills].map(k => SKILL_DISPLAY[k] || '').join(' ').toLowerCase();
 });
+// Diagnostic: distinguish "no skills sheet" from "sheet present but IDs don't join".
+function skillsDiagnostic(){
+  if (Object.keys(SKILL_DISPLAY).length) return '';
+  if (!SKILLS.length)
+    return '<div class="empty-note"><b>No skill data found.</b><br>The workbook needs an '
+      + '<b>Employee Skills</b> (or <b>Skill Mapping</b>) sheet with columns '
+      + 'Skill Category / Skills / WorkdayID.</div>';
+  return '<div class="empty-note"><b>' + SKILLS.length + ' skill rows loaded, but none match an employee.</b><br>'
+    + 'The <b>WorkdayID</b> values in the skills sheet don\u2019t match the Employee Details sheet. '
+    + 'Example from skills sheet: <b>' + esc(String(SKILLS[0].WorkdayID)) + '</b> \u2014 example employee: <b>'
+    + esc(String(EMPLOYEES.length ? EMPLOYEES[0].WorkdayID : '?')) + '</b>. Fix the IDs and rerun generate_report.py.</div>';
+}
 const ALL_SKILLS = Object.keys(SKILL_DISPLAY)
   .sort((a, b) => SKILL_DISPLAY[a].localeCompare(SKILL_DISPLAY[b], undefined, { sensitivity: 'base' }));
 const SKILL_COUNT = Object.create(null);
@@ -785,7 +804,7 @@ document.getElementById('bio-next').addEventListener('click', () => stepBio(1));
 })();
 
 function utilChartHtml(id){
-  const rows = (UTIL_BY_EMP[String(id)] || []).slice()
+  const rows = (UTIL_BY_EMP[normId(id)] || []).slice()
     .sort((a, b) => monthKey(a['Month Year']).localeCompare(monthKey(b['Month Year'])));
   if (!rows.length) return '<p class="muted">No utilization data.</p>';
   const W = 640, H = 240, padL = 42, padR = 18, padT = 30, padB = 40;
@@ -829,7 +848,7 @@ function utilChartHtml(id){
 }
 
 function renderBio(id){
-  const emp = _EMP_BY_ID[String(id)];
+  const emp = _EMP_BY_ID[normId(id)];
   if (!emp) return;
   currentBioId = id;
   const i = navOrder.findIndex(x => String(x) === String(id));
@@ -865,7 +884,7 @@ function renderBio(id){
   if (emp['Address']) grid += field('Address', emp['Address'], true);
 
   // Skills grouped by category
-  const empSkills = SKILLS_BY_EMP[String(id)] || [];
+  const empSkills = SKILLS_BY_EMP[normId(id)] || [];
   const grouped = {};
   empSkills.forEach(s => {
     const cat = String(s['Skill Category'] || 'Other').trim() || 'Other';
@@ -977,6 +996,8 @@ function staffMatches(){
 function renderFinderResults(){
   const summary = document.getElementById('finder-summary');
   const host = document.getElementById('finder-results');
+  const diag = skillsDiagnostic();
+  if (diag){ summary.innerHTML = ''; host.innerHTML = diag; return; }
   if (!mustSet.size && !niceSet.size){
     summary.innerHTML = '';
     host.innerHTML = '<div class="empty-note">Add skills above to see ranked matches.</div>';
@@ -1092,7 +1113,7 @@ function renderExplore(){
           '<button class="xtag' + (mustSet.has(k) ? ' must' : niceSet.has(k) ? ' nice' : '') + '" data-k="' + esc(k) + '">'
           + esc(SKILL_DISPLAY[k]) + ' <span class="n">' + n + '</span></button>').join('')
       + '</div></details>';
-  }).join('') : '<div class="empty-note">No skills in the current filter scope.</div>';
+  }).join('') : (skillsDiagnostic() || '<div class="empty-note">No skills in the current filter scope.</div>');
   host.querySelectorAll('.xtag').forEach(b =>
     b.addEventListener('click', () => openSkillSheet(b.dataset.k, 'explore')));
   updateExploreBar();
@@ -1164,6 +1185,13 @@ function renderRisk(){
     document.getElementById('risk-kpis').innerHTML = '';
     document.getElementById('risk-meta').textContent = '';
     list.innerHTML = '<div class="empty-note">This view needs monthly utilization, which is stripped from shared builds.</div>';
+    return;
+  }
+  const diag = skillsDiagnostic();
+  if (diag){
+    document.getElementById('risk-kpis').innerHTML = '';
+    document.getElementById('risk-meta').textContent = '';
+    list.innerHTML = diag;
     return;
   }
   const pool = filterPool();
@@ -1311,7 +1339,7 @@ const PAGE_EXPORTS = {
   directory(){
     const rows = [['Name','Role','Competency','Territory','Location','Experience (yrs)','PwC Experience (yrs)','Email','Skills']];
     visibleOrder.forEach(id => {
-      const e = _EMP_BY_ID[String(id)];
+      const e = _EMP_BY_ID[normId(id)];
       if (e) rows.push([e.Name, e.Role, e['Competency Filter'], e['Territory Filter'], e.Location,
                         e[EXP_TOTAL], e[EXP_PWC], e.emailid, _skillsOf(e)]);
     });
