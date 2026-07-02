@@ -79,6 +79,12 @@
   .pchev{color:var(--g-400);flex:0 0 auto;font-size:18px}
   .empty-note{color:var(--g-600);font-size:14px;text-align:center;padding:30px 10px}
 
+  /* ---- directory scroll fabs ---- */
+  .scroll-fabs{position:fixed;right:12px;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px);display:flex;flex-direction:column;gap:8px;z-index:35}
+  .scroll-fabs button{width:40px;height:40px;border-radius:50%;border:1px solid var(--g-300);background:rgba(255,255,255,.94);color:var(--g-700);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.14)}
+  .scroll-fabs button:active{background:var(--g-100)}
+  .scroll-fabs svg{width:20px;height:20px}
+
   /* ---- bottom nav ---- */
   nav.bottom{position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--white);border-top:1px solid var(--g-300);display:flex;height:calc(var(--nav-h) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom)}
   nav.bottom button{flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:600;color:var(--g-600);font-family:inherit}
@@ -189,6 +195,8 @@
   #skill-sheet.open{transform:translateY(0)}
   #ss-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .ss-sub{font-size:12px;color:var(--g-600);margin:2px 0 0}
+  .ss-seg{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--pwc-orange);padding:12px 0 4px}
+  .ss-seg:first-child{padding-top:4px}
 
   /* ---- finder: mode toggle + explore ---- */
   .fh-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
@@ -261,7 +269,7 @@
   <img src="__LOGO_URI__" alt="PwC" onerror="this.style.display='none'">
   <div>
     <h1>Employee Bios</h1>
-    <div class="sub">Generated __GENERATED__</div>
+    <div class="sub">As of __GENERATED__</div>
   </div>
   <button class="hdr-x" id="export-btn" aria-label="Export to Excel" title="Export the current view to Excel (filters applied)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg>
@@ -273,7 +281,7 @@
     <div class="stat"><div class="v" id="st-total">-</div><div class="l">People</div></div>
     <div class="stat"><div class="v" id="st-locs">-</div><div class="l">Locations</div></div>
     <div class="stat"><div class="v" id="st-comps">-</div><div class="l">Competencies</div></div>
-    <div class="stat"><div class="v" id="st-mgrs">-</div><div class="l">Mgrs &amp; above</div></div>
+    <div class="stat"><div class="v" id="st-mgrs">-</div><div class="l">Managers &amp; Above</div></div>
   </div>
   <div class="searchbar">
     <input type="search" id="m-search" placeholder="Search name, skill, role&hellip;" autocomplete="off">
@@ -327,8 +335,8 @@
 
   <div id="finder-explore" style="display:none">
     <div class="grp-row"><span class="gl">Group by</span>
-      <button data-dim="cat" class="active">Category</button>
-      <button data-dim="comp">Competency</button>
+      <button data-dim="comp" class="active">Competency</button>
+      <button data-dim="cat">Category</button>
       <button data-dim="terr">Territory</button>
     </div>
     <div id="explore-list"></div>
@@ -358,7 +366,7 @@
     </div>
     <div class="thr-row">
       <div class="thr-top"><span class="tl">Stretched above</span><span class="tv"><b id="thr-hot-val">100</b>% utilization</span></div>
-      <input type="range" id="thr-hot" min="40" max="150" step="5" value="100">
+      <input type="range" id="thr-hot" min="40" max="120" step="5" value="100">
     </div>
   </div>
   <div class="risk-kpis" id="risk-kpis"></div>
@@ -369,6 +377,11 @@
   <div id="risk-meta" style="font-size:12px;color:var(--g-600);margin:0 2px 10px"></div>
   <div id="risk-list"></div>
 </main>
+
+<div class="scroll-fabs" id="scroll-fabs">
+  <button id="fab-up" aria-label="Scroll up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button>
+  <button id="fab-down" aria-label="Scroll down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+</div>
 
 <nav class="bottom">
   <button data-view="directory" class="active">
@@ -589,9 +602,38 @@ document.querySelectorAll('nav.bottom button[data-view]').forEach(btn => {
     btn.classList.add('active');
     document.querySelectorAll('main.view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-' + btn.dataset.view).classList.add('active');
+    const fabs = document.getElementById('scroll-fabs');
+    if (fabs) fabs.style.display = btn.dataset.view === 'directory' ? 'flex' : 'none';
     window.scrollTo(0, 0);
   });
 });
+
+// ---- Directory glide scroll: floating arrows; stops mid-way on any user input,
+// ---- on tapping the same arrow again, or when the opposite arrow reverses it.
+(function(){
+  const up = document.getElementById('fab-up'), down = document.getElementById('fab-down');
+  if (!up) return;
+  let raf = null, dir = 0;
+  function stop(){ if (raf) cancelAnimationFrame(raf); raf = null; dir = 0; }
+  function glide(d){
+    if (dir === d){ stop(); return; }     // same arrow again = pause right here
+    stop(); dir = d;
+    const step = () => {
+      window.scrollBy(0, d * 16);
+      const doc = document.documentElement;
+      const atTop = window.scrollY <= 0;
+      const atBottom = window.innerHeight + window.scrollY >= doc.scrollHeight - 2;
+      if ((d < 0 && atTop) || (d > 0 && atBottom)){ stop(); return; }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+  }
+  up.addEventListener('click', () => glide(-1));
+  down.addEventListener('click', () => glide(1));
+  // the user touching / scrolling anywhere pauses the glide where it is
+  window.addEventListener('touchstart', e => { if (!e.target.closest || !e.target.closest('.scroll-fabs')) stop(); }, { passive: true });
+  window.addEventListener('wheel', stop, { passive: true });
+})();
 
 // ============ Filter state + bottom sheet ============
 // Same semantics as the desktop Directory: Role / Location / Territory Filter /
@@ -710,7 +752,7 @@ let currentBioId = null;
 let bioStack = [];
 
 function personRow(e){
-  const meta1 = [e.Role, e['Competency Group'] || e['Competency']].filter(Boolean).map(esc).join(' &middot; ');
+  const meta1 = [e.Role, e['Competency'] || e['Competency Group']].filter(Boolean).map(esc).join(' &middot; ');
   const meta2 = [e.Location ? esc(e.Location) : '', (e[EXP_TOTAL] || e[EXP_TOTAL] === 0) ? esc(e[EXP_TOTAL]) + ' yrs' : ''].filter(Boolean).join(' &middot; ');
   return '<div class="person" data-id="' + esc(e.WorkdayID) + '">'
     + avatarHtml(e, 'pav')
@@ -1073,7 +1115,7 @@ document.querySelectorAll('#finder-mode button').forEach(b => b.addEventListener
   document.getElementById('finder-explore').style.display = explore ? '' : 'none';
   if (explore) renderExplore();
 }));
-let exploreDim = 'cat';
+let exploreDim = 'comp';
 document.querySelectorAll('.grp-row button').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('.grp-row button').forEach(x => x.classList.remove('active'));
   b.classList.add('active');
@@ -1110,12 +1152,12 @@ function renderExplore(){
       +   '<span class="xc-meta">' + skills.length + (skills.length === 1 ? ' skill' : ' skills') + ' &middot; ' + o.people.size + (o.people.size === 1 ? ' person' : ' people') + '</span>'
       +   '<span class="xc-car">&#9662;</span></summary>'
       + '<div class="xc-body">' + skills.map(([k, n]) =>
-          '<button class="xtag' + (mustSet.has(k) ? ' must' : niceSet.has(k) ? ' nice' : '') + '" data-k="' + esc(k) + '">'
+          '<button class="xtag' + (mustSet.has(k) ? ' must' : niceSet.has(k) ? ' nice' : '') + '" data-k="' + esc(k) + '" data-g="' + esc(g) + '">'
           + esc(SKILL_DISPLAY[k]) + ' <span class="n">' + n + '</span></button>').join('')
       + '</div></details>';
   }).join('') : (skillsDiagnostic() || '<div class="empty-note">No skills in the current filter scope.</div>');
   host.querySelectorAll('.xtag').forEach(b =>
-    b.addEventListener('click', () => openSkillSheet(b.dataset.k, 'explore')));
+    b.addEventListener('click', () => openSkillSheet(b.dataset.k, 'explore', { dim: exploreDim, group: b.dataset.g })));
   updateExploreBar();
 }
 function refreshExploreStates(){
@@ -1260,7 +1302,7 @@ document.querySelectorAll('#risk-focus button').forEach(b => b.addEventListener(
 
 // ---- skill detail bottom sheet: who holds it + how busy they are ----
 const skillSheet = document.getElementById('skill-sheet');
-function openSkillSheet(k, ctx){
+function openSkillSheet(k, ctx, seg){
   ctx = ctx || 'risk';
   let baseHolders;
   const subBits = [esc(SKILL_CATEGORY[k] || '')];
@@ -1300,15 +1342,31 @@ function openSkillSheet(k, ctx){
     });
   };
   paintActions();
-  const holders = baseHolders.slice().sort((a, b) => (b._latestUtil ?? -1) - (a._latestUtil ?? -1));
-  document.getElementById('ss-body').innerHTML = holders.map(e => {
+  const byUtil = (a, b) => (b._latestUtil ?? -1) - (a._latestUtil ?? -1);
+  // When drilled in from a Competency / Territory group, show that segment's
+  // people first (each block sorted by utilization), then the other holders.
+  const segCol = seg && seg.group ? (seg.dim === 'comp' ? 'Competency Filter' : seg.dim === 'terr' ? 'Territory Filter' : null) : null;
+  let sections = [];
+  if (segCol){
+    const inSeg  = baseHolders.filter(e => String(e[segCol] || '').trim() === seg.group).sort(byUtil);
+    const others = baseHolders.filter(e => String(e[segCol] || '').trim() !== seg.group).sort(byUtil);
+    if (inSeg.length)  sections.push({ label: 'In ' + seg.group + ' &middot; ' + inSeg.length, people: inSeg });
+    if (others.length) sections.push({ label: 'Other holders &middot; ' + others.length, people: others });
+  } else {
+    sections = [{ label: null, people: baseHolders.slice().sort(byUtil) }];
+  }
+  const holders = sections.flatMap(x => x.people);
+  const rowHtml = e => {
     const u = typeof e._latestUtil === 'number'
       ? (() => { const c = utilColor(e._latestUtil); return '<span class="util-pill" style="background:' + c.bg + ';color:' + (c.dark ? '#2D2D2D' : '#fff') + '">' + Math.round(e._latestUtil) + '%</span>'; })()
       : '';
     return '<div class="rrow ss-person" data-id="' + esc(e.WorkdayID) + '" style="min-height:48px">' + avatarHtml(e, 'rav')
       + '<div style="flex:1;min-width:0"><div class="rname">' + esc(e.Name) + '</div><div class="rmeta">'
       + esc([e.Role, e['Competency Group'] || e['Competency']].filter(Boolean).join(' · ')) + '</div></div>' + u + '</div>';
-  }).join('');
+  };
+  document.getElementById('ss-body').innerHTML = sections.map(sec =>
+    (sec.label ? '<div class="ss-seg">' + sec.label + '</div>' : '') + sec.people.map(rowHtml).join('')
+  ).join('');
   const ids = holders.map(h => h.WorkdayID);
   document.getElementById('ss-body').querySelectorAll('.ss-person').forEach(p =>
     p.addEventListener('click', () => { closeSkillSheet(); openBio(p.dataset.id, false, ids); }));
