@@ -1349,5 +1349,27 @@ onFiltersChanged();
 renderFinderChips();
 renderFinderResults();
 </script>
+<script>
+// Guard: if the main script above failed to boot (e.g. this file was opened as
+// the raw TEMPLATE with unfilled placeholders), the KPI strip never gets numbers.
+// Show an explanation instead of a silently empty page. Note: we check the DOM
+// rather than the EMPLOYEES binding — a failed const initialiser leaves the name
+// in the temporal dead zone, where even typeof throws.
+(function(){
+  function check(){
+    var st = document.getElementById('st-total');
+    if (st && st.textContent === '-'){
+      document.body.insertAdjacentHTML('afterbegin',
+        '<div style="background:#E0301E;color:#fff;padding:14px 16px;font-size:13px;line-height:1.5">'
+        + '<b>The dashboard could not load its data.</b><br>'
+        + 'If you opened <b>template_mobile.html</b>: that is the build template &mdash; open '
+        + '<b>Employee_Dashboard_Mobile.html</b> from the <b>03_Output files</b> folder instead, '
+        + 'or regenerate it by running <b>generate_report.py</b>.</div>');
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', check);
+  else check();
+})();
+</script>
 </body>
 </html>
