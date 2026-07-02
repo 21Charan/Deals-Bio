@@ -51,6 +51,7 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 INPUT_FILE   = OUTPUT_DIR / "Employee Details.xlsx"      # master file (built by your ETL) lives with the outputs
 IMAGES_DIR   = SOURCE_DIR / "Images"
 TEMPLATE     = SCRIPT_DIR / "template.html"
+MOBILE_TEMPLATE = SCRIPT_DIR / "template_mobile.html"   # phone-first companion build
 OUTPUT_FILE  = OUTPUT_DIR / "Employee_Dashboard.html"
 
 # PwC logo lives in the working folder. Looked up by stem in this order.
@@ -162,6 +163,7 @@ def load_workbook_data(path):
         "Employee Details": "details",
         "Employee Skills": "skills",
         "Skill Mapping": "skills",          # real-file sheet name
+        "Employee Skills Hierarchy": "skills",  # renamed sheet (adds Skill Group column)
         "Employee Monthly Utilization": "utilization",
         "Employee Utilization_Jul_Jun": "util_jj",   # FY Jul-Jun view (Pulse toggle)
         "Employee Utilization_Apr_Mar": "util_am",   # FY Apr-Mar view (Pulse toggle)
@@ -305,9 +307,11 @@ def main():
     generated_str = f"{today.day} {today.strftime('%B %Y')}"
 
     template = TEMPLATE.read_text(encoding="utf-8")
+    mobile_template = MOBILE_TEMPLATE.read_text(encoding="utf-8") if MOBILE_TEMPLATE.exists() else None
 
-    def render(share):
-        """share=True -> restricted build: utilization stripped + full Address redacted."""
+    def render(share, tpl=None):
+        """share=True -> restricted build: utilization stripped + full Address redacted.
+        tpl overrides the page template (used for the mobile build)."""
         emp = enriched
         util = data["utilization"]
         util_jj = data["util_jj"]
@@ -315,7 +319,7 @@ def main():
         if share:
             util = util_jj = util_am = []                  # no utilization anywhere
             emp = [{k: v for k, v in e.items() if k != "Address"} for e in enriched]  # redact full address
-        return (template
+        return ((tpl if tpl is not None else template)
             .replace("__EMPLOYEES_JSON__", json.dumps(emp, default=str))
             .replace("__SKILLS_JSON__",    json.dumps(data["skills"], default=str))
             .replace("__UTIL_JSON__",      json.dumps(util, default=str))
@@ -336,9 +340,12 @@ def main():
             .replace("__PBI_URL__",        args.pbi_url))
 
     builds = [
-        (False, OUTPUT_DIR / "Employee_Dashboard.html",        "MD / full (all data)"),
-        (True,  OUTPUT_DIR / "Employee_Dashboard_Shared.html", "Restricted (no utilization, Address redacted)"),
+        (False, OUTPUT_DIR / "Employee_Dashboard.html",        "MD / full (all data)", None),
+        (True,  OUTPUT_DIR / "Employee_Dashboard_Shared.html", "Restricted (no utilization, Address redacted)", None),
     ]
+    if mobile_template is not None:
+        builds.append((False, OUTPUT_DIR / "Employee_Dashboard_Mobile.html",
+                       "Mobile / full (Directory + Skill Finder)", mobile_template))
 
     print(f"[ok] Employees: {len(enriched)} | Skill rows: {len(data['skills'])} | Util rows: {len(data['utilization'])}")
     ids_with_skills = {str(r.get("WorkdayID")) for r in data["skills"] if r.get("WorkdayID") not in (None, "")}
@@ -348,8 +355,8 @@ def main():
         more = f" + {len(no_skill_emps) - 5} more" if len(no_skill_emps) > 5 else ""
         print(f"[warn] {len(no_skill_emps)} employee(s) have NO rows in the skills sheet: {names}{more}")
     print(f"[ok] Logo found: {'yes' if logo_uri else 'no'}")
-    for share, out_file, label in builds:
-        out_file.write_text(render(share), encoding="utf-8")
+    for share, out_file, label, tpl in builds:
+        out_file.write_text(render(share, tpl), encoding="utf-8")
         size_kb = out_file.stat().st_size / 1024
         print(f"[ok] {label:46s} -> {out_file.name}  ({size_kb:,.0f} KB)")
 
