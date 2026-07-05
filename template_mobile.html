@@ -136,6 +136,10 @@
   .stitle{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--pwc-orange);margin:0 0 10px}
   .bgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px}
   .bgrid .full{grid-column:1 / -1}
+  .bgrid .col1{grid-column:1}
+  .contact-row{border-top:1px solid var(--g-200);padding-top:12px;margin-top:2px}
+  .contact-row a{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:var(--pwc-orange);text-decoration:none;word-break:break-all}
+  .contact-row svg{width:17px;height:17px;flex:0 0 auto;color:var(--g-600)}
   .field .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--g-600)}
   .field .val{font-size:13px;margin-top:2px;word-break:break-word}
   .field .val a{color:var(--pwc-orange);text-decoration:none;font-weight:600}
@@ -712,6 +716,18 @@ function onFiltersChanged(){
   document.querySelectorAll('.filter-btn').forEach(fb => fb.classList.toggle('has-filters', n > 0));
   document.querySelectorAll('.filter-btn .fbadge').forEach(el => { el.textContent = n; });
   renderActiveChips();
+  // Seed skills selected in the global filter into the Finder as nice-to-have
+  // chips (and remove them again when the filter is cleared).
+  sel.skills.forEach(k => {
+    if (!finderSeeded.has(k) && !finderDismissed.has(k) && !mustSet.has(k) && !niceSet.has(k)){ niceSet.add(k); finderSeeded.add(k); }
+  });
+  [...finderSeeded].forEach(k => {
+    if (!sel.skills.has(k)){ finderSeeded.delete(k); niceSet.delete(k); }
+  });
+  [...finderDismissed].forEach(k => {
+    if (!sel.skills.has(k)) finderDismissed.delete(k);   // unchecking the filter resets the dismissal
+  });
+  renderFinderChips();
   renderDirectory();
   renderRisk();           // risk pool respects the filters
   renderFinderResults();  // ...and so do the ranked matches
@@ -916,20 +932,26 @@ function renderBio(id){
   const SKIP = new Set(['Name','Role','OU','PhotoID','Employee Description','Team',
     'Territory','Territory Filter','Competency Group','Competency Filter','Skills',
     EXP_TOTAL, EXP_PWC, '_photo','_initials','_skills','_skillsSearchable']);
-  const PREF = ['WorkdayID','Join Date','emailid','Qualification','Status','Work Mode',
-    'Location','Emp Location','Territory','Job Family','Current Location','Talent Consultant','Coach','RL Manager'];
+  const PREF = ['WorkdayID','Join Date','Qualification','Status',
+    'Location','Current Location','Emp Location','Work Mode','Territory','Job Family','Talent Consultant','Coach','RL Manager'];
   const LABELS = { 'WorkdayID':'Workday ID','emailid':'Email','OU':'Operating Unit','Emp Location':'Office Location' };
-  const field = (key, val, full, raw) => {
+  const field = (key, val, full, raw, col1) => {
     let v = raw ? val : esc(val === '' || val == null ? '-' : val);
     if (key === 'emailid' && val) v = '<a href="mailto:' + esc(val) + '">' + esc(val) + '</a>';
-    return '<div class="field' + (full ? ' full' : '') + '"><div class="lbl">' + esc(LABELS[key] || key) + '</div><div class="val">' + v + '</div></div>';
+    return '<div class="field' + (full ? ' full' : '') + (col1 ? ' col1' : '') + '"><div class="lbl">' + esc(LABELS[key] || key) + '</div><div class="val">' + v + '</div></div>';
   };
   const keys = Object.keys(emp);
   const shown = PREF.filter(k => keys.includes(k) && !SKIP.has(k) && emp[k] !== '' && emp[k] != null);
   // Email (one unbreakable token) and any long value get a full-width row so
   // nothing wraps mid-word in the two-column grid on narrow phones.
   const needsFullRow = k => k === 'emailid' || String(emp[k]).length > 26;
-  let grid = shown.map(k => field(k, emp[k], needsFullRow(k))).join('');
+  let grid = shown.map(k => field(k, emp[k], needsFullRow(k), false,
+    k === 'Location' && String(emp['Current Location'] || '').trim() !== '')).join('');
+  if (emp.emailid){
+    grid += '<div class="field full contact-row"><a href="mailto:' + esc(emp.emailid) + '">'
+      + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>'
+      + esc(emp.emailid) + '</a></div>';
+  }
   // Team (linkified) + Address, full-width
   const teamRaw = String(emp.Team || '').trim();
   if (teamRaw){
@@ -1025,6 +1047,8 @@ function renderBio(id){
 // ============ Skill Finder (same scoring as desktop Staffing Match) ============
 const mustSet = new Set();
 const niceSet = new Set();
+const finderSeeded = new Set();      // nice-to-have chips that came from the global skills filter
+const finderDismissed = new Set();   // seeded chips the user removed by hand — don't re-seed while still filtered
 function addChip(kind, k){
   if (!SKILL_DISPLAY[k]) return;
   (kind === 'must' ? mustSet : niceSet).add(k);
@@ -1033,6 +1057,7 @@ function addChip(kind, k){
 }
 function removeChip(kind, k){
   (kind === 'must' ? mustSet : niceSet).delete(k);
+  if (finderSeeded.has(k)){ finderSeeded.delete(k); finderDismissed.add(k); }  // manual removal wins
   renderFinderChips(); renderFinderResults();
 }
 function renderFinderChips(){
@@ -1044,7 +1069,7 @@ function renderFinderChips(){
   refreshExploreStates();
 }
 function staffMatches(){
-  return filterPool().filter(e => {
+  return peoplePool().filter(e => {
     for (const m of mustSet){ if (!e._skills.has(m)) return false; }
     return true;
   }).map(e => {
@@ -1143,7 +1168,7 @@ document.querySelectorAll('.grp-row button').forEach(b => b.addEventListener('cl
 function renderExplore(){
   const host = document.getElementById('explore-list');
   if (!host) return;
-  const pool = filterPool();
+  const pool = peoplePool();
   const groups = new Map();
   const bump = (g, e, k) => {
     let o = groups.get(g);
@@ -1221,6 +1246,11 @@ function filterPool(){
     if (sel.comp.size && !sel.comp.has(String(e['Competency Filter'] || ''))) return false;
     return true;
   });
+}
+function peoplePool(){
+  // Skills picked in the global filter are seeded into the Finder as
+  // nice-to-have chips (soft ranking) rather than hard-restricting the pool.
+  return filterPool();
 }
 function riskSkillStats(pool){
   const map = new Map();
@@ -1334,7 +1364,7 @@ function openSkillSheet(k, ctx, seg){
       'avg ' + Math.round(demand) + '% util',
       '<b style="color:' + qd.col + '">' + qd.label + '</b>');
   } else {
-    baseHolders = filterPool().filter(e => e._skills.has(k));
+    baseHolders = peoplePool().filter(e => e._skills.has(k));
     if (!baseHolders.length) return;
     subBits.push(baseHolders.length + (baseHolders.length === 1 ? ' person' : ' people'));
     if (HAS_UTIL){
