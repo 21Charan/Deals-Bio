@@ -668,20 +668,23 @@ const sel = { role: new Set(), loc: new Set(), comp: new Set(), terr: new Set(),
 
 const fsBody = document.getElementById('fs-body');
 function buildFilterSheet(){
-  let html = ''
-    + '<details class="fgroup" open>'
-    +   '<summary><span>Skills <span class="cnt" data-cnt="skills" style="display:none"></span></span><span class="car">&#9662;</span></summary>'
-    +   '<input type="search" class="fskill-search" id="fskill-search" placeholder="Search skills&hellip;" autocomplete="off">'
-    +   '<div class="fopts" id="fskill-opts"></div>'
+  const skillsHtml = '<details class="fgroup">'
+    + '<summary><span>Skills <span class="cnt" data-cnt="skills" style="display:none"></span></span><span class="car">&#9662;</span></summary>'
+    + '<input type="search" class="fskill-search" id="fskill-search" placeholder="Search skills&hellip;" autocomplete="off">'
+    + '<div class="fopts" id="fskill-opts"></div>'
     + '</details>';
-  html += FILTER_GROUPS.map(g =>
-    '<details class="fgroup">'
+  const groupHtml = (g, open) => '<details class="fgroup"' + (open ? ' open' : '') + '>'
     + '<summary><span>' + esc(g.label) + ' <span class="cnt" data-cnt="' + g.key + '" style="display:none"></span></span><span class="car">&#9662;</span></summary>'
     + '<div class="fopts">'
     +   g.values.map(v =>
         '<label class="fopt"><input type="checkbox" data-group="' + g.key + '" value="' + esc(v) + '"><span>' + esc(v) + '</span></label>').join('')
     + '</div>'
-    + '</details>').join('');
+    + '</details>';
+  // Section order: Competency, Territory, Location, Skills, Role (first one open)
+  const byKey = Object.fromEntries(FILTER_GROUPS.map(g => [g.key, g]));
+  const html = ['comp', 'terr', 'loc'].filter(k => byKey[k]).map((k, i) => groupHtml(byKey[k], i === 0)).join('')
+    + skillsHtml
+    + (byKey.role ? groupHtml(byKey.role, false) : '');
   fsBody.innerHTML = html;
   renderSkillOpts('');
   document.getElementById('fskill-search').addEventListener('input', e => renderSkillOpts(e.target.value));
