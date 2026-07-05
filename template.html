@@ -1124,7 +1124,7 @@
       +     '<p class="name">' + esc(e.Name) + '</p>'
       +     '<span class="role-badge">' + esc(e.Role || '') + '</span>'
       +     '<div class="meta">'
-      +       [esc(e['Competency Group'] || e['Competency'] || ''), esc(e.Location || '')].filter(Boolean).join('<span class="sep">&middot;</span>') + '<br>'
+      +       [esc(e['Competency'] || e['Competency Group'] || ''), esc(e.Location || '')].filter(Boolean).join('<span class="sep">&middot;</span>') + '<br>'
       +       esc(e.Qualification || '') + '<span class="sep">&middot;</span>' + esc(e[EXP_TOTAL] || 0) + ' yrs exp'
       +     '</div>'
       +   '</div>'
@@ -1591,12 +1591,20 @@
         if (_myMail && xMail) return _norm(xMail) === _norm(_myMail);
         return _norm(x['RL Manager']) === _norm(emp.Name);
       })
-      .sort((a, b) => String(a.Name).localeCompare(String(b.Name)));
+      .sort(bySeniority);
     const reportCards = reports.map(e => {
       const av = e._photo ? '<div class="adt-person-photo"><img loading="lazy" src="' + e._photo + '"></div>' : '<div class="adt-person-photo fallback">' + esc(e._initials) + '</div>';
-      return '<div class="bio-report" data-id="' + esc(e.WorkdayID) + '">' + av + '<div style="min-width:0"><div class="adt-person-name">' + esc(e.Name) + '</div><div class="adt-person-meta">' + esc([e.Role, (e['Competency Group'] || e['Competency'])].filter(Boolean).join(' \u00b7 ')) + '</div></div></div>';
+      return '<div class="bio-report" data-id="' + esc(e.WorkdayID) + '">' + av + '<div style="min-width:0"><div class="adt-person-name">' + esc(e.Name) + '</div><div class="adt-person-meta">' + esc([e.Role, (e['Competency'] || e['Competency Group'])].filter(Boolean).join(' \u00b7 ')) + '</div></div></div>';
     }).join('');
-    const reportsBlock = reports.length ? ('<div class="bio-section-title">Employees Under This RL Manager (' + reports.length + ')</div><div class="bio-reports">' + reportCards + '</div>') : '';
+    // Role mix of this RL's reports, in hierarchy order (e.g. "1 Senior Manager · 2 Senior Associates")
+    const repBuckets = {};
+    reports.forEach(e => { const g = groupForRole(e.Role); repBuckets[g] = (repBuckets[g] || 0) + 1; });
+    const repMix = ROLE_GROUPS.filter(g => repBuckets[g.title])
+      .map(g => repBuckets[g.title] + ' ' + (repBuckets[g.title] === 1 && g.title !== 'Other' ? g.title.slice(0, -1) : g.title))
+      .join(' &middot; ');
+    const reportsBlock = reports.length ? ('<div class="bio-section-title">Employees Under This RL Manager (' + reports.length + ')'
+      + (repMix ? ' <span style="font-weight:600;font-size:12px;color:var(--pwc-grey-600);text-transform:none;letter-spacing:0;margin-left:8px">&mdash; ' + repMix + '</span>' : '')
+      + '</div><div class="bio-reports">' + reportCards + '</div>') : '';
     const rlName = String(emp['RL Manager'] || '').trim();
     const rlMail = String(emp['RL Manager Email'] || '').trim();
     // Resolve the RL Manager by email first (unique), then fall back to matching on name.
@@ -1618,7 +1626,7 @@
       +     '<div class="photo">' + photo + '</div>'
       +     '<div class="who">'
       +       '<h2 id="bio-modal-title">' + esc(emp.Name) + '</h2>'
-      +       '<div class="sub">' + esc(emp.Role || '') + ((emp['Competency Group'] || emp['Competency']) ? ' &middot; ' + esc(emp['Competency Group'] || emp['Competency']) : '') + '</div>'
+      +       '<div class="sub">' + esc(emp.Role || '') + ((emp['Competency'] || emp['Competency Group']) ? ' &middot; ' + esc(emp['Competency'] || emp['Competency Group']) : '') + '</div>'
       +       '<div class="pills">'
       +         (emp.Location ? '<span class="pill">' + esc(emp.Location) + '</span>' : '')
       +         '<span class="pill">' + esc(emp[EXP_TOTAL] || 0) + ' yrs total experience</span>'

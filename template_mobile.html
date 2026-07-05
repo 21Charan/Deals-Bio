@@ -965,12 +965,12 @@ function renderBio(id){
     const xm = String(x['RL Manager Email'] || '').trim();
     if (myMail && xm) return _n(xm) === _n(myMail);
     return _n(x['RL Manager']) === _n(emp.Name);
-  }).sort((a, b) => String(a.Name).localeCompare(String(b.Name)));
+  }).sort(bySeniority);
   const reportsHtml = reports.length
     ? '<div class="bcard"><p class="stitle">Employees under this RL Manager (' + reports.length + ')</p>'
       + reports.map(e => '<div class="rrow jump-report" data-id="' + esc(e.WorkdayID) + '">' + avatarHtml(e, 'rav')
         + '<div><div class="rname">' + esc(e.Name) + '</div><div class="rmeta">'
-        + esc([e.Role, e['Competency Group'] || e['Competency']].filter(Boolean).join(' · ')) + '</div></div></div>').join('')
+        + esc([e.Role, e['Competency'] || e['Competency Group']].filter(Boolean).join(' · ')) + '</div></div></div>').join('')
       + '</div>'
     : '';
 
@@ -997,7 +997,7 @@ function renderBio(id){
     + '<div class="bio-banner">'
     +   backChip + photo
     +   '<h2>' + esc(emp.Name) + '</h2>'
-    +   '<div class="bsub">' + esc(emp.Role || '') + ((emp['Competency Group'] || emp['Competency']) ? ' &middot; ' + esc(emp['Competency Group'] || emp['Competency']) : '') + '</div>'
+    +   '<div class="bsub">' + esc(emp.Role || '') + ((emp['Competency'] || emp['Competency Group']) ? ' &middot; ' + esc(emp['Competency'] || emp['Competency Group']) : '') + '</div>'
     +   '<div class="pills">'
     +     (emp.Location ? '<span class="pill">' + esc(emp.Location) + '</span>' : '')
     +     '<span class="pill">' + esc(emp[EXP_TOTAL] || 0) + ' yrs experience</span>'
@@ -1380,7 +1380,7 @@ function openSkillSheet(k, ctx, seg){
       : '';
     return '<div class="rrow ss-person" data-id="' + esc(e.WorkdayID) + '" style="min-height:48px">' + avatarHtml(e, 'rav')
       + '<div style="flex:1;min-width:0"><div class="rname">' + esc(e.Name) + '</div><div class="rmeta">'
-      + esc([e.Role, e['Competency Group'] || e['Competency']].filter(Boolean).join(' · ')) + '</div></div>' + u + '</div>';
+      + esc([e.Role, e['Competency'] || e['Competency Group']].filter(Boolean).join(' · ')) + '</div></div>' + u + '</div>';
   };
   document.getElementById('ss-body').innerHTML = sections.map(sec =>
     (sec.label ? '<div class="ss-seg">' + sec.label + '</div>' : '') + sec.people.map(rowHtml).join('')
