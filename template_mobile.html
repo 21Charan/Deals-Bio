@@ -638,7 +638,7 @@ document.querySelectorAll('nav.bottom button[data-view]').forEach(btn => {
     if (dir === d){ stop(); return; }     // same arrow again = pause right here
     stop(); dir = d;
     const step = () => {
-      window.scrollBy(0, d * 16);
+      window.scrollBy(0, d * 34);   // glide speed (px per frame, ~2000 px/s)
       const doc = document.documentElement;
       const atTop = window.scrollY <= 0;
       const atBottom = window.innerHeight + window.scrollY >= doc.scrollHeight - 2;
