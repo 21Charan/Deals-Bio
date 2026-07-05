@@ -32,7 +32,8 @@
   header.hdr img{height:30px;width:auto}
   header.hdr h1{margin:0;font-size:16px;font-weight:700}
   header.hdr .sub{font-size:11px;color:var(--g-600)}
-  .hdr-x{margin-left:auto;flex:0 0 auto;width:40px;height:40px;border:1px solid var(--g-300);border-radius:10px;background:var(--white);color:var(--g-700);display:flex;align-items:center;justify-content:center}
+  .hdr-right{margin-left:auto;display:flex;gap:8px}
+  .hdr-x{flex:0 0 auto;width:40px;height:40px;border:1px solid var(--g-300);border-radius:10px;background:var(--white);color:var(--g-700);display:flex;align-items:center;justify-content:center}
   .hdr-x:active{background:var(--g-100)}
   .hdr-x svg{width:19px;height:19px}
 
@@ -271,9 +272,14 @@
     <h1>Employee Bios</h1>
     <div class="sub">As of __GENERATED__</div>
   </div>
-  <button class="hdr-x" id="export-btn" aria-label="Export to Excel" title="Export the current view to Excel (filters applied)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg>
-  </button>
+  <div class="hdr-right">
+    <button class="hdr-x" id="share-btn" aria-label="Share client-safe copy" title="Download a client-safe copy of this dashboard (utilization and addresses removed)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+    </button>
+    <button class="hdr-x" id="export-btn" aria-label="Export to Excel" title="Export the current view to Excel (filters applied)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg>
+    </button>
+  </div>
 </header>
 
 <main class="view active" id="view-directory">
@@ -434,6 +440,9 @@
 
 <script>
 'use strict';
+// Pristine page source, captured before any rendering — used by the Share
+// button to rebuild a client-safe copy of this exact file.
+const PAGE_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 // ============ Data (injected by generate_report.py — same contract as desktop) ============
 const EMPLOYEES = __EMPLOYEES_JSON__;
 const SKILLS    = __SKILLS_JSON__;
@@ -481,6 +490,12 @@ const UTIL_LOOKUP = Object.create(null);
 UTIL.forEach(u => { UTIL_LOOKUP[normId(u.WorkdayID) + '|' + monthKey(u['Month Year'])] = Number(u.Utilization) || 0; });
 const HAS_UTIL = ALL_MONTHS.length > 0 && !SHARE_MODE;
 EMPLOYEES.forEach(e => { e._latestUtil = UTIL_LOOKUP[normId(e.WorkdayID) + '|' + LATEST_MONTH]; });
+// Shared / no-utilization builds: Skill Radar has nothing to show — remove the
+// whole tab (same pattern as the desktop build removing its Pulse tab).
+if (!HAS_UTIL){
+  const nb = document.getElementById('nav-risk');  if (nb) nb.remove();
+  const rv = document.getElementById('view-risk'); if (rv) rv.remove();
+}
 // PwC colour ramp for utilization (same bands as desktop)
 function utilColor(v){
   if (v == null || isNaN(v)) return { bg: '#F7F7F7', dark: true };
@@ -911,7 +926,10 @@ function renderBio(id){
   };
   const keys = Object.keys(emp);
   const shown = PREF.filter(k => keys.includes(k) && !SKIP.has(k) && emp[k] !== '' && emp[k] != null);
-  let grid = shown.map(k => field(k, emp[k])).join('');
+  // Email (one unbreakable token) and any long value get a full-width row so
+  // nothing wraps mid-word in the two-column grid on narrow phones.
+  const needsFullRow = k => k === 'emailid' || String(emp[k]).length > 26;
+  let grid = shown.map(k => field(k, emp[k], needsFullRow(k))).join('');
   // Team (linkified) + Address, full-width
   const teamRaw = String(emp.Team || '').trim();
   if (teamRaw){
@@ -1428,6 +1446,35 @@ document.getElementById('export-btn').addEventListener('click', () => {
   const fn = PAGE_EXPORTS[btn ? btn.dataset.view : 'directory'];
   if (fn) fn();
 });
+
+// ============ Share: download a client-safe copy (no utilization, no addresses) ============
+document.getElementById('share-btn').addEventListener('click', () => {
+  // Rebuild this file from its own pristine source with sensitive data removed.
+  const clean = EMPLOYEES.map(e => {
+    const c = {};
+    Object.keys(e).forEach(key => {
+      if (key === 'Address' || key === '_skills' || key === '_skillsSearchable' || key === '_latestUtil') return;
+      c[key] = e[key];
+    });
+    return c;
+  });
+  let src = PAGE_SRC;
+  src = src.replace(/const EMPLOYEES = \[[\s\S]*?\];\n/,
+    'const EMPLOYEES = ' + JSON.stringify(clean).replace(/</g, '\\u003c') + ';\n');
+  src = src.replace(/const UTIL      = \[[\s\S]*?\];\n/, 'const UTIL      = [];\n');
+  src = src.replace('const SHARE_MODE = false;', 'const SHARE_MODE = true;');
+  const blob = new Blob([src], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Employee_Bios_Shared_' + new Date().toISOString().slice(0, 10) + '.html';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+// A shared copy has nothing more to strip — hide its share button.
+if (SHARE_MODE){
+  const sb = document.getElementById('share-btn');
+  if (sb) sb.style.display = 'none';
+}
 
 // ============ Boot ============
 buildFilterSheet();
