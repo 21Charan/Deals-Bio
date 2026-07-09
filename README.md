@@ -1,6 +1,6 @@
 # Employee Bio Dashboard
 
-A PwC-branded, single-file HTML dashboard generated from an Excel workbook.
+A school test-branded, single-file HTML dashboard generated from an Excel workbook.
 Designed to be shared with clients as one self-contained file — photos and
 data are embedded inline, so the page works offline with no external
 dependencies.
@@ -39,7 +39,7 @@ dependencies.
     nice-to-haves. Copy emails of the top 10 in one click.
 - **Pulse tab** — workforce capacity view:
   - KPI strip (this-month avg, on-bench, healthy, stretched, burnout watch).
-  - Filterable monthly utilization heatmap (PwC orange/rose ramp). Click any
+  - Filterable monthly utilization heatmap (school test orange/rose ramp). Click any
     cell or name to open the bio. Paginated at 60 employees per page so it
     stays fast at scale.
   - Three insight cards: On the Bench (lowest util this month), Watch List
@@ -74,8 +74,8 @@ The script reads:
   - `Employee Skills` (one row per skill-category entry)
   - `Employee Monthly Utilization` (monthly utilization %)
 - `Images/` — photos named after the `PhotoID` column (e.g. `1.png`, `2.png`).
-  Missing photos fall back to a PwC-orange initials avatar.
-- `PwC Logo.jpg` — shown in the header. Optional.
+  Missing photos fall back to a school test-orange initials avatar.
+- `school test Logo.jpg` — shown in the header. Optional.
 - `template.html` — the HTML/CSS/JS template the script populates.
 
 …and writes `Employee_Dashboard.html`.
@@ -96,7 +96,7 @@ The script reads:
 | Employee Description   | Free-text bio                                      |
 | OU                     | Operating Unit                                     |
 | Location               |                                                    |
-| Experience             | Years at PwC (second occurrence — auto-renamed)    |
+| Experience             | Years at school test (second occurrence — auto-renamed)    |
 | Join Date              |                                                    |
 | Qualification          |                                                    |
 | Team                   | Comma-separated names; matching names link to bios |
@@ -128,7 +128,7 @@ A fresh `Employee_Dashboard.html` appears in the folder.
 - `generate_report.py` — the generator script.
 - `template.html` — the HTML/CSS/JS template with `__PLACEHOLDER__` tokens
   the script replaces.
-- `.gitignore` — excludes employee data, photos, the PwC logo, and the
+- `.gitignore` — excludes employee data, photos, the school test logo, and the
   generated output from version control.
 - `README.md` — this file.
 
