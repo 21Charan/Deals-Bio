@@ -238,6 +238,44 @@
   /* All Skills cloud — every skill in one scrollable place, grouped by
      competency, chip size scales with coverage. */
   .atlas-cloud{display:flex;flex-direction:column;gap:14px}
+
+  /* Capacity Radar (Capability Risk tab) — sellable capacity + upskilling candidates */
+  .atlas-md{display:flex;flex-direction:column;gap:16px}
+  .mdi-block{background:var(--white);border-radius:8px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.08);border-left:5px solid var(--pwc-orange)}
+  .mdi-title{font-size:14px;font-weight:700;color:var(--pwc-grey-900);text-transform:uppercase;letter-spacing:.4px;margin:0 0 2px}
+  .mdi-sub{font-size:12px;color:var(--pwc-grey-600);margin:0 0 12px;line-height:1.45}
+  .mdi-row{display:flex;align-items:center;gap:12px;padding:9px 10px;border:1px solid var(--pwc-grey-100);border-radius:6px;margin-bottom:6px;cursor:pointer;transition:background .12s}
+  .mdi-row:hover{background:var(--pwc-grey-50)}
+  .mdi-skill{flex:0 0 210px;min-width:0}
+  .mdi-skill b{display:block;font-size:13px;color:var(--pwc-grey-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mdi-skill span{font-size:11px;color:var(--pwc-grey-600)}
+  .mdi-stat{font-size:12px;color:var(--pwc-grey-700);white-space:nowrap}
+  .mdi-bar{flex:1 1 auto;height:8px;background:var(--pwc-grey-100);border-radius:4px;overflow:hidden;min-width:50px}
+  .mdi-fill{height:100%;border-radius:4px}
+  .mdi-fte{font-size:13px;font-weight:700;white-space:nowrap;min-width:62px;text-align:right}
+  .mdi-cands{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 auto;justify-content:flex-end}
+  .mdi-cand{display:inline-flex;align-items:center;gap:6px;font-size:12px;background:var(--pwc-grey-50);border:1px solid var(--pwc-grey-300);border-radius:14px;padding:3px 10px;cursor:pointer;transition:border-color .12s}
+  .mdi-cand:hover{border-color:var(--pwc-orange)}
+  .mdi-cand .n{color:var(--pwc-grey-600);font-size:11px}
+  .mdi-empty{font-size:12.5px;color:var(--pwc-grey-600);font-style:italic;padding:8px 2px}
+  .mdi-holders{margin:-2px 0 8px;padding:8px 10px;border:1px dashed var(--pwc-grey-300);border-radius:6px;background:var(--pwc-grey-50)}
+
+  /* Locations tab — offline India map + km-radius search */
+  .geo-mapwrap{background:var(--white);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);padding:12px;position:relative}
+  .geo-zoomctl{position:absolute;top:18px;right:18px;display:flex;flex-direction:column;gap:5px;z-index:2}
+  .geo-zoomctl button{width:30px;height:30px;border:1px solid var(--pwc-grey-300);border-radius:6px;background:var(--white);font-size:16px;font-weight:700;color:var(--pwc-grey-700);cursor:pointer;line-height:1;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+  .geo-zoomctl button:hover{border-color:var(--pwc-orange);color:var(--pwc-orange)}
+  .geo-mapwrap svg{width:100%;height:auto;display:block;cursor:crosshair;max-height:660px}
+  .geo-land{fill:#F4F1ED;stroke:#C9C2BA;stroke-width:0.7}
+  .geo-city{cursor:pointer}
+  .geo-city circle{fill:var(--pwc-orange);stroke:var(--white);stroke-width:1.2}
+  .geo-city.dim circle{fill:var(--pwc-grey-400)}
+  .geo-city text{font-size:11px;font-weight:600;fill:var(--pwc-grey-900);paint-order:stroke;stroke:var(--white);stroke-width:3px;stroke-linejoin:round}
+  .geo-city text.n{fill:var(--white);stroke:none;font-size:10px;font-weight:700;pointer-events:none}
+  .geo-ring{fill:rgba(208,74,2,0.07);stroke:var(--pwc-orange);stroke-width:1;stroke-dasharray:4 3;pointer-events:none}
+  .geo-pin{pointer-events:none}
+  .geo-dist{margin-left:auto;font-size:11px;font-weight:700;color:var(--pwc-orange);white-space:nowrap;flex-shrink:0}
+  @media (max-width:700px){ .mdi-row{flex-wrap:wrap} .mdi-skill{flex:1 1 100%} .mdi-cands{justify-content:flex-start} }
   .cloud-cat{background:var(--white);border-radius:8px;padding:14px 16px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.08);border-left:5px solid var(--pwc-orange)}
   .cloud-cat-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--pwc-grey-100)}
   .cloud-cat-name{font-size:14px;font-weight:700;color:var(--pwc-grey-900);text-transform:uppercase;letter-spacing:0.4px;margin:0}
@@ -554,6 +592,7 @@
   <button data-tab="skills">Skill Atlas</button>
   <button data-tab="caprisk">Capability Risk</button>
   <button data-tab="pulse">Pulse</button>
+  <button data-tab="geo">Locations</button>
   <button class="nav-export-btn" id="nav-export" title="Export the current page to Excel (with filters applied)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg><span class="nx-lbl">Export to Excel</span></button>
 </nav>
 
@@ -675,7 +714,7 @@
   <!-- ===== PORTABLE MODULE START: Capability Risk (HTML). Needs SHARED foundation — see INTEGRATION_GUIDE.md ===== -->
   <section class="tab-panel" id="tab-caprisk">
     <h1>Capability Risk</h1>
-    <p class="subtitle">Two lenses on capability exposure. <strong>Scarce vs Stretched</strong> evaluates each capability's coverage against the utilization of its holders; <strong>Key-Person Risk</strong> surfaces capabilities concentrated in one or two individuals.</p>
+    <p class="subtitle">Three lenses on capability exposure. <strong>Scarce vs Stretched</strong> evaluates each capability's coverage against the utilization of its holders; <strong>Key-Person Risk</strong> surfaces capabilities concentrated in one or two individuals; <strong>Capacity Radar</strong> shows where spare capacity sits today and who to cross-train next.</p>
 
     <details class="cr-help" open>
       <summary><span class="cr-help-ic">&#9432;</span> How to read this page</summary>
@@ -688,6 +727,7 @@
           <li><span class="cr-help-dot" style="background:#A6A6A6"></span><strong>Healthy depth</strong> &mdash; sufficient coverage with available capacity. No action required.</li>
         </ul>
         <p>Thresholds for <em>scarce</em> (number of practitioners) and <em>stretched</em> (utilization) are adjustable via the sliders to reflect the relevant population. The <strong>Key-Person Risk</strong> lens offers a complementary perspective &mdash; capabilities concentrated in one or two individuals, independent of utilization; a &#9733; denotes a holder at Manager grade or above.</p>
+        <p>The <strong>Capacity Radar</strong> lens turns the same data into actions: <em>Sellable Capacity</em> ranks skills by spare FTE (each holder's unused utilization, summed) and flags fully-committed skills, while <em>Upskilling Candidates</em> suggests, for each scarce skill, the people whose existing skills most often pair with it. Click a skill row to unfold who holds it; click a name to open their bio.</p>
       </div>
     </details>
 
@@ -705,6 +745,7 @@
       <div class="atlas-view-toggle" id="cr-view-toggle">
         <button data-view="scarce" class="active">Scarce vs Stretched</button>
         <button data-view="keyperson">Key-Person Risk</button>
+        <button data-view="radar">Capacity Radar</button>
       </div>
       <div class="smap-meta" id="cr-meta"></div>
     </div>
@@ -741,9 +782,41 @@
       <p class="subtitle" style="margin:-6px 0 12px">&#9733; marks a holder at Manager level or above. Click any name to open their bio.</p>
       <div class="cr-table-wrap"><table class="cr-table" id="cr-kp-table"></table></div>
     </div>
+
+    <div id="cr-radar-view" class="atlas-md" style="display:none"></div>
   </section>
 
   <!-- ===== PORTABLE MODULE END: Capability Risk (HTML) ===== -->
+
+  <!-- ===== PORTABLE MODULE START: Locations (HTML). Needs SHARED foundation — see INTEGRATION_GUIDE.md ===== -->
+  <section class="tab-panel" id="tab-geo">
+    <h1>Locations</h1>
+    <p class="subtitle">The team on a map, from the <strong>Current Location</strong> column. <strong>Click anywhere on the map</strong> (or a city marker) to drop a point, set the <strong>radius</strong>, and everyone inside appears on the right &mdash; nearest first. Scroll or use the corner buttons to <strong>zoom</strong>, drag to pan. Fully offline; no map service needed.</p>
+    <div class="controls smap-controls" id="geo-filters">
+      <div class="multiselect ms-compact" id="geo-role-ms"></div>
+      <div class="multiselect ms-compact" id="geo-comp-ms"></div>
+      <div class="multiselect ms-compact" id="geo-terr-ms"></div>
+      <div class="multiselect ms-compact" id="geo-skill-ms"></div>
+      <button class="reset-btn" id="geo-reset" title="Clear filters and the map point">Reset</button>
+    </div>
+    <div class="cr-thresholds">
+      <div class="cr-thr">
+        <div class="cr-thr-top"><span class="cr-thr-lbl">Radius</span><span class="cr-thr-val"><b id="geo-rad-val">250</b> km</span></div>
+        <input type="range" id="geo-rad" min="25" max="1500" step="25" value="250">
+      </div>
+      <div class="smap-meta" id="geo-meta" style="align-self:center"></div>
+    </div>
+    <div class="smap-grid">
+      <div class="smap-stage">
+        <div class="geo-mapwrap" id="geo-mapbox"></div>
+        <div class="smap-caption" id="geo-note"></div>
+      </div>
+      <aside class="atlas-detail smap-detail" id="geo-detail">
+        <div class="atlas-detail-empty"><div class="adt-emoji">&#128205;</div><p>Click the map to drop a point and see who&rsquo;s within reach.</p></div>
+      </aside>
+    </div>
+  </section>
+  <!-- ===== PORTABLE MODULE END: Locations (HTML) ===== -->
 
   <!-- ===== PORTABLE MODULE START: Pulse (HTML). Needs SHARED foundation — see INTEGRATION_GUIDE.md ===== -->
   <section class="tab-panel" id="tab-pulse">
@@ -2123,9 +2196,10 @@
       +   '<button class="secondary" id="adt-add-nice">Add to nice-to-have</button>'
       + '</div>';
 
-    // Wire panel interactions
+    // Wire panel interactions — bio arrows walk this panel's list, not the directory.
+    const adtIds = [...panel.querySelectorAll('.adt-person')].map(p => p.dataset.id);
     panel.querySelectorAll('.adt-person').forEach(p =>
-      p.addEventListener('click', () => showBio(p.dataset.id)));
+      p.addEventListener('click', () => showBio(p.dataset.id, false, adtIds)));
     panel.querySelectorAll('.adj-chip').forEach(c =>
       c.addEventListener('click', () => renderSkillDetail(c.dataset.skill)));
     document.getElementById('adt-add-must').onclick = () => { addStaffingChip('must', skillKey); };
@@ -2218,9 +2292,10 @@
            + '</div>';
     }).join('') + (matches.length > 50 ? '<div class="smatch-empty">Showing top 50 of ' + matches.length + '.</div>' : '');
 
-    // Wire interactions
+    // Wire interactions — bio arrows walk the ranked match list.
+    const smIds = [...list.querySelectorAll('.smatch')].map(r => r.dataset.id);
     list.querySelectorAll('.smatch').forEach(row =>
-      row.addEventListener('click', () => showBio(row.dataset.id)));
+      row.addEventListener('click', () => showBio(row.dataset.id, false, smIds)));
     const copyBtn = document.getElementById('copy-emails');
     if (copyBtn) copyBtn.addEventListener('click', () => {
       navigator.clipboard.writeText(top10emails).then(() => {
@@ -2605,6 +2680,236 @@
 
   // ============================================================
   // ============================================================
+  //  Locations tab — offline SVG India map + km-radius search
+  // ============================================================
+  (function(){
+    const $ = id => document.getElementById(id);
+    // Equirectangular projection, x compressed by cos(22.5°). These constants
+    // must match the embedded INDIA_PATH (Government of India official view —
+    // full Jammu & Kashmir and Ladakh; amCharts india2023 states, merged).
+    const VBW = 569, VBH = 637, S = 20, KX = 0.92388, LON0 = 67.47, LAT1 = 37.85, R = 6371;
+    const proj = (lat, lon) => [(lon - LON0) * S * KX, (LAT1 - lat) * S];
+    const unproj = (x, y) => [LAT1 - y / S, LON0 + x / (S * KX)];
+    const rad = d => d * Math.PI / 180;
+    function havKm(la1, lo1, la2, lo2){
+      const sa = Math.sin(rad(la2 - la1) / 2), sb = Math.sin(rad(lo2 - lo1) / 2);
+      return 2 * R * Math.asin(Math.sqrt(sa * sa + Math.cos(rad(la1)) * Math.cos(rad(la2)) * sb * sb));
+    }
+    // Destination point at d km / bearing deg — draws the radius as a true
+    // geodesic ring instead of a distorted pixel circle.
+    function dest(la1, lo1, d, brg){
+      const dr = d / R, t = rad(brg), p1 = rad(la1), l1 = rad(lo1);
+      const p2 = Math.asin(Math.sin(p1) * Math.cos(dr) + Math.cos(p1) * Math.sin(dr) * Math.cos(t));
+      const l2 = l1 + Math.atan2(Math.sin(t) * Math.sin(dr) * Math.cos(p1), Math.cos(dr) - Math.sin(p1) * Math.sin(p2));
+      return [p2 * 180 / Math.PI, l2 * 180 / Math.PI];
+    }
+    // City -> [lat, lon]. Covers current data plus most major Indian cities so
+    // future rows map automatically; anything missing is listed as unmapped.
+    const CITY_COORDS = {
+      'mumbai': [19.076, 72.8777], 'bombay': [19.076, 72.8777], 'pune': [18.5204, 73.8567],
+      'bangalore': [12.9716, 77.5946], 'bengaluru': [12.9716, 77.5946], 'chennai': [13.0827, 80.2707],
+      'madras': [13.0827, 80.2707], 'hyderabad': [17.385, 78.4867], 'kolkata': [22.5726, 88.3639],
+      'calcutta': [22.5726, 88.3639], 'gurgaon': [28.4595, 77.0266], 'gurugram': [28.4595, 77.0266],
+      'delhi': [28.7041, 77.1025], 'new delhi': [28.6139, 77.209], 'noida': [28.5355, 77.391],
+      'ahmedabad': [23.0225, 72.5714], 'jaipur': [26.9124, 75.7873], 'lucknow': [26.8467, 80.9462],
+      'kanpur': [26.4499, 80.3319], 'nagpur': [21.1458, 79.0882], 'indore': [22.7196, 75.8577],
+      'bhopal': [23.2599, 77.4126], 'surat': [21.1702, 72.8311], 'vadodara': [22.3072, 73.1812],
+      'coimbatore': [11.0168, 76.9558], 'kochi': [9.9312, 76.2673], 'cochin': [9.9312, 76.2673],
+      'thiruvananthapuram': [8.5241, 76.9366], 'trivandrum': [8.5241, 76.9366],
+      'visakhapatnam': [17.6868, 83.2185], 'vizag': [17.6868, 83.2185], 'bhubaneswar': [20.2961, 85.8245],
+      'patna': [25.5941, 85.1376], 'ranchi': [23.3441, 85.3096], 'guwahati': [26.1445, 91.7362],
+      'chandigarh': [30.7333, 76.7794], 'ludhiana': [30.901, 75.8573], 'amritsar': [31.634, 74.8723],
+      'dehradun': [30.3165, 78.0322], 'goa': [15.4909, 73.8278], 'panaji': [15.4909, 73.8278],
+      'mysore': [12.2958, 76.6394], 'mysuru': [12.2958, 76.6394], 'mangalore': [12.9141, 74.856],
+      'mangaluru': [12.9141, 74.856], 'madurai': [9.9252, 78.1198], 'tiruchirappalli': [10.7905, 78.7047],
+      'trichy': [10.7905, 78.7047], 'raipur': [21.2514, 81.6296], 'nashik': [19.9975, 73.7898],
+      'aurangabad': [19.8762, 75.3433], 'jamshedpur': [22.8046, 86.2029], 'siliguri': [26.7271, 88.3953]
+    };
+    const INDIA_PATH = 'M169.3 580.3L167.7 579.0L163.9 568.7L162.0 557.7L152.7 529.9L150.5 527.5L149.2 523.4L142.5 515.1L138.6 507.0L135.8 500.0L131.9 479.7L129.9 476.5L125.6 462.7L122.9 460.9L120.0 455.7L118.4 449.1L116.3 447.1L113.1 438.8L111.6 438.3L108.0 426.7L106.7 410.9L101.6 394.4L102.0 391.5L99.5 383.1L100.5 379.0L102.2 377.0L99.6 376.9L98.1 373.7L98.5 370.4L96.0 358.3L100.3 345.3L94.6 331.2L95.7 327.8L94.5 326.7L95.3 324.7L93.6 323.7L94.2 320.5L93.0 317.9L95.4 311.3L92.6 311.7L91.0 310.6L88.3 316.1L89.4 324.4L85.2 332.1L85.8 333.1L73.4 339.6L61.9 343.2L54.9 339.9L48.6 334.9L41.3 326.2L32.6 318.1L27.1 310.8L28.0 308.7L31.9 308.5L31.2 310.7L32.6 311.8L40.4 309.8L41.7 307.5L43.0 309.0L45.9 306.4L49.8 306.0L53.2 298.4L51.1 297.4L43.0 300.0L41.3 302.2L31.9 300.2L20.7 292.7L21.6 290.1L19.1 287.7L18.8 284.4L23.0 279.8L20.4 279.4L19.9 277.7L23.6 277.8L24.1 271.1L25.5 272.8L27.3 271.5L28.3 272.5L30.0 271.6L32.0 272.3L39.4 271.4L41.7 273.5L46.8 273.7L48.9 271.2L57.4 268.6L57.4 272.0L61.6 272.5L65.2 269.8L65.6 264.4L67.2 263.4L64.2 258.3L63.3 254.1L59.2 249.2L59.1 243.1L54.1 243.7L51.9 243.0L48.5 238.1L48.3 235.5L49.9 232.1L49.8 226.0L48.0 225.0L44.5 225.4L37.7 222.0L37.8 216.7L39.0 213.7L47.0 205.9L49.6 200.3L53.5 196.8L57.1 196.6L60.7 202.7L63.1 203.0L70.3 200.2L77.4 199.6L81.8 197.9L82.5 194.5L87.1 189.8L90.8 181.7L101.1 176.5L107.2 165.9L109.4 158.2L116.7 155.7L120.0 153.1L118.3 149.6L126.5 140.0L130.6 137.1L131.5 135.1L130.0 134.2L130.1 131.6L132.5 127.8L130.2 122.5L131.8 119.3L135.6 117.9L136.8 116.0L143.6 115.3L145.8 112.3L145.1 110.3L139.8 107.2L138.8 108.0L133.6 107.3L132.0 101.8L126.9 102.5L118.4 97.8L115.6 97.8L112.7 94.8L113.0 83.2L111.7 82.0L112.7 79.9L110.6 76.3L109.9 66.9L114.5 64.7L115.7 61.4L121.0 60.5L122.5 55.7L120.9 53.7L117.0 52.4L115.3 50.5L117.4 47.6L116.5 45.9L107.7 45.1L104.7 40.3L99.6 38.8L97.8 39.8L95.2 38.9L95.1 35.1L96.3 32.1L100.6 29.2L107.1 22.0L117.1 22.7L118.4 18.9L122.2 20.5L132.9 16.0L137.7 17.9L144.0 16.4L151.9 25.2L163.2 30.9L166.9 34.1L169.2 34.3L171.3 36.2L170.9 38.8L172.6 41.6L181.1 43.1L184.7 48.1L187.8 48.4L196.8 46.3L200.6 42.3L206.7 39.9L209.8 39.7L213.9 41.2L214.9 38.6L217.5 37.2L220.8 39.9L227.1 41.3L230.1 40.3L232.3 43.4L235.6 45.3L235.9 50.3L231.7 62.7L227.1 64.7L226.4 67.3L222.0 68.0L223.4 71.8L222.7 74.7L219.8 76.9L216.0 75.9L211.6 78.0L214.6 83.5L212.0 85.8L211.5 88.8L214.3 91.1L214.4 92.4L220.6 93.4L219.6 97.4L222.9 101.8L223.1 104.9L218.8 107.3L217.8 106.5L215.4 107.7L215.0 109.6L212.6 110.1L209.0 107.5L208.4 103.1L202.2 106.8L204.2 108.6L203.2 111.3L205.5 112.6L205.2 113.8L208.8 117.0L207.3 121.1L209.9 124.7L207.6 126.6L209.3 127.9L209.9 130.4L211.3 131.8L213.9 127.6L215.4 128.2L220.7 136.2L222.3 136.2L223.9 138.1L226.8 136.9L228.8 137.4L230.0 139.2L235.9 142.2L235.5 145.4L241.3 147.9L242.3 147.3L248.4 152.5L247.8 154.4L238.4 162.0L239.3 164.2L236.0 168.1L237.4 170.7L236.6 174.2L234.2 174.9L232.9 180.4L239.9 184.4L242.1 183.2L246.1 186.5L253.9 189.8L256.0 193.1L266.4 199.9L267.9 198.4L269.8 198.5L276.8 203.4L281.6 202.6L282.1 206.9L290.5 207.9L292.6 210.4L294.6 208.8L294.2 207.4L298.4 207.6L302.8 210.0L303.0 208.4L306.0 208.3L307.2 207.2L310.2 208.0L310.9 209.3L316.9 210.2L318.2 212.7L317.3 216.1L327.6 219.7L327.8 221.8L330.1 222.2L335.7 219.6L337.5 221.1L337.5 223.9L339.7 225.6L343.0 223.7L348.5 224.6L355.9 228.6L361.2 226.4L363.9 228.9L369.5 228.2L372.1 229.4L375.5 227.6L379.2 229.2L381.1 228.3L382.9 221.6L381.9 217.3L379.2 214.9L380.9 208.5L380.2 207.1L383.0 201.2L381.6 198.0L386.5 197.4L390.7 194.9L394.7 196.8L395.0 203.6L393.5 205.7L394.3 208.9L396.4 210.5L393.2 214.0L395.4 214.8L397.1 218.5L399.5 219.1L400.2 220.8L404.8 219.7L412.1 223.0L419.0 221.9L420.3 219.9L423.9 219.0L429.5 221.6L436.6 220.6L441.0 221.4L442.3 220.3L443.9 221.2L447.5 220.9L451.4 218.7L454.1 220.0L455.2 219.1L453.7 213.8L454.3 209.0L453.6 207.4L446.7 207.3L445.1 204.3L446.4 201.0L450.0 200.8L451.8 202.7L457.1 199.8L459.1 201.4L463.6 200.6L466.9 197.2L465.5 195.7L465.9 194.5L472.2 190.9L475.8 190.3L475.1 188.2L478.0 184.2L487.3 182.9L488.8 183.6L490.1 180.2L493.1 177.9L494.2 175.3L498.2 172.5L500.5 172.4L501.8 170.0L506.3 173.3L516.3 176.3L517.6 175.6L518.6 172.7L528.7 167.7L532.0 173.8L529.9 175.9L531.8 178.1L535.2 176.2L538.5 181.4L534.7 185.7L534.0 189.1L539.4 187.7L545.6 190.7L547.4 189.6L552.4 193.1L552.8 199.1L550.4 198.8L543.8 204.6L544.0 207.7L548.8 214.3L547.0 214.8L542.0 209.9L538.5 209.6L531.5 211.3L527.8 213.1L526.0 215.9L523.6 216.6L522.2 219.3L518.5 220.4L516.6 223.0L513.1 223.3L509.9 227.8L511.2 229.2L510.9 234.8L512.1 235.4L509.0 239.6L509.7 241.7L506.9 245.7L501.9 249.3L501.0 252.7L504.0 254.3L503.5 258.2L498.8 265.5L493.2 279.9L488.5 277.9L486.8 278.4L485.7 276.8L483.2 276.7L481.3 278.1L479.4 275.4L478.0 275.9L479.9 283.4L478.5 289.9L479.0 294.2L477.2 296.9L474.2 296.1L473.4 302.8L475.6 311.8L474.6 313.4L472.6 313.0L471.9 317.3L466.5 313.9L465.9 316.6L464.5 317.5L463.1 303.9L461.5 299.1L460.2 298.3L460.3 289.8L458.2 282.4L456.3 282.2L454.6 284.1L452.2 283.4L452.8 287.4L449.1 291.4L450.2 295.1L448.2 297.2L445.3 297.6L443.3 291.9L442.0 293.4L437.8 285.0L437.7 282.2L438.9 282.2L439.1 279.3L441.8 274.8L446.5 274.9L448.5 272.1L451.6 274.2L452.8 269.2L455.5 269.3L457.5 266.9L458.8 262.3L457.7 259.0L458.8 258.6L460.5 260.0L462.6 258.9L461.1 256.4L454.5 253.2L443.5 254.3L439.8 252.9L424.7 254.1L413.5 250.8L414.2 244.4L412.9 240.7L414.3 238.2L411.1 233.7L409.3 233.4L409.9 235.7L407.8 236.9L404.3 236.8L400.8 234.2L400.5 230.6L397.2 227.7L396.2 228.8L397.7 230.9L394.5 231.8L386.3 225.1L386.1 227.3L388.3 227.8L387.8 229.5L385.9 232.6L382.7 234.1L380.9 238.8L381.5 241.1L384.4 241.4L391.4 247.5L394.8 247.6L394.9 249.8L397.0 251.8L396.4 253.7L387.6 253.1L387.7 256.3L385.7 258.2L383.6 257.8L379.5 263.7L385.5 269.3L392.9 271.5L392.9 278.7L390.5 280.7L389.7 284.2L391.3 284.8L393.3 288.6L392.7 291.9L397.1 293.2L395.4 295.1L397.2 300.1L396.3 301.8L397.1 303.2L394.1 311.2L390.8 314.8L390.4 317.5L383.4 321.7L382.2 317.8L382.8 315.0L375.5 323.1L367.9 326.1L364.6 326.0L360.5 328.8L357.6 334.2L360.9 343.1L356.9 346.3L355.9 348.9L356.8 350.1L352.6 352.8L349.1 357.9L336.2 362.2L331.0 364.9L322.3 371.8L307.7 390.8L297.5 396.6L290.9 405.2L279.7 411.1L275.3 414.6L273.2 419.3L274.2 420.2L273.2 423.2L274.2 425.6L263.3 430.8L260.0 429.8L254.9 431.4L252.7 437.5L249.4 442.4L246.7 442.7L246.4 440.1L244.2 439.3L241.5 439.9L236.5 443.6L232.4 455.5L233.6 462.4L235.2 465.2L233.9 474.6L236.0 480.6L235.9 484.2L234.7 483.2L232.5 485.2L237.3 488.6L237.9 491.5L234.4 507.6L229.4 515.7L227.0 525.7L228.5 529.9L229.3 551.1L220.2 550.7L218.5 551.8L217.3 554.1L218.0 556.2L212.9 562.8L211.2 567.4L214.2 571.0L202.2 574.8L198.4 577.8L195.8 589.6L189.9 593.5L186.7 594.3L186.3 595.5L181.9 594.6L175.6 589.3L169.3 580.3ZM17.0 283.9L14.8 284.0L16.4 280.9L17.7 281.1L17.0 283.9ZM382.5 322.2L381.4 324.5L380.0 323.5L381.9 319.5L382.5 322.2ZM485.5 617.8L484.0 616.9L484.4 613.2L487.4 612.2L489.2 617.0L488.4 620.7L486.3 620.4L485.5 617.8ZM483.7 612.2L483.4 609.6L484.9 608.1L485.7 609.8L483.7 612.2ZM480.3 598.4L478.3 599.2L477.8 597.0L478.8 596.5L480.3 598.4ZM466.8 574.5L466.6 572.7L467.8 572.1L468.6 574.2L466.8 574.5ZM460.6 541.8L462.8 539.0L464.1 541.3L462.7 546.8L461.3 546.0L460.6 541.8ZM464.7 525.7L463.3 520.3L464.5 519.6L464.8 514.9L466.2 512.3L467.1 513.5L467.2 523.0L464.7 525.7ZM468.9 513.0L466.9 515.1L467.6 510.8L468.7 511.1L468.9 513.0ZM469.0 498.4L470.3 498.8L471.4 502.8L471.1 507.1L469.8 510.6L466.2 510.4L466.9 500.8L468.3 499.0L467.8 496.6L469.4 487.6L472.3 485.5L473.4 490.3L472.4 495.4L470.5 495.8L469.0 498.4Z';
+
+    const cityOf = e => String(e['Current Location'] || '').trim();
+    const coordOf = name => CITY_COORDS[String(name).toLowerCase().replace(/\s+/g, ' ').trim()];
+    // Per-employee coords: explicit Latitude/Longitude columns in the sheet win
+    // (add them any time — no template change needed); else the city lookup.
+    const coordOfEmp = e => {
+      const la = parseFloat(e.Latitude), lo = parseFloat(e.Longitude);
+      if (isFinite(la) && isFinite(lo)) return [la, lo];
+      return coordOf(cityOf(e));
+    };
+
+    const gRole  = buildMS('geo-role-ms',  'All roles',        orderBy(uniqueValues('Role'), ROLE_ORDER), render);
+    const gComp  = buildMS('geo-comp-ms',  'All competencies', orderCompetency(uniqueValues('Competency Filter')), render);
+    const gTerr  = buildMS('geo-terr-ms',  'All territories',  orderTerritory(uniqueValues('Territory Filter')), render);
+    const gSkill = buildMS('geo-skill-ms', 'All skills',       ALL_SKILLS.map(k => SKILL_DISPLAY[k]).sort((a, b) => a.localeCompare(b)), render);
+
+    let center = null;   // [lat, lon] set by clicking the map
+    // Zoom/pan state: the current viewBox. render() scales symbols by
+    // view.w/VBW so markers and labels stay a constant size on screen.
+    let view = { x: 0, y: 0, w: VBW, h: VBH };
+    let dragMoved = false;
+    function zoomAt(fx, fy, factor){
+      const nw = Math.min(VBW, Math.max(VBW / 16, view.w * factor));
+      const s = nw / view.w;
+      view.x = fx - (fx - view.x) * s;
+      view.y = fy - (fy - view.y) * s;
+      view.w = nw; view.h = nw * VBH / VBW;
+      view.x = Math.max(0, Math.min(VBW - view.w, view.x));
+      view.y = Math.max(0, Math.min(VBH - view.h, view.y));
+      render();
+    }
+
+    function pool(){
+      const sk = gSkill.selected;
+      return EMPLOYEES.filter(e => {
+        if (gRole.selected.size && !gRole.selected.has(String(e.Role || ''))) return false;
+        if (gComp.selected.size && !gComp.selected.has(String(e['Competency Filter'] || ''))) return false;
+        if (gTerr.selected.size && !gTerr.selected.has(String(e['Territory Filter'] || ''))) return false;
+        if (sk.size){ let hit = false; e._skills.forEach(k => { if (sk.has(SKILL_DISPLAY[k])) hit = true; }); if (!hit) return false; }
+        return true;
+      });
+    }
+    // People inside the radius, nearest first (null until a point is set).
+    function inRadius(p){
+      if (!center) return null;
+      const km = +($('geo-rad').value);
+      return p.map(e => {
+        const c = coordOfEmp(e); if (!c) return null;
+        const d = havKm(center[0], center[1], c[0], c[1]);
+        const city = cityOf(e);
+        return d <= km ? { e, d, city, key: city + '|' + c[0].toFixed(2) + ',' + c[1].toFixed(2) } : null;
+      }).filter(Boolean).sort((a, b) => a.d - b.d || String(a.e.Name).localeCompare(String(b.e.Name)));
+    }
+
+    function render(){
+      const p = pool(), km = +($('geo-rad').value);
+      $('geo-rad-val').textContent = km;
+      const byCity = new Map(), unmapped = new Set();
+      p.forEach(e => {
+        const c = cityOf(e); if (!c) return;
+        const xy = coordOfEmp(e);
+        if (!xy){ unmapped.add(c); return; }
+        const key = c + '|' + xy[0].toFixed(2) + ',' + xy[1].toFixed(2);
+        let g = byCity.get(key); if (!g){ g = { city: c, coord: xy, people: [] }; byCity.set(key, g); } g.people.push(e);
+      });
+      const rows = inRadius(p);
+      const inSet = rows ? new Set(rows.map(r => r.key)) : null;
+
+      // --- map (zoomable: mouse wheel, drag to pan, corner buttons) ---
+      const zk = view.w / VBW;   // symbols scale with zoom so they stay screen-constant
+      let h = '<svg viewBox="' + view.x.toFixed(1) + ' ' + view.y.toFixed(1) + ' ' + view.w.toFixed(1) + ' ' + view.h.toFixed(1) + '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Team locations across India">';
+      h += '<path class="geo-land" style="stroke-width:' + (0.7 * zk).toFixed(2) + '" d="' + INDIA_PATH + '"/>';
+      if (center){
+        const pts = [];
+        for (let b = 0; b <= 360; b += 6){ const q = dest(center[0], center[1], km, b); const xy = proj(q[0], q[1]); pts.push(xy[0].toFixed(1) + ',' + xy[1].toFixed(1)); }
+        h += '<polygon class="geo-ring" style="stroke-width:' + zk.toFixed(2) + ';stroke-dasharray:' + (4 * zk).toFixed(1) + ' ' + (3 * zk).toFixed(1) + '" points="' + pts.join(' ') + '"/>';
+      }
+      // At town/village scale (hundreds of places), label only the largest
+      // locations to avoid collisions; every dot keeps a hover tooltip.
+      const labelSet = new Set([...byCity.entries()].sort((a, b) => b[1].people.length - a[1].people.length).slice(0, 12).map(x => x[0]));
+      byCity.forEach((g, key) => {
+        const xy = proj(g.coord[0], g.coord[1]);
+        const r0 = Math.min(22, 7 + 2.2 * Math.sqrt(g.people.length)), r = r0 * zk;
+        const dim = inSet && !inSet.has(key);
+        h += '<g class="geo-city' + (dim ? ' dim' : '') + '" data-lat="' + g.coord[0] + '" data-lon="' + g.coord[1] + '">'
+          + '<title>' + esc(g.city) + ' — ' + g.people.length + (g.people.length === 1 ? ' person' : ' people') + '</title>'
+          + '<circle cx="' + xy[0].toFixed(1) + '" cy="' + xy[1].toFixed(1) + '" r="' + r.toFixed(1) + '" style="stroke-width:' + (1.2 * zk).toFixed(2) + '"/>'
+          + (r0 >= 8 ? '<text class="n" x="' + xy[0].toFixed(1) + '" y="' + (xy[1] + 3.6 * zk).toFixed(1) + '" text-anchor="middle" style="font-size:' + (10 * zk).toFixed(1) + 'px">' + g.people.length + '</text>' : '')
+          + (labelSet.has(key) ? '<text x="' + xy[0].toFixed(1) + '" y="' + (xy[1] - r - 5 * zk).toFixed(1) + '" text-anchor="middle" style="font-size:' + (11 * zk).toFixed(1) + 'px;stroke-width:' + (3 * zk).toFixed(1) + 'px">' + esc(g.city) + '</text>' : '')
+          + '</g>';
+      });
+      if (center){
+        const c = proj(center[0], center[1]), cx = c[0].toFixed(1), cy = c[1].toFixed(1);
+        h += '<g class="geo-pin"><line x1="' + (c[0] - 8 * zk).toFixed(1) + '" y1="' + cy + '" x2="' + (c[0] + 8 * zk).toFixed(1) + '" y2="' + cy + '" stroke="#2D2D2D" stroke-width="' + (1.3 * zk).toFixed(2) + '"/>'
+          + '<line x1="' + cx + '" y1="' + (c[1] - 8 * zk).toFixed(1) + '" x2="' + cx + '" y2="' + (c[1] + 8 * zk).toFixed(1) + '" stroke="#2D2D2D" stroke-width="' + (1.3 * zk).toFixed(2) + '"/>'
+          + '<circle cx="' + cx + '" cy="' + cy + '" r="' + (2.4 * zk).toFixed(2) + '" fill="#2D2D2D"/></g>';
+      }
+      h += '</svg>';
+      const box = $('geo-mapbox');
+      box.innerHTML = '<div class="geo-zoomctl"><button id="geo-zin" title="Zoom in">+</button><button id="geo-zout" title="Zoom out">&minus;</button><button id="geo-zfit" title="Reset view">&#8634;</button></div>' + h;
+      const svg = box.querySelector('svg');
+      svg.addEventListener('click', ev => {
+        if (dragMoved){ dragMoved = false; return; }
+        const rc = svg.getBoundingClientRect(); if (!rc.width || !rc.height) return;
+        center = unproj(view.x + (ev.clientX - rc.left) * (view.w / rc.width), view.y + (ev.clientY - rc.top) * (view.h / rc.height));
+        render();
+      });
+      svg.querySelectorAll('.geo-city').forEach(g => g.addEventListener('click', ev => {
+        ev.stopPropagation();
+        if (dragMoved){ dragMoved = false; return; }
+        const la = parseFloat(g.dataset.lat), lo = parseFloat(g.dataset.lon);
+        if (isFinite(la) && isFinite(lo)){ center = [la, lo]; render(); }
+      }));
+      svg.addEventListener('wheel', ev => {
+        ev.preventDefault();
+        const rc = svg.getBoundingClientRect(); if (!rc.width) return;
+        zoomAt(view.x + (ev.clientX - rc.left) * (view.w / rc.width), view.y + (ev.clientY - rc.top) * (view.h / rc.height), ev.deltaY > 0 ? 1.25 : 0.8);
+      }, { passive: false });
+      let drag = null;
+      svg.addEventListener('pointerdown', ev => { drag = { x: ev.clientX, y: ev.clientY, vx: view.x, vy: view.y, rc: svg.getBoundingClientRect() }; });
+      svg.addEventListener('pointermove', ev => {
+        if (!drag || !drag.rc.width) return;
+        const dx = ev.clientX - drag.x, dy = ev.clientY - drag.y;
+        if (Math.abs(dx) + Math.abs(dy) > 5) dragMoved = true;
+        view.x = Math.max(0, Math.min(VBW - view.w, drag.vx - dx * (view.w / drag.rc.width)));
+        view.y = Math.max(0, Math.min(VBH - view.h, drag.vy - dy * (view.h / drag.rc.height)));
+        svg.setAttribute('viewBox', view.x.toFixed(1) + ' ' + view.y.toFixed(1) + ' ' + view.w.toFixed(1) + ' ' + view.h.toFixed(1));
+      });
+      svg.addEventListener('pointerup', () => { drag = null; });
+      svg.addEventListener('pointerleave', () => { drag = null; });
+      $('geo-zin').addEventListener('click', () => zoomAt(view.x + view.w / 2, view.y + view.h / 2, 0.67));
+      $('geo-zout').addEventListener('click', () => zoomAt(view.x + view.w / 2, view.y + view.h / 2, 1.5));
+      $('geo-zfit').addEventListener('click', () => { view = { x: 0, y: 0, w: VBW, h: VBH }; render(); });
+
+      // --- results panel ---
+      const d = $('geo-detail');
+      if (!rows){
+        d.innerHTML = '<div class="atlas-detail-empty"><div class="adt-emoji">&#128205;</div><p>Click the map to drop a point and see who&rsquo;s within reach.</p></div>';
+      } else {
+        const shown = rows.slice(0, 200);
+        let dh = '<h3>Within ' + km + ' km</h3><div class="sd-sub">' + rows.length + ' ' + (rows.length === 1 ? 'person' : 'people') + ' &middot; nearest first &middot; click a name for the bio</div>';
+        dh += rows.length ? '<div class="smap-people">' + shown.map(r => {
+          const e = r.e;
+          const av = e._photo ? '<div class="sp-av" style="background-image:url(' + e._photo + ');background-size:cover;color:transparent">' + esc(e._initials || '') + '</div>' : '<div class="sp-av">' + esc(e._initials || '?') + '</div>';
+          return '<div class="smap-person" data-wid="' + esc(String(e.WorkdayID)) + '">' + av
+            + '<div style="flex:1 1 auto;min-width:0"><div class="sp-name">' + esc(e.Name) + (isManagerRole(e.Role) ? ' &#9733;' : '') + '</div>'
+            + '<div class="sp-meta">' + esc([e.Role, r.city].filter(Boolean).join(' · ')) + '</div></div>'
+            + '<span class="geo-dist">' + Math.round(r.d) + ' km</span></div>';
+        }).join('') + '</div>' + (rows.length > shown.length ? '<div class="mdi-empty">Showing the nearest ' + shown.length + ' of ' + rows.length + ' &mdash; Export to Excel for the full list.</div>' : '')
+          : '<div class="mdi-empty">No one inside this radius with the current filters &mdash; widen the radius or clear filters.</div>';
+        d.innerHTML = dh;
+        const ids = shown.map(r => String(r.e.WorkdayID));
+        d.querySelectorAll('.smap-person').forEach(rw => rw.addEventListener('click', () => showBio(rw.dataset.wid, false, ids)));
+      }
+
+      // --- meta + notes ---
+      const mapped = [...byCity.values()].reduce((t, g) => t + g.people.length, 0);
+      $('geo-meta').innerHTML = rows
+        ? '<strong>' + rows.length + '</strong> of <strong>' + mapped + '</strong> mapped people within <strong>' + km + '</strong> km'
+        : '<strong>' + mapped + '</strong> people &middot; <strong>' + byCity.size + '</strong> cities &middot; click the map to set a point';
+      $('geo-note').innerHTML = (unmapped.size ? '<b>Unmapped locations:</b> ' + esc([...unmapped].join(', ')) + ' &mdash; add Latitude/Longitude columns to the sheet, or extend CITY_COORDS in the template. &middot; ' : '')
+        + 'Map: Government of India official boundaries. Distances: straight-line between city centres.';
+    }
+
+    $('geo-rad').addEventListener('input', render);
+    $('geo-reset').addEventListener('click', () => {
+      [gRole, gComp, gTerr, gSkill].forEach(ms => { ms.selected.clear(); ms.refresh(); });
+      center = null;
+      view = { x: 0, y: 0, w: VBW, h: VBH };
+      const sl = $('geo-rad'); sl.value = 250;
+      render();
+    });
+    // Locations export: the in-radius list (needs a point on the map).
+    PAGE_EXPORTS.geo = function(){
+      const rows = inRadius(pool());
+      if (!rows){ alert('Click the map to set a point first — the export contains the people inside the radius.'); return; }
+      const out = [['Name', 'Role', 'Competency', 'Current Location', 'Distance (km)', 'Email']];
+      rows.forEach(r => out.push([r.e.Name || '', r.e.Role || '', (r.e['Competency Group'] || r.e['Competency'] || ''), r.city, Math.round(r.d), r.e.emailid || '']));
+      downloadCSV('Locations_Radius', out);
+    };
+    render();
+  })();
+
+  // ============================================================
   //  Capability Risk tab  —  Scarce vs Stretched  +  Key-Person Risk
   // ============================================================
   (function(){
@@ -2653,7 +2958,7 @@
         return '<div class="smap-person" data-wid="' + esc(String(e.WorkdayID)) + '">' + av + '<div style="flex:1 1 auto"><div class="sp-name">' + esc(e.Name) + (isSenior(e.Role) ? ' ★' : '') + '</div><div class="sp-meta">' + esc([e.Role, e.Territory].filter(Boolean).join(' · ')) + '</div></div>' + u + '</div>';
       }).join('') + '</div>';
     }
-    function wirePeople(c){ c.querySelectorAll('.smap-person').forEach(r => r.addEventListener('click', () => showBio(r.dataset.wid))); }
+    function wirePeople(c){ const rows = [...c.querySelectorAll('.smap-person')]; const ids = rows.map(r => r.dataset.wid); rows.forEach(r => r.addEventListener('click', () => showBio(r.dataset.wid, false, ids))); }
 
     // ---------- Scarce vs Stretched (user-tunable thresholds) ----------
     function thresholds(){
@@ -2758,17 +3063,110 @@
       });
       h += '</tbody>';
       const tbl = $('cr-kp-table'); tbl.innerHTML = h;
-      tbl.querySelectorAll('.cr-who').forEach(el => el.addEventListener('click', () => showBio(el.dataset.wid)));
+      const whoIds = [...new Set([...tbl.querySelectorAll('.cr-who')].map(x => x.dataset.wid))];
+      tbl.querySelectorAll('.cr-who').forEach(el => el.addEventListener('click', () => showBio(el.dataset.wid, false, whoIds)));
       $('cr-meta').innerHTML = '<strong>' + rows.length + '</strong> at-risk skills of <strong>' + stats.length + '</strong> in scope';
     }
 
-    function render(){ if (view === 'scarce') renderScarce(); else renderKeyPerson(); }
+    // ---------- Capacity Radar: sellable capacity + upskilling candidates ----------
+    // Actions layer over the same slice: where spare capacity sits right now,
+    // and the shortest cross-training path for scarce skills. Capacity needs
+    // utilization (stripped from shared builds); upskilling works without it.
+    function renderRadar(){
+      const p = pool(), stats = skillStats(p), wrap = $('cr-radar-view');
+      const byKey = Object.create(null); stats.forEach(s => { byKey[s.key] = s; });
+      if (!stats.length){
+        wrap.innerHTML = '<div class="cr-quad-empty">No skills match the current filters.</div>';
+        $('cr-meta').innerHTML = '';
+        return;
+      }
+      const uOf = e => typeof e._latestUtil === 'number' ? e._latestUtil : 999;
+
+      // 1) Sellable capacity — spare FTE = unused % of each holder, summed.
+      let capHtml;
+      if (!HAS_UTIL){
+        capHtml = '<div class="mdi-empty">Utilization is not included in this build, so capacity cannot be computed.</div>';
+      } else {
+        const rows = stats.filter(s => s.utils.length).map(s => ({
+          s,
+          spare: s.utils.reduce((t, u) => t + Math.max(0, 100 - u), 0) / 100,
+          avg: avg(s.utils)
+        }));
+        const free  = rows.filter(r => r.spare >= 0.3).sort((a, b) => b.spare - a.spare).slice(0, 8);
+        const maxed = rows.filter(r => r.s.utils.every(u => u >= 95))
+          .sort((a, b) => b.s.holders.length - a.s.holders.length || b.avg - a.avg).slice(0, 8);
+        const maxSpare = Math.max(1, ...free.map(r => r.spare));
+        const rowHtml = (r, col) =>
+          '<div class="mdi-row" data-k="' + esc(r.s.key) + '" title="Click to unfold who holds this skill">'
+          + '<div class="mdi-skill"><b>' + esc(SKILL_DISPLAY[r.s.key]) + '</b><span>' + esc(SKILL_CATEGORY[r.s.key] || '') + '</span></div>'
+          + '<span class="mdi-stat">' + r.s.holders.length + (r.s.holders.length === 1 ? ' person' : ' ppl') + ' &middot; avg ' + Math.round(r.avg) + '%</span>'
+          + '<div class="mdi-bar"><div class="mdi-fill" style="width:' + Math.max(4, Math.round((r.spare / maxSpare) * 100)) + '%;background:' + col + '"></div></div>'
+          + '<span class="mdi-fte" style="color:' + col + '">' + r.spare.toFixed(1) + ' FTE</span>'
+          + '</div>';
+        capHtml =
+          '<div class="mdi-sub" style="margin-bottom:8px"><strong>Ready to deploy</strong> &mdash; capabilities with spare capacity in the latest month.</div>'
+          + (free.length ? free.map(r => rowHtml(r, '#EB8C00')).join('') : '<div class="mdi-empty">No spare capacity in this slice.</div>')
+          + '<div class="mdi-sub" style="margin:14px 0 8px"><strong>Fully committed</strong> &mdash; every holder at 95%+; new demand here means upskilling, hiring, or waiting.</div>'
+          + (maxed.length ? maxed.map(r => rowHtml(r, '#E0301E')).join('') : '<div class="mdi-empty">Nothing fully committed &mdash; every capability has some slack.</div>');
+      }
+
+      // 2) Upskilling candidates — for scarce skills (2 or fewer holders in
+      // slice), rank non-holders by how often their skills pair with it.
+      const scarce = stats.filter(s => s.holders.length <= 2 && COOCCUR[s.key])
+        .sort((a, b) => a.holders.length - b.holders.length || SKILL_DISPLAY[a.key].localeCompare(SKILL_DISPLAY[b.key]));
+      const upRows = [];
+      scarce.forEach(s => {
+        const cands = p.filter(e => !e._skills.has(s.key)).map(e => {
+          let aff = 0, hits = 0;
+          e._skills.forEach(k => { const n = (COOCCUR[s.key] || {})[k] || 0; if (n){ aff += n; hits++; } });
+          return { e, aff, hits };
+        }).filter(c => c.hits >= 2)
+          .sort((a, b) => b.aff - a.aff || uOf(a.e) - uOf(b.e))
+          .slice(0, 3);
+        if (cands.length) upRows.push({ s, cands });
+      });
+      const upHtml = upRows.length
+        ? upRows.slice(0, 8).map(r =>
+          '<div class="mdi-row" data-k="' + esc(r.s.key) + '" title="Click to unfold who holds this skill">'
+          + '<div class="mdi-skill"><b>' + esc(SKILL_DISPLAY[r.s.key]) + '</b><span>' + r.s.holders.length + (r.s.holders.length === 1 ? ' holder' : ' holders') + ' &middot; ' + esc(SKILL_CATEGORY[r.s.key] || '') + '</span></div>'
+          + '<div class="mdi-cands">' + r.cands.map(c =>
+              '<span class="mdi-cand" data-wid="' + esc(String(c.e.WorkdayID)) + '" title="' + esc(c.e.Role || '') + '">' + esc(c.e.Name) + (isSenior(c.e.Role) ? ' &#9733;' : '')
+              + '<span class="n">' + c.hits + ' adjacent</span></span>').join('')
+          + '</div></div>').join('')
+        : '<div class="mdi-empty">No scarce skills with viable cross-training candidates in this slice.</div>';
+
+      wrap.innerHTML =
+        '<div class="mdi-block"><h3 class="mdi-title">Sellable Capacity</h3>'
+        + '<p class="mdi-sub">Where the team can say yes to new work today &mdash; and where it can&rsquo;t. Spare FTE adds up each holder&rsquo;s unused utilization. Click a skill to unfold who holds it.</p>' + capHtml + '</div>'
+        + '<div class="mdi-block"><h3 class="mdi-title">Upskilling Candidates</h3>'
+        + '<p class="mdi-sub">For each scarce skill, the people whose existing skills most often pair with it across the team &mdash; the shortest path to bench depth. Click a name for their bio.</p>' + upHtml + '</div>';
+
+      // Wire: skill rows unfold their holders inline; candidate chips open bios.
+      wrap.querySelectorAll('.mdi-row').forEach(row => row.addEventListener('click', () => {
+        const nxt = row.nextElementSibling;
+        if (nxt && nxt.classList.contains('mdi-holders')){ nxt.remove(); return; }
+        const st = byKey[row.dataset.k]; if (!st) return;
+        const box = document.createElement('div');
+        box.className = 'mdi-holders';
+        box.innerHTML = peopleRows(st.holders, HAS_UTIL);
+        row.after(box);
+        wirePeople(box);
+      }));
+      wrap.querySelectorAll('.mdi-cands').forEach(box => {
+        const cids = [...box.querySelectorAll('.mdi-cand')].map(c => c.dataset.wid);
+        box.querySelectorAll('.mdi-cand').forEach(c => c.addEventListener('click', ev => { ev.stopPropagation(); showBio(c.dataset.wid, false, cids); }));
+      });
+      $('cr-meta').innerHTML = '<strong>' + stats.length + '</strong> skills &middot; <strong>' + p.length + '</strong> people in scope';
+    }
+
+    function render(){ if (view === 'scarce') renderScarce(); else if (view === 'radar') renderRadar(); else renderKeyPerson(); }
 
     $('cr-view-toggle').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
       $('cr-view-toggle').querySelectorAll('button').forEach(x => x.classList.remove('active')); b.classList.add('active');
       view = b.dataset.view;
       $('cr-scarce-view').style.display = view === 'scarce' ? 'block' : 'none';
       $('cr-keyperson-view').style.display = view === 'keyperson' ? 'block' : 'none';
+      $('cr-radar-view').style.display = view === 'radar' ? 'flex' : 'none';
       render();
     }));
     $('cr-reset').addEventListener('click', () => {
