@@ -208,6 +208,20 @@
   .seg{display:flex;background:var(--white);border:1px solid var(--g-300);border-radius:12px;padding:3px;margin-top:12px}
   .seg button{flex:1;height:36px;border:none;border-radius:9px;background:transparent;font-size:13px;font-weight:600;color:var(--g-600);font-family:inherit}
   .seg button.active{background:var(--pwc-black);color:#fff}
+  /* ---- Capacity Radar (mobile) ---- */
+  .rad-h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--pwc-orange);margin:16px 2px 8px}
+  .rad-seclbl{font-size:11.5px;font-weight:700;color:var(--g-700);margin:12px 2px 7px}
+  .rad-row{background:var(--white);border-radius:12px;padding:10px 12px;margin-bottom:8px;box-shadow:0 1px 2px rgba(0,0,0,.06);cursor:pointer}
+  .rad-rtop{display:flex;align-items:baseline;gap:8px}
+  .rad-name{font-size:14px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rad-fte{font-size:13px;font-weight:700;white-space:nowrap}
+  .rad-meta{font-size:11px;color:var(--g-600);margin-top:2px}
+  .rad-bar{height:7px;border-radius:4px;background:var(--g-200);overflow:hidden;margin-top:7px}
+  .rad-fill{height:100%;border-radius:4px}
+  .rad-cands{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .rad-cand{display:inline-flex;align-items:center;gap:6px;background:var(--g-100);border:1px solid var(--g-300);border-radius:12px;padding:4px 9px;font-size:12px;font-weight:600;color:var(--g-900)}
+  .rad-cand .n{font-size:10px;font-weight:700;color:var(--pwc-orange);background:#FBE9DE;border-radius:8px;padding:1px 6px}
+  .rad-empty{color:var(--g-600);font-size:13px;padding:10px 4px}
   .grp-row{display:flex;gap:6px;margin:12px 0 10px;align-items:center}
   .grp-row .gl{font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--g-600);letter-spacing:.4px;flex:0 0 auto}
   .grp-row button{flex:1;height:32px;border-radius:9px;border:1px solid var(--g-300);background:var(--white);font-size:12px;font-weight:600;color:var(--g-700);font-family:inherit}
@@ -232,6 +246,7 @@
   .ss-actions button{flex:1;height:38px;border-radius:10px;border:none;font-size:12.5px;font-weight:700;font-family:inherit;color:#fff}
   .ss-actions .a-must{background:var(--pwc-orange)}
   .ss-actions .a-nice{background:var(--pwc-tangerine)}
+  .ss-actions .a-copy{background:var(--pwc-orange)}
   .ss-actions button.added{opacity:.55}
 
   /* ---- skill finder ---- */
@@ -369,6 +384,11 @@
     </button>
   </div>
   <div class="achips-host"></div>
+  <div class="seg" id="risk-modes">
+    <button data-rmode="scarce" class="active">Scarce &amp; Stretched</button>
+    <button data-rmode="radar">Capacity Radar</button>
+  </div>
+  <div id="risk-scarce-wrap">
   <div class="risk-ctl" id="risk-ctl">
     <div class="thr-row">
       <div class="thr-top"><span class="tl">Scarce when</span><span class="tv"><b id="thr-scarce-val">3</b> or fewer people</span></div>
@@ -386,6 +406,18 @@
   </div>
   <div id="risk-meta" style="font-size:12px;color:var(--g-600);margin:0 2px 10px"></div>
   <div id="risk-list"></div>
+  </div>
+  <div id="risk-radar-wrap" style="display:none">
+    <div class="risk-ctl" id="radar-ctl">
+      <div class="thr-row"><div class="thr-top"><span class="tl">Deployable when spare</span><span class="tv"><b id="rad-fte-val">0.5</b>+ FTE</span></div><input type="range" id="rad-fte" min="0" max="5" step="0.25" value="0.5"></div>
+      <div class="thr-row"><div class="thr-top"><span class="tl">Count spare only below</span><span class="tv"><b id="rad-frag-val">85</b>% util</span></div><input type="range" id="rad-frag" min="40" max="120" step="5" value="85"></div>
+      <div class="thr-row"><div class="thr-top"><span class="tl">Fully committed above</span><span class="tv"><b id="rad-comm-val">95</b>% util</span></div><input type="range" id="rad-comm" min="70" max="120" step="5" value="95"></div>
+      <div class="thr-row"><div class="thr-top"><span class="tl">Cross-train when</span><span class="tv"><b id="rad-few-val">2</b> or fewer</span></div><input type="range" id="rad-few" min="1" max="10" step="1" value="2"></div>
+      <div class="thr-row"><div class="thr-top"><span class="tl">Adjacent skills needed</span><span class="tv"><b id="rad-adj-val">2</b>+ shared</span></div><input type="range" id="rad-adj" min="1" max="6" step="1" value="2"></div>
+    </div>
+    <div id="radar-meta" style="font-size:12px;color:var(--g-600);margin:12px 2px 4px"></div>
+    <div id="radar-body"></div>
+  </div>
 </main>
 
 <div class="scroll-fabs" id="scroll-fabs">
@@ -544,6 +576,19 @@ const ALL_SKILLS = Object.keys(SKILL_DISPLAY)
   .sort((a, b) => SKILL_DISPLAY[a].localeCompare(SKILL_DISPLAY[b], undefined, { sensitivity: 'base' }));
 const SKILL_COUNT = Object.create(null);
 EMPLOYEES.forEach(e => e._skills.forEach(k => { SKILL_COUNT[k] = (SKILL_COUNT[k] || 0) + 1; }));
+// Co-occurrence: how often each pair of skills is held by the same person (symmetric).
+const COOCCUR = Object.create(null);
+EMPLOYEES.forEach(e => {
+  const arr = [...e._skills];
+  for (let i = 0; i < arr.length; i++){ const a = arr[i];
+    for (let j = i + 1; j < arr.length; j++){ const b = arr[j];
+      (COOCCUR[a] || (COOCCUR[a] = Object.create(null)))[b] = (COOCCUR[a][b] || 0) + 1;
+      (COOCCUR[b] || (COOCCUR[b] = Object.create(null)))[a] = (COOCCUR[b][a] || 0) + 1;
+    }
+  }
+});
+const _SENIOR_RE = /manager|director|principal|partner|\blead\b|head of/i;
+function isSenior(role){ return _SENIOR_RE.test(String(role || '')); }
 
 function initials(name){
   const p = String(name || '').split(/\s+/).filter(Boolean);
@@ -733,6 +778,7 @@ function onFiltersChanged(){
   renderFinderChips();
   renderDirectory();
   renderRisk();           // risk pool respects the filters
+  if (radarMode === 'radar') renderRadarMobile();
   renderFinderResults();  // ...and so do the ranked matches
   renderExplore();        // ...and the skill explorer
 }
@@ -1351,9 +1397,83 @@ document.querySelectorAll('#risk-focus button').forEach(b => b.addEventListener(
   renderRisk();
 }));
 
+// ---- Capacity Radar (mobile) ----
+let radarMode = 'scarce';
+function renderRadarMobile(){
+  const body = document.getElementById('radar-body'); if (!body) return;
+  const meta = document.getElementById('radar-meta');
+  if (!HAS_UTIL){ body.innerHTML = '<div class="rad-empty">This view needs monthly utilization, which is stripped from shared builds.</div>'; if (meta) meta.textContent = ''; return; }
+  const diag = skillsDiagnostic();
+  if (diag){ body.innerHTML = diag; if (meta) meta.textContent = ''; return; }
+  const pool = filterPool();
+  const stats = riskSkillStats(pool);
+  _riskStats = stats;   // so tapping a skill reuses openSkillSheet('risk')
+  const gv = (id, d) => { const el = document.getElementById(id); const v = el ? parseFloat(el.value) : NaN; return Number.isFinite(v) ? v : d; };
+  const fteBar = gv('rad-fte', 0.5), frag = gv('rad-frag', 85), commit = gv('rad-comm', 95), few = gv('rad-few', 2), adj = gv('rad-adj', 2);
+  document.getElementById('rad-fte-val').textContent = fteBar;
+  document.getElementById('rad-frag-val').textContent = frag;
+  document.getElementById('rad-comm-val').textContent = commit;
+  document.getElementById('rad-few-val').textContent = few;
+  document.getElementById('rad-adj-val').textContent = adj;
+  const uOf = e => typeof e._latestUtil === 'number' ? e._latestUtil : undefined;
+  if (meta) meta.innerHTML = '<b>' + stats.length + '</b> skills &middot; <b>' + pool.length + '</b> people in scope &middot; latest month ' + esc(monthLabel(LATEST_MONTH));
+
+  // Sellable capacity
+  const rows = stats.map(s => {
+    const us = s.holders.map(uOf).filter(u => u !== undefined);
+    const spare = s.holders.reduce((t, e) => { const u = uOf(e); return (u !== undefined && u < frag) ? t + Math.max(0, 100 - u) / 100 : t; }, 0);
+    return { s, us, spare, avg: us.length ? us.reduce((x, y) => x + y, 0) / us.length : null };
+  }).filter(r => r.avg !== null);
+  const free  = rows.filter(r => r.spare >= Math.max(0.05, fteBar)).sort((a, b) => b.spare - a.spare).slice(0, 8);
+  const maxed = rows.filter(r => r.us.length && r.us.every(u => u >= commit)).sort((a, b) => b.s.holders.length - a.s.holders.length || b.avg - a.avg).slice(0, 8);
+  const maxSpare = Math.max(1, ...free.map(r => r.spare));
+  const capRow = (r, col, seg) =>
+    '<div class="rad-row" data-k="' + esc(r.s.key) + '" data-seg="' + seg + '">'
+    + '<div class="rad-rtop"><span class="rad-name">' + esc(SKILL_DISPLAY[r.s.key]) + '</span><span class="rad-fte" style="color:' + col + '">' + r.spare.toFixed(1) + ' FTE</span></div>'
+    + '<div class="rad-meta">' + r.s.holders.length + (r.s.holders.length === 1 ? ' person' : ' ppl') + ' &middot; avg ' + Math.round(r.avg) + '% &middot; ' + esc(SKILL_CATEGORY[r.s.key] || '') + '</div>'
+    + '<div class="rad-bar"><div class="rad-fill" style="width:' + Math.max(4, Math.round((r.spare / maxSpare) * 100)) + '%;background:' + col + '"></div></div></div>';
+
+  // Upskilling candidates
+  const scarce = stats.filter(s => s.holders.length <= few && COOCCUR[s.key]).sort((a, b) => a.holders.length - b.holders.length || SKILL_DISPLAY[a.key].localeCompare(SKILL_DISPLAY[b.key]));
+  const upRows = [];
+  scarce.forEach(s => {
+    const cands = pool.filter(e => !e._skills.has(s.key)).map(e => {
+      let aff = 0, hits = 0; e._skills.forEach(k => { const n = (COOCCUR[s.key] || {})[k] || 0; if (n){ aff += n; hits++; } });
+      return { e, aff, hits };
+    }).filter(c => c.hits >= adj).sort((a, b) => b.aff - a.aff || ((a.e._latestUtil ?? 999) - (b.e._latestUtil ?? 999))).slice(0, 3);
+    if (cands.length) upRows.push({ s, cands });
+  });
+  const upRow = r =>
+    '<div class="rad-row" data-k="' + esc(r.s.key) + '" data-seg="upskill">'
+    + '<div class="rad-rtop"><span class="rad-name">' + esc(SKILL_DISPLAY[r.s.key]) + '</span><span class="rad-fte" style="color:var(--g-600)">' + r.s.holders.length + (r.s.holders.length === 1 ? ' holder' : ' holders') + '</span></div>'
+    + '<div class="rad-cands">' + r.cands.map(c => '<span class="rad-cand">' + esc(c.e.Name) + (isSenior(c.e.Role) ? ' &#9733;' : '') + '<span class="n">' + c.hits + '</span></span>').join('') + '</div></div>';
+
+  body.innerHTML =
+    '<div class="rad-h3">Sellable Capacity</div>'
+    + '<div class="rad-seclbl">Ready to deploy &middot; at least ' + fteBar + ' spare FTE, counting people under ' + frag + '%</div>'
+    + (free.length ? free.map(r => capRow(r, '#EB8C00', 'deploy')).join('') : '<div class="rad-empty">No skills clear the ' + fteBar + '-FTE bar.</div>')
+    + '<div class="rad-seclbl">Fully committed &middot; every holder at ' + commit + '%+</div>'
+    + (maxed.length ? maxed.map(r => capRow(r, '#E0301E', 'committed')).join('') : '<div class="rad-empty">Nothing fully committed at ' + commit + '%.</div>')
+    + '<div class="rad-h3">Upskilling Candidates</div>'
+    + '<div class="rad-seclbl">Skills with ' + few + ' or fewer holders &middot; candidates share ' + adj + '+ skills</div>'
+    + (upRows.length ? upRows.slice(0, 8).map(upRow).join('') : '<div class="rad-empty">No scarce skills have candidates sharing ' + adj + '+ skills here.</div>');
+
+  body.querySelectorAll('.rad-row').forEach(r => r.addEventListener('click', () => openSkillSheet(r.dataset.k, 'radar', null, { seg: r.dataset.seg, frag: frag })));
+}
+['rad-fte', 'rad-frag', 'rad-comm', 'rad-few', 'rad-adj'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', renderRadarMobile); });
+document.querySelectorAll('#risk-modes button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#risk-modes button').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  radarMode = b.dataset.rmode;
+  const sc = document.getElementById('risk-scarce-wrap'), rd = document.getElementById('risk-radar-wrap');
+  if (sc) sc.style.display = radarMode === 'radar' ? 'none' : 'block';
+  if (rd) rd.style.display = radarMode === 'radar' ? 'block' : 'none';
+  if (radarMode === 'radar') renderRadarMobile(); else renderRisk();
+}));
+
 // ---- skill detail bottom sheet: who holds it + how busy they are ----
 const skillSheet = document.getElementById('skill-sheet');
-function openSkillSheet(k, ctx, seg){
+function openSkillSheet(k, ctx, seg, radar){
   ctx = ctx || 'risk';
   let baseHolders;
   const subBits = [esc(SKILL_CATEGORY[k] || '')];
@@ -1379,26 +1499,50 @@ function openSkillSheet(k, ctx, seg){
   document.getElementById('ss-sub').innerHTML = subBits.filter(Boolean).join(' &middot; ');
   // quick-add: build the staffing shortlist straight from the sheet
   const act = document.getElementById('ss-actions');
-  const paintActions = () => {
-    act.innerHTML =
-        '<button class="a-must' + (mustSet.has(k) ? ' added' : '') + '" type="button">' + (mustSet.has(k) ? '&#10003; Must-have' : '+ Must-have') + '</button>'
-      + '<button class="a-nice' + (niceSet.has(k) ? ' added' : '') + '" type="button">' + (niceSet.has(k) ? '&#10003; Nice-to-have' : '+ Nice-to-have') + '</button>';
-    act.querySelector('.a-must').addEventListener('click', () => {
-      mustSet.has(k) ? removeChip('must', k) : addChip('must', k);
-      paintActions();
+  if (ctx === 'radar'){
+    // Radar: one-tap copy of the relevant people's emails (deploy = only those under the spare cut).
+    const uu = e => typeof e._latestUtil === 'number' ? e._latestUtil : undefined;
+    const fr = radar && typeof radar.frag === 'number' ? radar.frag : 100;
+    const pick = (radar && radar.seg === 'deploy') ? baseHolders.filter(e => { const u = uu(e); return u !== undefined && u < fr; }) : baseHolders;
+    const emails = pick.map(e => e.emailid).filter(Boolean);
+    const label = emails.length ? 'Copy ' + emails.length + ' email' + (emails.length === 1 ? '' : 's') : 'No emails available';
+    act.innerHTML = '<button class="a-copy" type="button"' + (emails.length ? '' : ' disabled style="opacity:.5"') + '>' + label + '</button>';
+    const btn = act.querySelector('.a-copy');
+    if (emails.length) btn.addEventListener('click', () => {
+      const txt = emails.join('; ');
+      const done = () => { btn.textContent = 'Copied \u2713'; setTimeout(() => { btn.textContent = label; }, 1400); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done).catch(() => alert(txt));
+      else alert(txt);
     });
-    act.querySelector('.a-nice').addEventListener('click', () => {
-      niceSet.has(k) ? removeChip('nice', k) : addChip('nice', k);
-      paintActions();
-    });
-  };
-  paintActions();
+  } else {
+    const paintActions = () => {
+      act.innerHTML =
+          '<button class="a-must' + (mustSet.has(k) ? ' added' : '') + '" type="button">' + (mustSet.has(k) ? '&#10003; Must-have' : '+ Must-have') + '</button>'
+        + '<button class="a-nice' + (niceSet.has(k) ? ' added' : '') + '" type="button">' + (niceSet.has(k) ? '&#10003; Nice-to-have' : '+ Nice-to-have') + '</button>';
+      act.querySelector('.a-must').addEventListener('click', () => {
+        mustSet.has(k) ? removeChip('must', k) : addChip('must', k);
+        paintActions();
+      });
+      act.querySelector('.a-nice').addEventListener('click', () => {
+        niceSet.has(k) ? removeChip('nice', k) : addChip('nice', k);
+        paintActions();
+      });
+    };
+    paintActions();
+  }
   const byUtil = (a, b) => (b._latestUtil ?? -1) - (a._latestUtil ?? -1);
   // When drilled in from a Competency / Territory group, show that segment's
   // people first (each block sorted by utilization), then the other holders.
   const segCol = seg && seg.group ? (seg.dim === 'comp' ? 'Competency Filter' : seg.dim === 'terr' ? 'Territory Filter' : null) : null;
   let sections = [];
-  if (segCol){
+  if (ctx === 'radar' && radar && radar.seg === 'deploy'){
+    const fr = typeof radar.frag === 'number' ? radar.frag : 100;
+    const uu = e => typeof e._latestUtil === 'number' ? e._latestUtil : undefined;
+    const avail = baseHolders.filter(e => { const u = uu(e); return u !== undefined && u < fr; }).sort((a, b) => (a._latestUtil ?? 999) - (b._latestUtil ?? 999));
+    const busy  = baseHolders.filter(e => { const u = uu(e); return !(u !== undefined && u < fr); }).sort(byUtil);
+    if (avail.length) sections.push({ label: 'Available &middot; under ' + fr + '% &middot; ' + avail.length, people: avail });
+    if (busy.length)  sections.push({ label: 'Fully committed &middot; ' + fr + '%+ &middot; ' + busy.length, people: busy });
+  } else if (segCol){
     const inSeg  = baseHolders.filter(e => String(e[segCol] || '').trim() === seg.group).sort(byUtil);
     const others = baseHolders.filter(e => String(e[segCol] || '').trim() !== seg.group).sort(byUtil);
     if (inSeg.length)  sections.push({ label: 'In ' + seg.group + ' &middot; ' + inSeg.length, people: inSeg });
