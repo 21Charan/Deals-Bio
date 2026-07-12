@@ -409,11 +409,11 @@
   </div>
   <div id="risk-radar-wrap" style="display:none">
     <div class="risk-ctl" id="radar-ctl">
-      <div class="thr-row"><div class="thr-top"><span class="tl">Deployable when spare</span><span class="tv"><b id="rad-fte-val">0.5</b>+ FTE</span></div><input type="range" id="rad-fte" min="0" max="5" step="0.25" value="0.5"></div>
-      <div class="thr-row"><div class="thr-top"><span class="tl">Count spare only below</span><span class="tv"><b id="rad-frag-val">85</b>% util</span></div><input type="range" id="rad-frag" min="40" max="120" step="5" value="85"></div>
+      <div class="thr-row"><div class="thr-top"><span class="tl">Minimum Spare FTE</span><span class="tv"><b id="rad-fte-val">0.5</b>+ FTE</span></div><input type="range" id="rad-fte" min="0" max="25" step="0.25" value="0.5"></div>
+      <div class="thr-row"><div class="thr-top"><span class="tl">Availability Threshold</span><span class="tv"><b id="rad-frag-val">85</b>% util</span></div><input type="range" id="rad-frag" min="40" max="120" step="5" value="85"></div>
       <div class="thr-row"><div class="thr-top"><span class="tl">Fully committed above</span><span class="tv"><b id="rad-comm-val">95</b>% util</span></div><input type="range" id="rad-comm" min="70" max="120" step="5" value="95"></div>
       <div class="thr-row"><div class="thr-top"><span class="tl">Cross-train when</span><span class="tv"><b id="rad-few-val">2</b> or fewer</span></div><input type="range" id="rad-few" min="1" max="10" step="1" value="2"></div>
-      <div class="thr-row"><div class="thr-top"><span class="tl">Adjacent skills needed</span><span class="tv"><b id="rad-adj-val">2</b>+ shared</span></div><input type="range" id="rad-adj" min="1" max="6" step="1" value="2"></div>
+      <div class="thr-row"><div class="thr-top"><span class="tl">Minimum shared skills</span><span class="tv"><b id="rad-adj-val">2</b>+ shared</span></div><input type="range" id="rad-adj" min="1" max="6" step="1" value="2"></div>
     </div>
     <div id="radar-meta" style="font-size:12px;color:var(--g-600);margin:12px 2px 4px"></div>
     <div id="radar-body"></div>

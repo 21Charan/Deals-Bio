@@ -325,7 +325,8 @@
   .cr-thr-row{display:flex;gap:24px;align-items:flex-end;flex:1 1 auto}
   .cr-thr-row .cr-thr{flex:1 1 150px;min-width:130px}
   .cr-thr-gh{margin:0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--pwc-orange)}
-  #cr-window-toggle{align-self:center;margin-left:24px}
+  #cr-window-toggle{align-self:center;margin-left:24px;flex-direction:column}
+  #cr-window-toggle button + button{border-left:none;border-top:1px solid var(--pwc-grey-300)}
   @media (max-width:1080px){.cr-thr-group,#cr-grp-deploy,#cr-grp-committed,#cr-grp-upskill{flex:1 1 100%;border-right:none;border-bottom:1px solid var(--pwc-grey-200);padding:12px 0}.cr-thr-group:first-of-type{padding-top:0}#cr-window-toggle{margin-left:0;padding-top:12px}}
   /* Capability Risk — ranked risk list */
   .cr-risklist{display:flex;flex-direction:column;gap:8px;max-height:660px;overflow-y:auto;padding-right:2px}
@@ -793,11 +794,11 @@
           <div class="cr-thr-gh">Ready to deploy</div>
           <div class="cr-thr-row">
             <div class="cr-thr">
-              <div class="cr-thr-top"><span class="cr-thr-lbl">Deployable when spare</span><span class="cr-thr-val"><b id="cr-fte-val">0.5</b>+ FTE</span></div>
-              <input type="range" id="cr-fte-slider" min="0" max="5" step="0.25" value="0.5">
+              <div class="cr-thr-top"><span class="cr-thr-lbl">Minimum Spare FTE</span><span class="cr-thr-val"><b id="cr-fte-val">0.5</b>+ FTE</span></div>
+              <input type="range" id="cr-fte-slider" min="0" max="25" step="0.25" value="0.5">
             </div>
             <div class="cr-thr">
-              <div class="cr-thr-top"><span class="cr-thr-lbl">Count spare only below</span><span class="cr-thr-val"><b id="cr-frag-val">85</b>% utilization</span></div>
+              <div class="cr-thr-top"><span class="cr-thr-lbl">Availability Threshold</span><span class="cr-thr-val"><b id="cr-frag-val">85</b>% utilization</span></div>
               <input type="range" id="cr-frag-slider" min="40" max="120" step="5" value="85">
             </div>
           </div>
@@ -819,7 +820,7 @@
               <input type="range" id="cr-few-slider" min="1" max="10" step="1" value="2">
             </div>
             <div class="cr-thr">
-              <div class="cr-thr-top"><span class="cr-thr-lbl">Adjacent skills needed</span><span class="cr-thr-val"><b id="cr-adj-val">2</b>+ shared</span></div>
+              <div class="cr-thr-top"><span class="cr-thr-lbl">Minimum shared skills</span><span class="cr-thr-val"><b id="cr-adj-val">2</b>+ shared</span></div>
               <input type="range" id="cr-adj-slider" min="1" max="6" step="1" value="2">
             </div>
           </div>
