@@ -1074,6 +1074,25 @@
       if (!SKILL_CATEGORY[k]) SKILL_CATEGORY[k] = cat;
     });
   });
+  // Faithful Skill-Category index: which people hold each skill *within each category*.
+  // A skill can be tagged under several categories (e.g. Power BI under FDD and Data & Analytics),
+  // so the Skill-Category cloud lists it under every category it appears in, not just the first-seen one.
+  const CAT_SKILL_PPL = Object.create(null); // cat -> { skillKey -> Set(WorkdayID) }
+  SKILLS.forEach(row => {
+    const empId = String(row.WorkdayID);
+    if (!EMPLOYEES.some(x => String(x.WorkdayID) === empId)) return;
+    const cat = String(row['Skill Category'] || '').trim() || 'Uncategorised';
+    if (!CAT_SKILL_PPL[cat]) CAT_SKILL_PPL[cat] = Object.create(null);
+    String(row.Skills || '').split(/[,;]/).map(s => s.trim()).filter(Boolean).forEach(s => {
+      const k = s.toLowerCase();
+      (CAT_SKILL_PPL[cat][k] || (CAT_SKILL_PPL[cat][k] = new Set())).add(empId);
+    });
+  });
+  // All skill categories a skill appears in (for labels that used to show only the first).
+  const SKILL_CATS = Object.create(null);
+  Object.keys(CAT_SKILL_PPL).forEach(cat => { Object.keys(CAT_SKILL_PPL[cat]).forEach(k => { (SKILL_CATS[k] || (SKILL_CATS[k] = [])).push(cat); }); });
+  Object.keys(SKILL_CATS).forEach(k => SKILL_CATS[k].sort());
+  function catLabel(k){ const a = SKILL_CATS[k]; return (a && a.length) ? a.join(' · ') : (SKILL_CATEGORY[k] || ''); }
   const ALL_SKILLS = Object.keys(SKILL_DISPLAY)
     .sort((a, b) => SKILL_DISPLAY[a].localeCompare(SKILL_DISPLAY[b], undefined, { sensitivity: 'base' }));
 
@@ -1995,21 +2014,22 @@
   // can consume it directly.
   function buildSkillCategoryData(){
     const ids = atlasPoolIds(), catSel = aCat.selected;
-    const cats = Object.create(null);
-    EMPLOYEES.forEach(e => {
-      if (!ids.has(String(e.WorkdayID))) return;
-      e._skills.forEach(k => {
-        const cat = SKILL_CATEGORY[k] || 'Uncategorised';
-        if (catSel.size && !catSel.has(cat)) return;
-        if (!cats[cat]) cats[cat] = { skills: Object.create(null), people: new Set() };
-        cats[cat].people.add(e.WorkdayID);
-        cats[cat].skills[k] = (cats[cat].skills[k] || 0) + 1;
+    const out = [];
+    Object.keys(CAT_SKILL_PPL).forEach(cat => {
+      if (catSel.size && !catSel.has(cat)) return;
+      const skillMap = CAT_SKILL_PPL[cat];
+      const people = new Set();
+      const skills = [];
+      Object.keys(skillMap).forEach(k => {
+        let count = 0;
+        skillMap[k].forEach(id => { if (ids.has(id)){ count++; people.add(id); } });
+        if (count > 0) skills.push({ key: k, count });
       });
+      if (!skills.length) return;
+      skills.sort((a, b) => b.count - a.count);
+      out.push({ name: cat, color: CAT_COLOR[cat] || '#9C9C9C', peopleCount: people.size, skillsCount: skills.length, skills });
     });
-    return Object.entries(cats).map(([name, data]) => {
-      const skills = Object.entries(data.skills).map(([key, count]) => ({ key, count })).sort((a, b) => b.count - a.count);
-      return { name, color: CAT_COLOR[name] || '#9C9C9C', peopleCount: data.people.size, skillsCount: skills.length, skills };
-    }).sort((a, b) => (a.name === 'Uncategorised') - (b.name === 'Uncategorised') || b.peopleCount - a.peopleCount || a.name.localeCompare(b.name));
+    return out.sort((a, b) => (a.name === 'Uncategorised') - (b.name === 'Uncategorised') || b.peopleCount - a.peopleCount || a.name.localeCompare(b.name));
   }
   // ----- All Skills cloud: the complete catalogue in one place -----
   // Chips grouped by competency, sized by how many people hold the skill.
@@ -2736,13 +2756,17 @@
     }
     const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
     function kpi(label, val, col){ return '<div class="cr-kpi" style="border-top-color:' + col + '"><div class="cr-kpi-val" style="color:' + col + '">' + val + '</div><div class="cr-kpi-lbl">' + esc(label) + '</div></div>'; }
-    function peopleRows(arr, withUtil, availFirst){
-      const u = e => typeof e._latestUtil === 'number' ? e._latestUtil : (availFirst ? 999 : -1);
+    function peopleRows(arr, withUtil, availFirst, utilOf){
+      // utilOf lets callers pick which utilisation window to show/sort by
+      // (radar passes the Latest-month / 3-month-avg accessor); defaults to latest.
+      const val = typeof utilOf === 'function' ? utilOf : (e => (typeof e._latestUtil === 'number' ? e._latestUtil : undefined));
+      const u = e => { const v = val(e); return typeof v === 'number' ? v : (availFirst ? 999 : -1); };
       const sorted = arr.slice().sort((a, b) => withUtil ? (availFirst ? u(a) - u(b) : u(b) - u(a)) : String(a.Name).localeCompare(String(b.Name)));
       return '<div class="smap-people">' + sorted.map(e => {
         const av = e._photo ? '<div class="sp-av" style="background-image:url(' + e._photo + ');background-size:cover;color:transparent">' + esc(e._initials || '') + '</div>' : '<div class="sp-av">' + esc(e._initials || '?') + '</div>';
         let u = '';
-        if (withUtil && typeof e._latestUtil === 'number'){ const c = utilColor(e._latestUtil); u = '<span class="cr-util" style="background:' + c.bg + ';color:' + (c.dark ? '#2D2D2D' : '#fff') + '">' + Math.round(e._latestUtil) + '%</span>'; }
+        const uv = val(e);
+        if (withUtil && typeof uv === 'number'){ const c = utilColor(uv); u = '<span class="cr-util" style="background:' + c.bg + ';color:' + (c.dark ? '#2D2D2D' : '#fff') + '">' + Math.round(uv) + '%</span>'; }
         return '<div class="smap-person" data-wid="' + esc(String(e.WorkdayID)) + '">' + av + '<div style="flex:1 1 auto"><div class="sp-name">' + esc(e.Name) + (isSenior(e.Role) ? ' ★' : '') + '</div><div class="sp-meta">' + esc([e.Role, e.Territory].filter(Boolean).join(' · ')) + '</div></div>' + u + '</div>';
       }).join('') + '</div>';
     }
@@ -2800,7 +2824,7 @@
         return '<div class="cr-risk-row" data-k="' + esc(q.s.key) + '">'
           + '<span class="crr-dot" style="background:' + q.qd.col + '"></span>'
           + '<div class="crr-main"><div class="crr-name" title="' + esc(SKILL_DISPLAY[q.s.key]) + '">' + esc(SKILL_DISPLAY[q.s.key]) + '</div>'
-          +   '<div class="crr-cat">' + esc(SKILL_CATEGORY[q.s.key] || '') + '</div></div>'
+          +   '<div class="crr-cat" title="' + esc(catLabel(q.s.key)) + '">' + esc(catLabel(q.s.key)) + '</div></div>'
           + '<div class="crr-metric"><span class="crr-ml">DEPTH</span><div class="crr-bar"><div class="crr-fill" style="width:' + depthPct.toFixed(0) + '%;background:' + depthCol + '"></div></div><span class="crr-val">' + q.supply + (q.supply === 1 ? ' person' : ' ppl') + '</span></div>'
           + '<div class="crr-metric"><span class="crr-ml">LOAD</span><div class="crr-bar"><div class="crr-fill" style="width:' + loadPct.toFixed(0) + '%;background:' + lc.bg + '"></div></div><span class="crr-val">' + Math.round(q.demand) + '%</span></div>'
           + '<span class="crr-badge" style="background:' + q.qd.col + '">' + q.qd.label + '</span>'
@@ -2813,7 +2837,7 @@
         board.querySelectorAll('.cr-risk-row.sel').forEach(x => x.classList.remove('sel'));
         b.classList.add('sel');
         const st = stats.find(x => x.key === b.dataset.k), dm = avg(st.utils), qd = quad(st.holders.length, dm, th), d = $('cr-scarce-detail');
-        d.innerHTML = '<h3>' + esc(SKILL_DISPLAY[st.key]) + '</h3><div class="sd-sub">' + esc(SKILL_CATEGORY[st.key]) + ' · ' + st.holders.length + ' ' + (st.holders.length === 1 ? 'person' : 'people') + ' · avg ' + Math.round(dm) + '% util</div><div class="smap-tagrow"><span class="cr-badge" style="background:' + qd.col + '">' + esc(qd.label) + '</span></div>' + peopleRows(st.holders, true);
+        d.innerHTML = '<h3>' + esc(SKILL_DISPLAY[st.key]) + '</h3><div class="sd-sub">' + esc(catLabel(st.key)) + ' · ' + st.holders.length + ' ' + (st.holders.length === 1 ? 'person' : 'people') + ' · avg ' + Math.round(dm) + '% util</div><div class="smap-tagrow"><span class="cr-badge" style="background:' + qd.col + '">' + esc(qd.label) + '</span></div>' + peopleRows(st.holders, true);
         wirePeople(d);
       }));
 
@@ -2850,7 +2874,7 @@
       if (!rows.length) h += '<tr><td colspan="6" class="cr-empty">No key-person risks in this slice — capability is well spread.</td></tr>';
       rows.forEach(r => {
         const who = r.s.holders.slice().sort((a, b) => String(a.Name).localeCompare(String(b.Name))).map(e => '<span class="cr-who" data-wid="' + esc(String(e.WorkdayID)) + '">' + esc(e.Name) + (isSenior(e.Role) ? ' ★' : '') + '</span>').join('');
-        h += '<tr><td>' + badge(r.risk, r.rank) + '</td><td class="cr-skill">' + esc(SKILL_DISPLAY[r.s.key]) + '</td><td>' + esc(SKILL_CATEGORY[r.s.key]) + '</td><td class="cr-num">' + r.n + '</td><td class="cr-num">' + r.sen + '</td><td>' + who + '</td></tr>';
+        h += '<tr><td>' + badge(r.risk, r.rank) + '</td><td class="cr-skill">' + esc(SKILL_DISPLAY[r.s.key]) + '</td><td>' + esc(catLabel(r.s.key)) + '</td><td class="cr-num">' + r.n + '</td><td class="cr-num">' + r.sen + '</td><td>' + who + '</td></tr>';
       });
       h += '</tbody>';
       const tbl = $('cr-kp-table'); tbl.innerHTML = h;
@@ -2908,7 +2932,7 @@
         const maxSpare = Math.max(1, ...free.map(r => r.spare));
         const rowHtml = (r, col, kind) =>
           '<div class="mdi-row" data-k="' + esc(r.s.key) + '" data-kind="' + kind + '" title="Click to unfold who holds this skill">'
-          + '<div class="mdi-skill"><b>' + esc(SKILL_DISPLAY[r.s.key]) + '</b><span>' + esc(SKILL_CATEGORY[r.s.key] || '') + '</span></div>'
+          + '<div class="mdi-skill"><b>' + esc(SKILL_DISPLAY[r.s.key]) + '</b><span>' + esc(catLabel(r.s.key)) + '</span></div>'
           + '<span class="mdi-stat">' + r.s.holders.length + (r.s.holders.length === 1 ? ' person' : ' ppl') + ' &middot; avg ' + Math.round(r.avg) + '%</span>'
           + '<div class="mdi-bar"><div class="mdi-fill" style="width:' + Math.max(4, Math.round((r.spare / maxSpare) * 100)) + '%;background:' + col + '"></div></div>'
           + '<span class="mdi-fte" style="color:' + col + '">' + r.spare.toFixed(1) + ' FTE</span>'
@@ -2937,7 +2961,7 @@
       const upHtml = upRows.length
         ? upRows.slice(0, 8).map(r =>
           '<div class="mdi-row" data-k="' + esc(r.s.key) + '" data-kind="upskill" title="Click to unfold who holds this skill">'
-          + '<div class="mdi-skill"><b>' + esc(SKILL_DISPLAY[r.s.key]) + '</b><span>' + r.s.holders.length + (r.s.holders.length === 1 ? ' holder' : ' holders') + ' &middot; ' + esc(SKILL_CATEGORY[r.s.key] || '') + '</span></div>'
+          + '<div class="mdi-skill"><b>' + esc(SKILL_DISPLAY[r.s.key]) + '</b><span>' + r.s.holders.length + (r.s.holders.length === 1 ? ' holder' : ' holders') + ' &middot; ' + esc(catLabel(r.s.key)) + '</span></div>'
           + '<div class="mdi-cands">' + r.cands.map(c =>
               '<span class="mdi-cand" data-wid="' + esc(String(c.e.WorkdayID)) + '" title="' + esc(c.e.Role || '') + '">' + esc(c.e.Name) + (isSenior(c.e.Role) ? ' &#9733;' : '')
               + '<span class="n">' + c.hits + ' adjacent</span></span>').join('')
@@ -2967,12 +2991,12 @@
           const spare = avail.reduce((t, e) => t + Math.max(0, 100 - uWin(e)) / 100, 0);
           box.innerHTML =
             '<div class="mdi-hgroup"><div class="mdi-holders-head mdi-hh-go">Available &middot; under ' + frag + '% &middot; ' + avail.length + (avail.length === 1 ? ' person' : ' people') + ' &middot; sums to ' + spare.toFixed(1) + ' FTE</div>'
-            + (avail.length ? peopleRows(avail, true, true) : '<div class="mdi-empty">No one is under ' + frag + '% utilization right now.</div>') + '</div>'
-            + (busy.length ? '<div class="mdi-hgroup"><div class="mdi-holders-head mdi-hh-stop">Fully committed &middot; ' + frag + '%+ &middot; ' + busy.length + (busy.length === 1 ? ' person' : ' people') + ' &middot; not counted</div>' + peopleRows(busy, true, false) + '</div>' : '');
+            + (avail.length ? peopleRows(avail, true, true, uWin) : '<div class="mdi-empty">No one is under ' + frag + '% utilization right now.</div>') + '</div>'
+            + (busy.length ? '<div class="mdi-hgroup"><div class="mdi-holders-head mdi-hh-stop">Committed &middot; ' + frag + '%+ &middot; ' + busy.length + (busy.length === 1 ? ' person' : ' people') + ' &middot; not counted</div>' + peopleRows(busy, true, false, uWin) + '</div>' : '');
         } else {
           box.innerHTML = '<div class="mdi-holders-head">' + st.holders.length + (st.holders.length === 1 ? ' person' : ' people')
             + (HAS_UTIL ? ' &middot; most available first' : '') + (st.holders.length > 8 ? ' &middot; list scrolls' : '') + '</div>'
-            + peopleRows(st.holders, HAS_UTIL, true);
+            + peopleRows(st.holders, HAS_UTIL, true, uWin);
         }
         row.after(box);
         wirePeople(box);
