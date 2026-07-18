@@ -7,7 +7,8 @@
 <style>
   :root {
     --pwc-orange:#D04A02; --pwc-tangerine:#EB8C00; --pwc-yellow:#FFB600;
-    --pwc-rose:#E0301E; --pwc-pink:#E45C9F; --pwc-burgundy:#8C2D63;
+    /* Official PwC palette: red #E0301E, logo pink #E669A2, rose #DB536A */
+    --pwc-rose:#E0301E; --pwc-pink:#E669A2; --pwc-burgundy:#DB536A;
     --pwc-black:#2D2D2D;
     --pwc-grey-900:#2D2D2D; --pwc-grey-700:#3D3D3D;
     --pwc-grey-600:#464646; --pwc-grey-400:#A6A6A6; --pwc-grey-300:#DEDEDE;
@@ -258,10 +259,48 @@
   .mdi-cand:hover{border-color:var(--pwc-orange)}
   .mdi-cand .n{color:var(--pwc-grey-600);font-size:11px}
   .mdi-empty{font-size:12.5px;color:var(--pwc-grey-600);font-style:italic;padding:8px 2px}
+  .mdi-scroll{max-height:352px;overflow-y:auto;padding-right:4px;overscroll-behavior:contain}
+  /* ---- Team Analytics ---- */
+  .ana-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .ana-card{background:var(--white);border-radius:8px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,0.08);border-left:5px solid var(--pwc-orange)}
+  .ana-card.full{grid-column:1/-1}
+  .ana-h{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin:0 0 4px;color:var(--pwc-grey-900)}
+  .ana-sub{font-size:12px;color:var(--pwc-grey-600);margin:0 0 14px;line-height:1.45}
+  .ana-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .ana-lbl{flex:0 0 140px;font-size:12.5px;color:var(--pwc-grey-700);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ana-bar{flex:1 1 auto;height:20px;background:var(--pwc-grey-100);border-radius:4px;overflow:hidden;display:flex}
+  .ana-seg{height:100%}
+  .ana-val{flex:0 0 64px;font-size:12.5px;font-weight:700;color:var(--pwc-grey-900);white-space:nowrap}
+  .ana-note{font-size:12px;color:var(--pwc-grey-600);margin-top:12px;border-top:1px solid var(--pwc-grey-100);padding-top:10px}
+  .ana-note b{color:var(--pwc-orange)}
+  .ana-legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--pwc-grey-700);margin:0 0 12px}
+  .ana-legend .sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+  .ana-toolbar{display:flex;align-items:center;gap:14px;margin:0 0 14px;flex-wrap:wrap}
+  .ana-meta{font-size:12px;color:var(--pwc-grey-600)}
+  .ana-table{width:100%;border-collapse:collapse;font-size:12.5px}
+  .ana-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--pwc-grey-600);padding:8px 10px;border-bottom:2px solid var(--pwc-grey-300);white-space:nowrap}
+  .ana-table td{padding:8px 10px;border-bottom:1px solid var(--pwc-grey-100);white-space:nowrap;vertical-align:middle}
+  .ana-table tr:hover td{background:var(--pwc-grey-50)}
+  .ana-insights{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+  .ana-insights li{font-size:13px;color:var(--pwc-grey-700);line-height:1.5;padding-left:18px;position:relative}
+  .ana-insights li::before{content:'';position:absolute;left:0;top:6px;width:8px;height:8px;border-radius:2px;background:var(--pwc-orange)}
+  .ana-delta-up{color:#E0301E;font-weight:700}
+  .ana-delta-dn{color:var(--pwc-grey-600);font-weight:700}
+  .ana-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;background:var(--pwc-grey-50);border:1px solid var(--pwc-grey-300);border-radius:14px;padding:3px 10px;margin:0 6px 6px 0}
+  .ana-scroll{max-height:380px;overflow-y:auto;padding-right:4px;overscroll-behavior:contain}
+  .ana-tblwrap{max-height:480px;overflow:auto}
+  .ana-tblwrap th{position:sticky;top:0;background:var(--white);z-index:1}
+  .ana-mgr-row{cursor:pointer}
+  .ana-subrow td{background:var(--pwc-grey-50);white-space:normal}
+  .ana-chip.ana-emp{cursor:pointer;background:var(--white)}
+  .ana-chip.ana-emp:hover{border-color:var(--pwc-orange)}
+  .ana-dot{cursor:pointer;transition:r .12s}
+  .ana-dot:hover{stroke:#2D2D2D;stroke-width:2}
+  @media (max-width:900px){.ana-grid{grid-template-columns:1fr}.ana-lbl{flex-basis:110px}}
   .mdi-holders{margin:-2px 0 8px;padding:8px 10px;border:1px dashed var(--pwc-grey-300);border-radius:6px;background:var(--pwc-grey-50);max-height:320px;overflow-y:auto}
   .mdi-holders-head{font-size:11px;font-weight:600;color:var(--pwc-grey-600);text-transform:uppercase;letter-spacing:.3px;margin:0 0 6px}
   .mdi-hgroup + .mdi-hgroup{margin-top:10px;padding-top:10px;border-top:1px dashed var(--pwc-grey-300)}
-  .mdi-hh-go{color:#2E7D32}
+  .mdi-hh-go{color:var(--pwc-tangerine)}
   .mdi-hh-stop{color:var(--pwc-grey-500)}
   @media (max-width:700px){ .mdi-row{flex-wrap:wrap} .mdi-skill{flex:1 1 100%} .mdi-cands{justify-content:flex-start} }
   .cloud-cat{background:var(--white);border-radius:8px;padding:14px 16px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.08);border-left:5px solid var(--pwc-orange)}
@@ -469,7 +508,8 @@
   /* ---- Pulse (capacity heatmap) ---- */
   .pulse-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
   .pulse-controls > input,.pulse-controls > select{padding:9px 12px;border:1px solid var(--pwc-grey-300);border-radius:4px;font-family:inherit;font-size:13px;background:var(--white);height:42px;box-sizing:border-box}
-  .pulse-controls > input{flex:0 1 230px;min-width:160px}
+  .pulse-controls > input{flex:1 1 150px;min-width:110px;max-width:260px}
+  #pulse-sort{width:160px;flex:0 0 auto}
   .pulse-controls > input:focus,.pulse-controls > select:focus{outline:none;border-color:var(--pwc-orange);box-shadow:0 0 0 2px rgba(208,74,2,0.15)}
   .pulse-legend{display:flex;flex-wrap:wrap;gap:8px;font-size:11px;color:var(--pwc-grey-700);margin-left:auto}
   .pulse-controls .reset-btn{padding:0 16px;height:42px;box-sizing:border-box;background:var(--white);color:var(--pwc-grey-700);border:1px solid var(--pwc-grey-300);border-radius:4px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;transition:all .15s}
@@ -592,6 +632,7 @@
   <button data-tab="skills">Skill Atlas</button>
   <button data-tab="caprisk">Capability Risk</button>
   <button data-tab="pulse">Pulse</button>
+  <button data-tab="analytics">Team Analytics</button>
   <button class="nav-export-btn" id="nav-export" title="Export the current page to Excel (with filters applied)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg><span class="nx-lbl">Export to Excel</span></button>
 </nav>
 
@@ -600,6 +641,7 @@
     <div class="dir-head"><h1>Team Directory</h1></div>
     <section class="stats">
       <div class="stat-card"><div class="value" id="kpi-total">-</div><div class="label">Active Employees</div></div>
+      <div class="stat-card t2"><div class="value" id="kpi-gender">-</div><div class="label">Male : Female</div></div>
       <div class="stat-card t3"><div class="value" id="kpi-locs">-</div><div class="label">Locations</div></div>
       <div class="stat-card t4"><div class="value" id="kpi-comps">-</div><div class="label">Competencies</div></div>
       <div class="stat-card t5"><div class="value" id="kpi-managers">-</div><div class="label">Managers &amp; above</div></div>
@@ -808,7 +850,7 @@
           <div class="cr-thr-row">
             <div class="cr-thr">
               <div class="cr-thr-top"><span class="cr-thr-lbl">Fully committed above</span><span class="cr-thr-val"><b id="cr-comm-val">95</b>% utilization</span></div>
-              <input type="range" id="cr-comm-slider" min="70" max="120" step="5" value="95">
+              <input type="range" id="cr-comm-slider" min="50" max="120" step="5" value="95">
             </div>
           </div>
         </div>
@@ -839,7 +881,7 @@
   <!-- ===== PORTABLE MODULE START: Pulse (HTML). Needs SHARED foundation — see INTEGRATION_GUIDE.md ===== -->
   <section class="tab-panel" id="tab-pulse">
     <h1>Workforce Pulse</h1>
-    <p class="subtitle">Monthly utilization per person &mdash; warmer cells are busier. <strong>On bench</strong> &lt;40% &middot; <strong>Healthy</strong> 80&ndash;100% &middot; <strong>Stretched</strong> &gt;100% &middot; <strong>Burnout watch</strong> = 3-month avg &gt;100%. Filter the team, then click any cell to open the bio.</p>
+    <p class="subtitle">Monthly utilization per person &mdash; warmer cells are busier. <strong>On bench</strong> &lt;40% &middot; <strong>Healthy</strong> 80&ndash;100% &middot; <strong>Stretched</strong> &gt;100% &middot; <strong>Burnout watch</strong> = 3-month avg &gt;100%. Filter the team, then click any cell to open the bio. Managing Directors are excluded.</p>
 
     <section class="stats" id="pulse-kpis">
       <div class="stat-card"><div class="value" id="pl-avg">-</div><div class="label">This-Month Avg Util</div></div>
@@ -850,25 +892,26 @@
     </section>
 
     <div class="pulse-controls">
-      <input type="text" id="pulse-search" placeholder="Search name, role, location...">
+      <input type="text" id="pulse-search" placeholder="Search name..." title="Search by name, role, or location">
+      <div class="multiselect ms-compact" id="pulse-mgr-ms" title="Filter to an RL manager: shows their own utilization plus everyone reporting to them"></div>
       <div class="multiselect ms-compact" id="pulse-role-ms"></div>
       <div class="multiselect ms-compact" id="pulse-loc-ms"></div>
       <div class="multiselect ms-compact" id="pulse-comp-ms"></div>
       <div class="multiselect ms-compact" id="pulse-terr-ms"></div>
       <div class="multiselect ms-compact" id="pulse-cat-ms"></div>
-      <select id="pulse-sort">
+      <select id="pulse-sort" title="Sort the heatmap">
         <option value="avg-desc">Sort: avg util &#8595;</option>
         <option value="avg-asc">Sort: avg util &#8593;</option>
         <option value="latest-desc">Sort: latest month &#8595;</option>
         <option value="latest-asc">Sort: latest month &#8593;</option>
         <option value="name">Sort: Name</option>
       </select>
-      <button class="reset-btn" id="pulse-reset" title="Clear filters">Reset</button>
       <div class="atlas-view-toggle" id="pulse-fy-toggle" title="Switch fiscal-year window">
         <button data-fy="jj" class="active">FY Jul&ndash;Jun</button>
-        <button data-fy="am">FY Apr&ndash;Mar</button>
+        <button data-fy="am" title="Performance Year May to April">PY May&ndash;Apr</button>
       </div>
       <div class="pulse-legend" id="pulse-legend"></div>
+      <button class="reset-btn" id="pulse-reset" title="Clear filters">Reset</button>
     </div>
 
     <div class="heatmap-wrap">
@@ -902,6 +945,30 @@
   </section>
 
   <!-- ===== PORTABLE MODULE END: Pulse (HTML) ===== -->
+
+  <!-- ===== Team Analytics: leverage pyramid, gender by grade, tenure, util vs experience ===== -->
+  <section class="tab-panel" id="tab-analytics">
+    <h1>Team Analytics</h1>
+    <p class="subtitle">Detailed cuts of the team &mdash; switch views with the toggle, and use the filters to slice any view by manager, role, location, competency, or territory. All charts count active employees in the current slice.</p>
+    <div class="controls smap-controls" id="ana-filters">
+      <div class="multiselect ms-compact" id="ana-mgr-ms"></div>
+      <div class="multiselect ms-compact" id="ana-role-ms"></div>
+      <div class="multiselect ms-compact" id="ana-loc-ms"></div>
+      <div class="multiselect ms-compact" id="ana-comp-ms"></div>
+      <div class="multiselect ms-compact" id="ana-terr-ms"></div>
+      <button class="reset-btn" id="ana-reset" title="Clear filters">Reset</button>
+    </div>
+    <div class="ana-toolbar">
+      <div class="atlas-view-toggle" id="ana-view-toggle">
+        <button data-view="trend" class="active">Utilization Trends</button>
+        <button data-view="mgr">Manager Scorecard</button>
+        <button data-view="mix">Workforce Mix</button>
+        <button data-view="deploy">Deployment</button>
+      </div>
+      <span class="ana-meta" id="ana-meta"></span>
+    </div>
+    <div class="ana-grid" id="ana-body"></div>
+  </section>
 
 </main>
 <div class="scroll-nav" id="scroll-nav">
@@ -947,12 +1014,15 @@
   if (SHARE_MODE){
     const pulseBtn = document.querySelector('button[data-tab="pulse"]');
     if (pulseBtn) pulseBtn.remove();
+    // Team Analytics is internal (gender mix, tenure, utilization) — not for client builds.
+    const anaBtn = document.querySelector('button[data-tab="analytics"]');
+    if (anaBtn) anaBtn.remove();
   }
 
   const ORANGE='#D04A02', TANGERINE='#EB8C00', YELLOW='#FFB600',
-        ROSE='#E0301E', PINK='#E45C9F', BURGUNDY='#8C2D63',
+        ROSE='#E0301E', PINK='#E669A2', BURGUNDY='#DB536A',
         BLACK='#2D2D2D', GREY='#A6A6A6', GREY_D='#464646';
-  // PwC-branded palette: orange + pink + black + tangerine + yellow + rose + burgundy + greys
+  // Official PwC palette only: orange, logo pink, black, tangerine, yellow, red, rose + greys
   const PALETTE = [ORANGE, PINK, BLACK, TANGERINE, YELLOW, ROSE, BURGUNDY, GREY_D, GREY];
 
   function esc(s){
@@ -1044,12 +1114,21 @@
     });
     return s.size;
   }
-  function setKpis(){
+  // Accepts an optional employee list (the Directory's filtered view) so the
+  // KPI cards follow the active filters; defaults to the full roster.
+  function setKpis(list){
+    list = list || EMPLOYEES;
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-    set('kpi-total',    EMPLOYEES.filter(e => { const s = String(e.Status || '').trim().toLowerCase(); return s === '' || s === 'active' || s === 'in leave'; }).length);
-    set('kpi-locs',     uniqueValues('Location').length);
-    set('kpi-comps',    competencyCount());
-    set('kpi-managers', EMPLOYEES.filter(e => isManagerRole(e.Role)).length);
+    const active = list.filter(e => { const s = String(e.Status || '').trim().toLowerCase(); return s === '' || s === 'active' || s === 'in leave'; });
+    set('kpi-total', active.length);
+    const locs = new Set(); list.forEach(e => { const v = String(e.Location || '').trim(); if (v) locs.add(v); });
+    set('kpi-locs', locs.size);
+    const comps = new Set(); list.forEach(e => { const v = String(e['Competency Group'] || '').trim(); if (v) comps.add(v); });
+    set('kpi-comps', comps.size || (list.length === EMPLOYEES.length ? competencyCount() : 0));
+    set('kpi-managers', list.filter(e => isManagerRole(e.Role)).length);
+    const male   = active.filter(e => String(e.Gender || '').trim().toLowerCase() === 'male').length;
+    const female = active.filter(e => String(e.Gender || '').trim().toLowerCase() === 'female').length;
+    set('kpi-gender', male + ' : ' + female);
   }
   setKpis();
 
@@ -1266,6 +1345,9 @@
       return ['Name','Role','Location','Territory Group','Competency Group','Qualification','emailid','Employee ID']
         .some(k => String(e[k] ?? '').toLowerCase().includes(q));
     });
+    // KPI cards reflect the current filter selection.
+    setKpis(list);
+
     list.sort((a, b) => {
       const x = a[sortKey], y = b[sortKey];
       const nx = parseFloat(x), ny = parseFloat(y);
@@ -2413,7 +2495,7 @@
   });
   const LATEST_MONTH = ALL_MONTHS[ALL_MONTHS.length - 1] || '';
 
-  // ----- Fiscal-year datasets for the Pulse toggle (Jul-Jun vs Apr-Mar) -----
+  // ----- Fiscal-year datasets for the Pulse toggle (FY Jul-Jun vs Performance Year May-Apr) -----
   function buildFYData(rows){
     const months = [...new Set((rows || []).map(u => monthKey(u['Month Year'])))].sort();
     const lookup = Object.create(null);
@@ -2479,6 +2561,9 @@
 
   // Filter dropdowns — share the same data as Directory but for the Pulse tab.
   const pChange = () => { pulsePage = 0; renderPulse(); };
+  // RL Manager filter: selecting a manager keeps their direct reports AND the
+  // manager's own row (all RL managers are also employees in the roster).
+  const pMgr  = buildMS('pulse-mgr-ms',  'All RL managers',      uniqueValues('RL Manager'),                pChange);
   const pRole = buildMS('pulse-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), pChange);
   const pLoc  = buildMS('pulse-loc-ms',  'All locations',        uniqueValues('Location'),                  pChange);
   const pComp = buildMS('pulse-comp-ms', 'All competencies',     orderCompetency(uniqueValues('Competency Filter')), pChange);
@@ -2503,6 +2588,8 @@
     const fyAvg = e => { let sum = 0, n = 0; FY.months.forEach(m => { const v = FY.lookup[String(e.WorkdayID) + '|' + m]; if (v !== undefined){ sum += v; n++; } }); return n ? sum / n : null; };
 
     let list = EMPLOYEES.filter(e => {
+      if (groupForRole(e.Role) === 'Managing Directors') return false;   // MD utilization excluded from Pulse
+      if (pMgr.selected.size && !(pMgr.selected.has(String(e['RL Manager'] || '').trim()) || pMgr.selected.has(String(e.Name || '').trim()))) return false;
       if (pRole.selected.size && !pRole.selected.has(String(e['Role'] || ''))) return false;
       if (pLoc.selected.size  && !pLoc.selected.has(String(e['Location'] || ''))) return false;
       if (pComp.selected.size && !pComp.selected.has(String(e['Competency Filter'] || ''))) return false;
@@ -2674,7 +2761,7 @@
     document.getElementById(id).addEventListener('input', () => { pulsePage = 0; renderPulse(); }));
   document.getElementById('pulse-reset').addEventListener('click', () => {
     document.getElementById('pulse-search').value = '';
-    [pRole, pLoc, pComp, pTerr, pCat].forEach(ms => { ms.selected.clear(); ms.refresh(); });
+    [pMgr, pRole, pLoc, pComp, pTerr, pCat].forEach(ms => { ms.selected.clear(); ms.refresh(); });
     document.getElementById('pulse-sort').value = 'avg-desc';
     pulsePage = 0; renderPulse();
   });
@@ -2693,6 +2780,8 @@
     const FY = FY_DATA[pulseFY];
     const q = document.getElementById('pulse-search').value.toLowerCase().trim();
     const list = EMPLOYEES.filter(e => {
+      if (groupForRole(e.Role) === 'Managing Directors') return false;   // MD utilization excluded from Pulse
+      if (pMgr.selected.size && !(pMgr.selected.has(String(e['RL Manager'] || '').trim()) || pMgr.selected.has(String(e.Name || '').trim()))) return false;
       if (pRole.selected.size && !pRole.selected.has(String(e['Role'] || ''))) return false;
       if (pLoc.selected.size  && !pLoc.selected.has(String(e['Location'] || ''))) return false;
       if (pComp.selected.size && !pComp.selected.has(String(e['Competency Filter'] || ''))) return false;
@@ -2702,7 +2791,7 @@
       return ['Name','Role','Location','Territory Group','Competency Group','Qualification'].some(k => String(e[k] ?? '').toLowerCase().includes(q));
     });
     if (!list.length){ alert('No employees to export with the current filters.'); return; }
-    const fyLabel = pulseFY === 'jj' ? 'FY Jul-Jun' : 'FY Apr-Mar';
+    const fyLabel = pulseFY === 'jj' ? 'FY Jul-Jun' : 'PY May-Apr';
     const header = ['Employee', 'Role', 'Competency', 'Location', fyLabel + ' Avg %'].concat(FY.months.map(fmtMonth));
     const rows = [header];
     list.forEach(e => {
@@ -2927,9 +3016,10 @@
           const spare = s.holders.reduce((t, e) => { const u = uWin(e); return (u !== undefined && u < frag) ? t + Math.max(0, 100 - u) / 100 : t; }, 0);
           return { s, us, spare, avg: us.length ? us.reduce((x, y) => x + y, 0) / us.length : null };
         }).filter(r => r.avg !== null);
-        const free  = rows.filter(r => r.spare >= Math.max(0.05, fteBar)).sort((a, b) => b.spare - a.spare).slice(0, 8);
+        // All qualifying skills are shown (no top-8 cap); long lists scroll.
+        const free  = rows.filter(r => r.spare >= Math.max(0.05, fteBar)).sort((a, b) => b.spare - a.spare);
         const maxed = rows.filter(r => r.us.every(u => u >= commit))
-          .sort((a, b) => b.s.holders.length - a.s.holders.length || b.avg - a.avg).slice(0, 8);
+          .sort((a, b) => b.s.holders.length - a.s.holders.length || b.avg - a.avg);
         const maxSpare = Math.max(1, ...free.map(r => r.spare));
         const rowHtml = (r, col, kind) =>
           '<div class="mdi-row" data-k="' + esc(r.s.key) + '" data-kind="' + kind + '" title="Click to unfold who holds this skill">'
@@ -2939,10 +3029,10 @@
           + '<span class="mdi-fte" style="color:' + col + '">' + r.spare.toFixed(1) + ' FTE</span>'
           + '</div>';
         capHtml =
-          '<div class="mdi-sub" style="margin-bottom:8px"><strong>Ready to deploy</strong> &mdash; at least ' + fteBar + ' spare FTE on the ' + winLbl + ', counting only people under ' + frag + '% utilization.</div>'
-          + (free.length ? free.map(r => rowHtml(r, '#EB8C00', 'deploy')).join('') : '<div class="mdi-empty">No skills clear the ' + fteBar + '-FTE bar with these thresholds.</div>')
-          + '<div class="mdi-sub" style="margin:14px 0 8px"><strong>Fully committed</strong> &mdash; every holder at ' + commit + '%+ on the ' + winLbl + '; new demand here means upskilling, hiring, or waiting.</div>'
-          + (maxed.length ? maxed.map(r => rowHtml(r, '#E0301E', 'committed')).join('') : '<div class="mdi-empty">Nothing fully committed at ' + commit + '% &mdash; every capability has some slack.</div>');
+          '<div class="mdi-sub" style="margin-bottom:8px"><strong>Ready to deploy</strong> &mdash; <b>' + free.length + '</b> of ' + rows.length + ' skills clear the ' + fteBar + '-FTE bar on the ' + winLbl + ', counting only people under ' + frag + '% utilization.' + (free.length > 7 ? ' List scrolls.' : '') + '</div>'
+          + (free.length ? '<div class="mdi-scroll">' + free.map(r => rowHtml(r, '#EB8C00', 'deploy')).join('') + '</div>' : '<div class="mdi-empty">No skills clear the ' + fteBar + '-FTE bar with these thresholds.</div>')
+          + '<div class="mdi-sub" style="margin:14px 0 8px"><strong>Fully committed</strong> &mdash; <b>' + maxed.length + '</b> of ' + rows.length + ' skills have every holder at ' + commit + '%+ on the ' + winLbl + '; new demand here means upskilling, hiring, or waiting.' + (maxed.length > 7 ? ' List scrolls.' : '') + '</div>'
+          + (maxed.length ? '<div class="mdi-scroll">' + maxed.map(r => rowHtml(r, '#E0301E', 'committed')).join('') + '</div>' : '<div class="mdi-empty">Nothing fully committed at ' + commit + '% &mdash; every capability has some slack.</div>');
       }
 
       // 2) Upskilling candidates — the scarcity bar comes from the slider.
@@ -2960,20 +3050,20 @@
         if (cands.length) upRows.push({ s, cands });
       });
       const upHtml = upRows.length
-        ? upRows.slice(0, 8).map(r =>
+        ? '<div class="mdi-scroll">' + upRows.map(r =>
           '<div class="mdi-row" data-k="' + esc(r.s.key) + '" data-kind="upskill" title="Click to unfold who holds this skill">'
           + '<div class="mdi-skill"><b>' + esc(SKILL_DISPLAY[r.s.key]) + '</b><span>' + r.s.holders.length + (r.s.holders.length === 1 ? ' holder' : ' holders') + ' &middot; ' + esc(catLabel(r.s.key)) + '</span></div>'
           + '<div class="mdi-cands">' + r.cands.map(c =>
               '<span class="mdi-cand" data-wid="' + esc(String(c.e.WorkdayID)) + '" title="' + esc(c.e.Role || '') + '">' + esc(c.e.Name) + (isSenior(c.e.Role) ? ' &#9733;' : '')
               + '<span class="n">' + c.hits + ' adjacent</span></span>').join('')
-          + '</div></div>').join('')
+          + '</div></div>').join('') + '</div>'
         : '<div class="mdi-empty">No skills with ' + few + ' or fewer holders have viable cross-training candidates in this slice.</div>';
 
       wrap.innerHTML =
         '<div class="mdi-block"><h3 class="mdi-title">Sellable Capacity</h3>'
         + '<p class="mdi-sub">Where the team can say yes to new work &mdash; and where it can&rsquo;t. Tune the sliders above; your settings are remembered. Click a skill to unfold who holds it.</p>' + capHtml + '</div>'
         + '<div class="mdi-block"><h3 class="mdi-title">Upskilling Candidates</h3>'
-        + '<p class="mdi-sub">For each skill with ' + few + ' or fewer holders, the people whose existing skills most often pair with it &mdash; at least ' + adj + ' shared. The shortest path to bench depth. Click a name for their bio.</p>' + upHtml + '</div>';
+        + '<p class="mdi-sub">For each skill with ' + few + ' or fewer holders, the people whose existing skills most often pair with it &mdash; at least ' + adj + ' shared. The shortest path to bench depth. Click a name for their bio.' + (upRows.length ? ' <b>' + upRows.length + '</b> skill' + (upRows.length === 1 ? '' : 's') + ' listed' + (upRows.length > 7 ? '; list scrolls.' : '.') : '') + '</p>' + upHtml + '</div>';
 
       // Wire: skill rows unfold their holders inline; candidate chips open bios.
       wrap.querySelectorAll('.mdi-row').forEach(row => row.addEventListener('click', () => {
@@ -3091,6 +3181,326 @@
       downloadCSV('Capability_Risk', rows);
     };
     render();
+  })();
+
+  // ===== Team Analytics — filterable, toggled views: gender mix, tenure & hiring, deployment =====
+  (function(){
+    if (!document.getElementById('tab-analytics')) return;
+    const GRADE_COL = { 'Managing Directors': BLACK, 'Directors': ORANGE, 'Senior Managers': TANGERINE,
+                        'Managers': YELLOW, 'Senior Associates': BURGUNDY, 'Associates': PINK, 'Other': GREY };
+    const gOf = e => { const g = String(e.Gender || '').trim().toLowerCase(); return g === 'male' ? 'm' : (g === 'female' ? 'f' : 'x'); };
+    const now = new Date();
+    const tenureYrs = e => { const d = new Date(String(e['Join Date'] || '')); return isNaN(d) ? null : (now - d) / 3.15576e10; };
+    const HAS_U = !SHARE_MODE && typeof LATEST_MONTH !== 'undefined' && !!LATEST_MONTH;
+    const GRADE_ORDER_T = ROLE_GROUPS.map(g => g.title);
+
+    // Filters — same behaviour as Pulse (an RL manager selection keeps the manager's own row too).
+    const aChange = () => renderAnalytics();
+    const aMgr  = buildMS('ana-mgr-ms',  'All RL managers',  uniqueValues('RL Manager'), aChange);
+    const aRole = buildMS('ana-role-ms', 'All roles',        orderBy(uniqueValues('Role'), ROLE_ORDER), aChange);
+    const aLoc  = buildMS('ana-loc-ms',  'All locations',    uniqueValues('Location'), aChange);
+    const aComp = buildMS('ana-comp-ms', 'All competencies', orderCompetency(uniqueValues('Competency Filter')), aChange);
+    const aTerr = buildMS('ana-terr-ms', 'All territories',  orderTerritory(uniqueValues('Territory Filter')), aChange);
+    document.getElementById('ana-reset').addEventListener('click', () => {
+      [aMgr, aRole, aLoc, aComp, aTerr].forEach(ms => { ms.selected.clear(); ms.refresh(); });
+      renderAnalytics();
+    });
+    let anaView = 'trend';
+    document.querySelectorAll('#ana-view-toggle button').forEach(b => b.addEventListener('click', () => {
+      if (b.dataset.view === anaView) return;
+      document.querySelectorAll('#ana-view-toggle button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active'); anaView = b.dataset.view; renderAnalytics();
+    }));
+
+    function poolA(){
+      return EMPLOYEES.filter(e => {
+        const s = String(e.Status || '').trim().toLowerCase();
+        if (!(s === '' || s === 'active' || s === 'in leave')) return false;
+        if (aMgr.selected.size && !(aMgr.selected.has(String(e['RL Manager'] || '').trim()) || aMgr.selected.has(String(e.Name || '').trim()))) return false;
+        if (aRole.selected.size && !aRole.selected.has(String(e.Role || ''))) return false;
+        if (aLoc.selected.size  && !aLoc.selected.has(String(e.Location || ''))) return false;
+        if (aComp.selected.size && !aComp.selected.has(String(e['Competency Filter'] || ''))) return false;
+        if (aTerr.selected.size && !aTerr.selected.has(String(e['Territory Filter'] || ''))) return false;
+        return true;
+      });
+    }
+
+    // -- shared builders --
+    const card = (title, sub, body, full) =>
+      '<div class="ana-card' + (full ? ' full' : '') + '"><h3 class="ana-h">' + title + '</h3><p class="ana-sub">' + sub + '</p>' + body + '</div>';
+    const GLEGEND = '<div class="ana-legend"><span><span class="sw" style="background:' + TANGERINE + '"></span>Male</span>'
+      + '<span><span class="sw" style="background:' + BURGUNDY + '"></span>Female</span></div>';
+    // Managing Directors are excluded from every utilization computation on this tab.
+    const noMD = pool => pool.filter(e => groupForRole(e.Role) !== 'Managing Directors');
+    function stackedGender(pool, labelOf, order){
+      const groups = Object.create(null);
+      pool.forEach(e => { const k = labelOf(e) || 'Unspecified'; (groups[k] = groups[k] || []).push(e); });
+      let keys = Object.keys(groups);
+      keys = order ? order.filter(k => keys.indexOf(k) >= 0).concat(keys.filter(k => order.indexOf(k) < 0).sort()) : keys.sort();
+      return keys.map(k => {
+        const g = groups[k], n = g.length;
+        const m = g.filter(e => gOf(e) === 'm').length, f = g.filter(e => gOf(e) === 'f').length, x = n - m - f;
+        const seg = (c, col) => c ? '<div class="ana-seg" style="width:' + (c / n * 100) + '%;background:' + col + '"></div>' : '';
+        return '<div class="ana-row"><span class="ana-lbl" title="' + esc(k) + '">' + esc(k) + '</span>'
+          + '<div class="ana-bar">' + seg(m, TANGERINE) + seg(f, BURGUNDY) + seg(x, GREY) + '</div>'
+          + '<span class="ana-val">' + m + ' : ' + f + (x ? ' (+' + x + ')' : '') + '</span></div>';
+      }).join('') || '<div class="mdi-empty">No one in this slice.</div>';
+    }
+    function bars(rows, col){   // rows = [label, numericValue, displayValue?]
+      const mx = Math.max(1, ...rows.map(r => r[1]));
+      return rows.map(r =>
+        '<div class="ana-row"><span class="ana-lbl" title="' + esc(String(r[0])) + '">' + r[0] + '</span>'
+        + '<div class="ana-bar"><div class="ana-seg" style="width:' + Math.max(3, Math.round(r[1] / mx * 100)) + '%;background:' + col + '"></div></div>'
+        + '<span class="ana-val">' + (r[2] !== undefined ? r[2] : r[1]) + '</span></div>').join('') || '<div class="mdi-empty">No data in this slice.</div>';
+    }
+    const gradesOf = pool => { const bg = Object.create(null); pool.forEach(e => { const g = groupForRole(e.Role); (bg[g] = bg[g] || []).push(e); }); return bg; };
+
+    function renderAnalytics(){
+      const pool = poolA();
+      document.getElementById('ana-meta').innerHTML = '<strong>' + pool.length + '</strong> people in scope';
+      const body = document.getElementById('ana-body');
+      if (!pool.length){ body.innerHTML = '<div class="ana-card full"><div class="mdi-empty">No employees match the current filters.</div></div>'; return; }
+      if (anaView === 'trend')       body.innerHTML = renderTrend(pool);
+      else if (anaView === 'mgr')    body.innerHTML = renderMgr(pool);
+      else if (anaView === 'mix')    body.innerHTML = renderMix(pool);
+      else                           body.innerHTML = renderDeploy(pool);
+      body.querySelectorAll('.ana-dot').forEach(c => c.addEventListener('click', () => showBio(c.dataset.wid)));
+      // Manager Scorecard: click a manager row to unfold their team inline.
+      body.querySelectorAll('.ana-mgr-row').forEach(tr => tr.addEventListener('click', () => {
+        const wasOpen = tr.nextElementSibling && tr.nextElementSibling.classList.contains('ana-subrow');
+        body.querySelectorAll('.ana-subrow').forEach(x => x.remove());
+        if (wasOpen) return;
+        const g = (_mgrTeams && _mgrTeams[tr.dataset.mg]) || [];
+        const last = HAS_U && ALL_MONTHS.length ? ALL_MONTHS[ALL_MONTHS.length - 1] : null;
+        const chips = g.slice().sort(bySeniority).map(e => {
+          const u = last && groupForRole(e.Role) !== 'Managing Directors' ? uAt(e, last) : undefined;
+          return '<span class="ana-chip ana-emp" data-wid="' + esc(String(e.WorkdayID)) + '"><b>' + esc(e.Name) + '</b>'
+            + '<span style="color:var(--pwc-grey-600)">' + esc(e.Role || '') + (typeof u === 'number' ? ' &middot; ' + Math.round(u) + '%' : '') + '</span></span>';
+        }).join('');
+        const sub = document.createElement('tr'); sub.className = 'ana-subrow';
+        sub.innerHTML = '<td colspan="' + tr.children.length + '">' + (chips || '<span class="mdi-empty">No team members in this slice.</span>') + '</td>';
+        tr.after(sub);
+        sub.querySelectorAll('.ana-emp').forEach(c => c.addEventListener('click', ev => { ev.stopPropagation(); showBio(c.dataset.wid); }));
+      }));
+    }
+
+    // -- monthly utilization helpers --
+    const uAt = (e, m) => UTIL_LOOKUP[String(e.WorkdayID) + '|' + m];
+    function avgAt(pool, m){ const vs = pool.map(e => uAt(e, m)).filter(v => typeof v === 'number'); return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : null; }
+    const insights = items => '<ul class="ana-insights">' + items.filter(Boolean).map(t => '<li>' + t + '</li>').join('') + '</ul>';
+    const pts1 = v => (v > 0 ? '+' : '') + Math.round(v);
+    const avgOf = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+
+    // ---- View 1: Utilization Trends — monthly line chart + auto-insights + movers ----
+    function renderTrend(pool){
+      if (!HAS_U || !ALL_MONTHS.length) return card('Utilization Trends', 'Utilization data is not included in this build, so this view cannot be shown.', '<div class="mdi-empty">No utilization available.</div>', true);
+      const upool = noMD(pool);
+      const months = ALL_MONTHS;
+      const last = months[months.length - 1], prev = months.length > 1 ? months[months.length - 2] : null;
+      const curAvg = avgAt(upool, last), prevAvg = prev ? avgAt(upool, prev) : null;
+      const lastU = upool.map(e => uAt(e, last)).filter(v => typeof v === 'number');
+      const benchN = lastU.filter(v => v < 40).length, hotN = lastU.filter(v => v > 100).length;
+      const burnN = upool.filter(e => typeof e._sustained3 === 'number' && e._sustained3 > 100).length;
+      const deltas = prev ? upool.map(e => ({ e, a: uAt(e, prev), b: uAt(e, last) }))
+        .filter(r => typeof r.a === 'number' && typeof r.b === 'number')
+        .map(r => ({ e: r.e, a: r.a, b: r.b, d: r.b - r.a })).sort((x, y) => y.d - x.d) : [];
+      const chip = r => '<span class="ana-chip" title="' + esc(r.e.Role || '') + '">' + esc(r.e.Name)
+        + ' <b class="' + (r.d >= 0 ? 'ana-delta-up' : 'ana-delta-dn') + '">' + Math.round(r.a) + '% &rarr; ' + Math.round(r.b) + '%</b></span>';
+      const risers = deltas.filter(r => r.d > 2).slice(0, 5);
+      const fallers = deltas.filter(r => r.d < -2).slice(-5).reverse();
+      const delta = (prevAvg !== null && curAvg !== null) ? curAvg - prevAvg : null;
+      const deltaTxt = delta === null ? '' : (Math.abs(delta) < 0.5 ? ', unchanged vs '
+        : (delta > 0 ? ', up <b class="ana-delta-up">' + Math.round(delta) + ' points</b> vs '
+                     : ', down <b class="ana-delta-dn">' + Math.abs(Math.round(delta)) + ' points</b> vs ')) + esc(fmtMonth(prev));
+      const ins = insights([
+        curAvg !== null ? 'Average utilization in ' + esc(fmtMonth(last)) + ' is <b>' + Math.round(curAvg) + '%</b>' + deltaTxt + '.' : null,
+        '<b>' + benchN + '</b> ' + (benchN === 1 ? 'person is' : 'people are') + ' on the bench (&lt;40%) and <b>' + hotN + '</b> running above 100% this month.',
+        burnN ? '<b>' + burnN + '</b> on burnout watch &mdash; averaging above 100% for three straight months.' : 'No one on burnout watch (3-month average above 100%).'
+      ]);
+      return card('Utilization Trend', 'Monthly average utilization for this slice (thick orange) with each grade behind it. Shaded band = healthy 80&ndash;100%; dashed line = 100%. Managing Directors are excluded from all utilization figures.', trendSVG(upool, months), true)
+        + card('This Month in Numbers', 'Auto-computed for ' + esc(fmtMonth(last)) + '.', ins)
+        + card('Biggest Movers', 'Utilization from ' + (prev ? esc(fmtMonth(prev)) : '&mdash;') + ' to ' + esc(fmtMonth(last)) + ' &mdash; who got busier, and who freed up.',
+            (risers.length ? '<div class="ana-note" style="border:none;margin:0 0 4px;padding:0"><b>Busier</b></div><div>' + risers.map(chip).join('') + '</div>' : '')
+            + (fallers.length ? '<div class="ana-note" style="border:none;margin:8px 0 4px;padding:0"><b>Freed up</b></div><div>' + fallers.map(chip).join('') + '</div>' : '')
+            + (!risers.length && !fallers.length ? '<div class="mdi-empty">No meaningful movement vs last month.</div>' : ''));
+    }
+    function trendSVG(pool, months){
+      const overall = months.map(m => avgAt(pool, m));
+      const bg = gradesOf(pool);
+      const gl = GRADE_ORDER_T.filter(t => bg[t] && bg[t].length);
+      const series = gl.map(t => ({ t, col: GRADE_COL[t], vals: months.map(m => avgAt(bg[t], m)) }));
+      const allVals = overall.concat.apply(overall.filter(v => v !== null), series.map(s => s.vals.filter(v => v !== null)));
+      if (!allVals.length) return '<div class="mdi-empty">No utilization data in this slice.</div>';
+      const W = 920, H = 300, L = 44, R = 16, T = 12, B = 30;
+      const yMax = Math.max(120, Math.ceil(Math.max.apply(null, allVals) / 20) * 20);
+      const X = i => months.length === 1 ? (L + (W - L - R) / 2) : L + i / (months.length - 1) * (W - L - R);
+      const Y = v => H - B - v / yMax * (H - T - B);
+      let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">';
+      svg += '<rect x="' + L + '" y="' + Y(100) + '" width="' + (W - L - R) + '" height="' + (Y(80) - Y(100)) + '" fill="rgba(208,74,2,0.05)"/>';
+      for (let v = 0; v <= yMax; v += 20)
+        svg += '<line x1="' + L + '" y1="' + Y(v) + '" x2="' + (W - R) + '" y2="' + Y(v) + '" stroke="#F2F2F2"/>'
+             + '<text x="' + (L - 7) + '" y="' + (Y(v) + 3.5) + '" text-anchor="end" class="cr-tick">' + v + '</text>';
+      svg += '<line x1="' + L + '" y1="' + Y(100) + '" x2="' + (W - R) + '" y2="' + Y(100) + '" stroke="#A6A6A6" stroke-dasharray="4 4"/>';
+      months.forEach((m, i) => { svg += '<text x="' + X(i) + '" y="' + (H - B + 16) + '" text-anchor="middle" class="cr-tick">' + fmtMonth(m) + '</text>'; });
+      const path = vals => vals.map((v, i) => v === null ? null : (X(i) + ',' + Y(v))).filter(Boolean).join(' ');
+      series.forEach(s => { svg += '<polyline points="' + path(s.vals) + '" fill="none" stroke="' + s.col + '" stroke-width="1.6" stroke-opacity=".5"/>'; });
+      svg += '<polyline points="' + path(overall) + '" fill="none" stroke="' + ORANGE + '" stroke-width="3"/>';
+      overall.forEach((v, i) => { if (v !== null) svg += '<circle cx="' + X(i) + '" cy="' + Y(v) + '" r="3.6" fill="' + ORANGE + '"><title>' + fmtMonth(months[i]) + ' &middot; ' + Math.round(v) + '% avg</title></circle>'; });
+      svg += '</svg>';
+      return '<div class="ana-legend"><span><span class="sw" style="background:' + ORANGE + '"></span><b>Overall</b></span>'
+        + gl.map(t => '<span><span class="sw" style="background:' + GRADE_COL[t] + '"></span>' + esc(t) + '</span>').join('') + '</div>' + svg;
+    }
+
+    // ---- View 2: Manager Scorecard — one row per RL manager; click a row to unfold the team ----
+    let _mgrTeams = null;
+    function renderMgr(pool){
+      const by = Object.create(null);
+      pool.forEach(e => { const m = String(e['RL Manager'] || '').trim(); if (m) (by[m] = by[m] || []).push(e); });   // no Unassigned bucket
+      _mgrTeams = by;
+      const last = HAS_U && ALL_MONTHS.length ? ALL_MONTHS[ALL_MONTHS.length - 1] : null;
+      const rows = Object.keys(by).map(mg => {
+        const g = by[mg], gu = noMD(g);
+        const us = last ? gu.map(e => uAt(e, last)).filter(v => typeof v === 'number') : [];
+        const exps = g.map(e => parseFloat(e[EXP_TOTAL])).filter(v => !isNaN(v));
+        const s3 = gu.map(e => e._sustained3).filter(v => typeof v === 'number');
+        return { mg, n: g.length,
+          mf: g.filter(e => gOf(e) === 'm').length + ' : ' + g.filter(e => gOf(e) === 'f').length,
+          exp: avgOf(exps), a: avgOf(us), a3: avgOf(s3),
+          bench: us.filter(v => v < 40).length, hot: us.filter(v => v > 100).length,
+          burn: gu.filter(e => typeof e._sustained3 === 'number' && e._sustained3 > 100).length };
+      }).sort((x, y) => y.n - x.n);
+      const ubar = v => v === null ? '&mdash;'
+        : '<div style="display:flex;align-items:center;gap:8px"><div class="ana-bar" style="width:90px;flex:0 0 90px"><div class="ana-seg" style="width:' + Math.min(100, Math.round(v / 120 * 100)) + '%;background:' + (v < 40 ? '#FCC288' : v > 100 ? '#E0301E' : ORANGE) + '"></div></div><b>' + Math.round(v) + '%</b></div>';
+      const tbl = '<div class="ana-tblwrap"><table class="ana-table"><thead><tr><th>RL Manager</th><th>Team</th><th>M : F</th><th>Avg exp</th>'
+        + (last ? '<th>Latest avg util</th><th>3-mo avg</th><th>Bench</th><th>Stretched</th><th>Burnout</th>' : '') + '</tr></thead><tbody>'
+        + rows.map(r => '<tr class="ana-mgr-row" data-mg="' + esc(r.mg) + '" title="Click to see the team"><td><b>' + esc(r.mg) + '</b></td><td>' + r.n + '</td><td>' + r.mf + '</td><td>' + (r.exp === null ? '&mdash;' : r.exp.toFixed(1) + ' yrs') + '</td>'
+          + (last ? '<td>' + ubar(r.a) + '</td><td>' + (r.a3 === null ? '&mdash;' : Math.round(r.a3) + '%') + '</td><td>' + (r.bench || '') + '</td><td>' + (r.hot || '') + '</td><td>' + (r.burn ? '<b class="ana-delta-up">' + r.burn + '</b>' : '') + '</td>' : '')
+          + '</tr>').join('')
+        + '</tbody></table></div>';
+      return card('Manager Scorecard', 'Each RL manager&rsquo;s team within the current slice' + (last ? ', measured on ' + esc(fmtMonth(last)) : '') + '. Bench &lt;40% &middot; Stretched &gt;100% &middot; Burnout = 3-month average &gt;100%. <b>Click a row to see the team</b>; click a name for the bio. Managing Directors are excluded from the utilization columns.', tbl, true);
+    }
+
+    // ---- View 3: Workforce Mix — auto-highlights + gender & tenure cuts ----
+    function renderMix(pool){
+      const m = pool.filter(e => gOf(e) === 'm').length, f = pool.filter(e => gOf(e) === 'f').length;
+      const pct = (m + f) ? Math.round(f / (m + f) * 100) : 0;
+      const srs = pool.filter(e => isManagerRole(e.Role));
+      const smf = srs.filter(e => gOf(e) === 'f').length, smm = srs.filter(e => gOf(e) === 'm').length;
+      const spct = (smf + smm) ? Math.round(smf / (smf + smm) * 100) : 0;
+      const withD = pool.map(e => ({ e, y: tenureYrs(e) })).filter(r => r.y !== null);
+      const avgTen = avgOf(withD.map(r => r.y));
+      const r3 = withD.length ? Math.round(withD.filter(r => r.y < 3).length / withD.length * 100) : 0;
+      const buckets = [['Under 1 yr', y => y < 1], ['1&ndash;3 yrs', y => y >= 1 && y < 3], ['3&ndash;5 yrs', y => y >= 3 && y < 5], ['5&ndash;10 yrs', y => y >= 5 && y < 10], ['10+ yrs', y => y >= 10]];
+      const byYear = Object.create(null);
+      withD.forEach(r => { const y = new Date(String(r.e['Join Date'])).getFullYear(); byYear[y] = (byYear[y] || 0) + 1; });
+      const years = Object.keys(byYear).map(Number).sort((a, b) => a - b).slice(-8);
+      const gap = pct - spct;
+      const cnt = keyFn => { const o = Object.create(null); pool.forEach(e => { const k = keyFn(e); if (k) o[k] = (o[k] || 0) + 1; }); return o; };
+      const comps = cnt(e => String(e['Competency Group'] || '').trim());
+      const topComp = Object.keys(comps).sort((a, b) => comps[b] - comps[a])[0];
+      const locs = cnt(e => String(e.Location || '').trim());
+      const topLoc = Object.keys(locs).sort((a, b) => locs[b] - locs[a])[0];
+      const kpi = (v, l, c) => '<div class="cr-kpi" style="border-top-color:' + c + '"><div class="cr-kpi-val">' + v + '</div><div class="cr-kpi-lbl">' + l + '</div></div>';
+      const n3 = withD.filter(r => r.y < 3).length;
+      const kpis = '<div class="cr-kpis">'
+        + kpi(pool.length, 'People in slice', ORANGE)
+        + kpi(pct + '%', 'Female &mdash; ' + f + ' of ' + (m + f) + ' people', BURGUNDY)
+        + kpi(spct + '%', 'Female at Mgr &amp; above &mdash; ' + smf + ' of ' + (smf + smm), TANGERINE)
+        + kpi(avgTen === null ? '&mdash;' : avgTen.toFixed(1) + ' yrs', 'Avg time at PwC', YELLOW)
+        + kpi(n3, 'Joined in last 3 yrs &mdash; ' + r3 + '% of team', BLACK) + '</div>';
+      const ins = insights([
+        'Gender balance stands at <b>' + m + ' : ' + f + '</b> male : female &mdash; <b>' + pct + '%</b> female overall'
+          + ((smf + smm) ? (gap > 5 ? ', falling to <b>' + spct + '%</b> at manager-and-above &mdash; a ' + Math.round(gap) + '-point drop worth weighing in promotion and hiring plans.'
+            : gap < -5 ? ', rising to <b>' + spct + '%</b> at manager-and-above.'
+            : ', broadly consistent at <b>' + spct + '%</b> at manager-and-above.') : '.'),
+        avgTen !== null ? 'The team averages <b>' + avgTen.toFixed(1) + ' years</b> of tenure, and <b>' + r3 + '%</b> joined within the last 3 years'
+          + (r3 >= 50 ? ' &mdash; a young bench that will need deliberate coaching and succession depth.' : ' &mdash; a settled core carrying institutional knowledge.') : null,
+        topComp ? 'Largest competency: <b>' + esc(topComp) + '</b> with ' + comps[topComp] + ' people (' + Math.round(comps[topComp] / pool.length * 100) + '% of the slice).' : null,
+        topLoc ? 'Largest location: <b>' + esc(topLoc) + '</b> holds ' + Math.round(locs[topLoc] / pool.length * 100) + '% of the slice.' : null,
+        years.length ? (function(){
+          const mx = Math.max.apply(null, years.map(y => byYear[y]));
+          const top = years.filter(y => byYear[y] === mx);
+          return (top.length === 1 ? 'Busiest hiring year: <b>' + top[0] + '</b> (' + mx + ' joiner' + (mx === 1 ? '' : 's') + ').'
+                                   : 'Busiest hiring years: <b>' + top.join(', ') + '</b> (' + mx + ' joiners each).');
+        })() : null
+      ]);
+      return card('Executive Highlights', 'Auto-computed for the current slice &mdash; updates with every filter.', kpis + ins, true)
+        + card('Gender by Grade', 'Split of each grade.', GLEGEND + '<div class="ana-scroll">' + stackedGender(pool, e => groupForRole(e.Role), GRADE_ORDER_T) + '</div>')
+        + card('Gender by Competency', 'Where the mix skews.', GLEGEND + '<div class="ana-scroll">' + stackedGender(pool, e => String(e['Competency Group'] || e.Competency || '').trim()) + '</div>')
+        + card('Tenure Mix', 'Time since PwC join date.', bars(buckets.map(b => [b[0], withD.filter(r => b[1](r.y)).length]), YELLOW))
+        + card('Joiners by Year', 'Hiring pace (last ' + years.length + ' years with joiners).', '<div class="ana-scroll">' + bars(years.map(y => [y, byYear[y]]), TANGERINE) + '</div>');
+    }
+
+    // ---- View 4: Deployment — distribution + scatter ----
+    function renderDeploy(pool){
+      if (!HAS_U) return card('Deployment', 'Utilization data is not included in this build, so this view cannot be shown.', '<div class="mdi-empty">No utilization available.</div>', true);
+      pool = noMD(pool);   // MDs excluded from all utilization views
+      const last = ALL_MONTHS[ALL_MONTHS.length - 1];
+      const us = pool.map(e => uAt(e, last)).filter(v => typeof v === 'number');
+      const hb = [['0&ndash;20%', v => v < 20, '#FFE8D6'], ['20&ndash;40%', v => v >= 20 && v < 40, '#FCC288'],
+                  ['40&ndash;60%', v => v >= 40 && v < 60, YELLOW], ['60&ndash;80%', v => v >= 60 && v < 80, TANGERINE],
+                  ['80&ndash;100%', v => v >= 80 && v <= 100, ORANGE], ['100%+', v => v > 100, '#E0301E']];
+      const counts = hb.map(b => us.filter(b[1]).length);
+      const hMax = Math.max(1, Math.max.apply(null, counts));
+      const hist = hb.map((b, i) =>
+        '<div class="ana-row"><span class="ana-lbl">' + b[0] + '</span>'
+        + '<div class="ana-bar"><div class="ana-seg" style="width:' + Math.max(3, Math.round(counts[i] / hMax * 100)) + '%;background:' + b[2] + '"></div></div>'
+        + '<span class="ana-val">' + counts[i] + '</span></div>').join('');
+      const bg = gradesOf(pool);
+      const uRows = GRADE_ORDER_T.filter(t => bg[t]).map(t => {
+        const a = avgOf(bg[t].map(e => uAt(e, last)).filter(v => typeof v === 'number'));
+        return [esc(t), a === null ? 0 : a, a === null ? '&mdash;' : Math.round(a) + '%'];
+      });
+      return card('Utilization Distribution', 'How ' + esc(fmtMonth(last)) + ' utilization is spread across ' + us.length + ' people.', hist)
+        + card('Avg Utilization by Grade', 'Latest month (' + esc(fmtMonth(last)) + ') averaged per grade.', bars(uRows, ORANGE))
+        + card('Utilization vs Experience', 'Each dot is a person (latest month). Top-left: juniors stretched; bottom-right: seniors on the bench. Click a dot for the bio.', scatterSVG(pool), true);
+    }
+
+    function scatterSVG(pool){
+      const pts = pool.map(e => ({ e, x: parseFloat(e[EXP_TOTAL]), y: e._latestUtil })).filter(p => !isNaN(p.x) && typeof p.y === 'number');
+      if (!pts.length) return '<div class="mdi-empty">No utilization data in this slice.</div>';
+      const grades = GRADE_ORDER_T.filter(t => pts.some(p => groupForRole(p.e.Role) === t));
+      const W = 760, H = 320, L = 46, R = 14, T = 14, B = 36;
+      const xMax = Math.max(5, Math.ceil(Math.max(...pts.map(p => p.x)) / 5) * 5);
+      const yMax = Math.max(120, Math.ceil(Math.max(...pts.map(p => p.y)) / 20) * 20);
+      const X = v => L + v / xMax * (W - L - R);
+      const Y = v => H - B - v / yMax * (H - T - B);
+      let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">';
+      for (let v = 0; v <= yMax; v += 20)
+        svg += '<line x1="' + L + '" y1="' + Y(v) + '" x2="' + (W - R) + '" y2="' + Y(v) + '" stroke="#F2F2F2"/>'
+             + '<text x="' + (L - 7) + '" y="' + (Y(v) + 3.5) + '" text-anchor="end" class="cr-tick">' + v + '</text>';
+      for (let v = 0; v <= xMax; v += 5)
+        svg += '<text x="' + X(v) + '" y="' + (H - B + 16) + '" text-anchor="middle" class="cr-tick">' + v + '</text>';
+      [[40, 'Bench'], [100, 'Full']].forEach(([v, lbl]) => {
+        svg += '<line x1="' + L + '" y1="' + Y(v) + '" x2="' + (W - R) + '" y2="' + Y(v) + '" stroke="#A6A6A6" stroke-dasharray="4 4"/>'
+             + '<text x="' + (W - R - 2) + '" y="' + (Y(v) - 4) + '" text-anchor="end" class="cr-tick">' + lbl + ' ' + v + '%</text>';
+      });
+      svg += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 4) + '" text-anchor="middle" class="cr-axlbl">Total experience (years)</text>'
+           + '<text x="12" y="' + ((T + H - B) / 2) + '" text-anchor="middle" class="cr-axlbl" transform="rotate(-90 12 ' + ((T + H - B) / 2) + ')">Latest-month utilization %</text>';
+      pts.forEach(p => {
+        const g = groupForRole(p.e.Role);
+        svg += '<circle class="ana-dot" data-wid="' + esc(String(p.e.WorkdayID)) + '" cx="' + X(p.x) + '" cy="' + Y(p.y) + '" r="7" fill="' + (GRADE_COL[g] || GREY) + '" fill-opacity=".85">'
+             + '<title>' + esc(p.e.Name) + ' &middot; ' + esc(p.e.Role || '') + ' &middot; ' + p.x + ' yrs &middot; ' + Math.round(p.y) + '%</title></circle>';
+      });
+      svg += '</svg>';
+      return '<div class="ana-legend">' + grades.map(t => '<span><span class="sw" style="background:' + GRADE_COL[t] + '"></span>' + esc(t) + '</span>').join('') + '</div>' + svg;
+    }
+
+    // Export: the current filtered slice, one row per person (pivots nicely in Excel).
+    PAGE_EXPORTS.analytics = function(){
+      const pool = poolA();
+      const rows = [['Name', 'Grade', 'Role', 'Gender', 'Location', 'Competency', 'RL Manager', 'Experience (yrs)', 'Tenure (yrs)', 'Latest Util %']];
+      pool.forEach(e => {
+        const t = tenureYrs(e);
+        rows.push([e.Name, groupForRole(e.Role), e.Role || '', e.Gender || '', e.Location || '', e['Competency Group'] || '', e['RL Manager'] || '',
+                   isNaN(parseFloat(e[EXP_TOTAL])) ? '' : parseFloat(e[EXP_TOTAL]),
+                   t === null ? '' : t.toFixed(1),
+                   (HAS_U && typeof e._latestUtil === 'number') ? Math.round(e._latestUtil) : '']);
+      });
+      downloadCSV('Team_Analytics', rows);
+    };
+
+    renderAnalytics();
   })();
 
   // ----- Back-to-top / bottom scroll nav -----

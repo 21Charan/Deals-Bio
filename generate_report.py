@@ -21,6 +21,7 @@ import argparse
 import base64
 import json
 import datetime
+import re
 import struct
 import zlib
 import zipfile
@@ -50,6 +51,7 @@ OUTPUT_DIR   = ROOT / "03_Output files"                  # generated HTML
 OUTPUT_DIR.mkdir(exist_ok=True)
 INPUT_FILE   = OUTPUT_DIR / "Employee Details.xlsx"      # master file (built by your ETL) lives with the outputs
 IMAGES_DIR   = SOURCE_DIR / "Images"
+PINCODE_FILE = SOURCE_DIR / "pincode_coords.csv"        # PIN -> lat,lng (India Post; used to geocode Address)
 TEMPLATE     = SCRIPT_DIR / "template.html"
 MOBILE_TEMPLATE = SCRIPT_DIR / "template_mobile.html"   # phone-first companion build
 OUTPUT_FILE  = OUTPUT_DIR / "Employee_Dashboard.html"
@@ -166,7 +168,8 @@ def load_workbook_data(path):
         "Employee Skills Hierarchy": "skills",  # renamed sheet (adds Skill Group column)
         "Employee Monthly Utilization": "utilization",
         "Employee Utilization_Jul_Jun": "util_jj",   # FY Jul-Jun view (Pulse toggle)
-        "Employee Utilization_Apr_Mar": "util_am",   # FY Apr-Mar view (Pulse toggle)
+        "Employee Utilization_May_April": "util_am", # Performance Year May-Apr view (Pulse toggle)
+        "Employee Utilization_Apr_Mar": "util_am",   # legacy tab name, kept as fallback
     }
     data = {"details": [], "skills": [], "utilization": [], "util_jj": [], "util_am": []}
     for ws in wb.worksheets:
@@ -263,6 +266,38 @@ def initials(name):
     return (parts[0][0] + parts[-1][0]).upper()
 
 
+# ---- Locations tab geocoding -------------------------------------------
+# The dashboard's Locations map places people by explicit Latitude/Longitude
+# columns when present, else by the coordinates we derive here from the PIN
+# code inside the Address column, else by a city-name lookup in the template.
+
+_PIN_RE = re.compile(r"\b([1-9][0-9]{5})\b")
+
+
+def pin_from_address(address):
+    """First plausible Indian PIN code (6 digits, not starting with 0)."""
+    m = _PIN_RE.search(str(address or ""))
+    return m.group(1) if m else None
+
+
+def load_pincode_coords():
+    """PIN -> (lat, lng) from 01_Source/pincode_coords.csv. Optional file:
+    when absent, geocoding is skipped and the map falls back gracefully."""
+    coords = {}
+    if not PINCODE_FILE.exists():
+        return coords
+    with open(PINCODE_FILE, encoding="utf-8") as f:
+        next(f, None)                                   # skip header
+        for line in f:
+            parts = line.strip().split(",")
+            if len(parts) == 3:
+                try:
+                    coords[parts[0]] = (float(parts[1]), float(parts[2]))
+                except ValueError:
+                    pass
+    return coords
+
+
 def main():
     parser = argparse.ArgumentParser(description="Build the employee dashboard HTML.")
     parser.add_argument("--pbi-url", default="",
@@ -275,12 +310,29 @@ def main():
     photos = load_photos(IMAGES_DIR)
     logo_uri = load_logo()
 
+    pin_coords = load_pincode_coords()
+    geocoded = 0
     enriched = []
     for r in data["details"]:
         c = dict(r)
         c["_photo"] = photo_for(r, photos)
         c["_initials"] = initials(r.get("Name"))
+        # Geocode from the Address PIN unless the sheet already provides
+        # explicit Latitude/Longitude (sheet values always win).
+        if pin_coords and not (c.get("Latitude") and c.get("Longitude")):
+            pc = pin_coords.get(pin_from_address(c.get("Address")))
+            if pc:
+                c["Latitude"], c["Longitude"] = pc
+                geocoded += 1
         enriched.append(c)
+
+    if pin_coords:
+        print(f"[ok] Geocoded from Address PIN: {geocoded} / {len(enriched)} "
+              f"(pincode_coords.csv: {len(pin_coords)} PINs)")
+        if geocoded < len(enriched):
+            print("       Others fall back to Latitude/Longitude columns or the city-name lookup.")
+    else:
+        print("[note] 01_Source/pincode_coords.csv not found - Locations map uses city-name lookup only.")
 
     # Photo-match diagnostic (helps spot Employee ID vs image-name mismatches)
     if photos:
@@ -358,7 +410,7 @@ def main():
     for share, out_file, label, tpl in builds:
         out_file.write_text(render(share, tpl), encoding="utf-8")
         size_kb = out_file.stat().st_size / 1024
-        print(f"[ok] {label:46s} -> {out_file.name}  ({size_kb:,.0f} KB)")
+        print(f"[ok] Wrote {out_file.name} ({label}) - {size_kb:.0f} KB")
 
 
 if __name__ == "__main__":

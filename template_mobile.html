@@ -13,7 +13,7 @@
 <style>
   :root{
     --pwc-orange:#D04A02; --pwc-tangerine:#EB8C00; --pwc-yellow:#FFB600;
-    --pwc-rose:#E0301E; --pwc-pink:#E45C9F; --pwc-burgundy:#8C2D63;
+    --pwc-rose:#E0301E; --pwc-pink:#E669A2; --pwc-burgundy:#DB536A;
     --pwc-black:#2D2D2D; --white:#FFFFFF;
     --g-100:#F7F7F7; --g-200:#F2F2F2; --g-300:#DEDEDE; --g-400:#BDBDBD;
     --g-600:#7D7D7D; --g-700:#575757; --g-900:#2D2D2D;
@@ -411,7 +411,7 @@
     <div class="risk-ctl" id="radar-ctl">
       <div class="thr-row"><div class="thr-top"><span class="tl">Minimum Spare FTE</span><span class="tv"><b id="rad-fte-val">0.5</b>+ FTE</span></div><input type="range" id="rad-fte" min="0" max="25" step="0.25" value="0.5"></div>
       <div class="thr-row"><div class="thr-top"><span class="tl">Availability Threshold</span><span class="tv"><b id="rad-frag-val">85</b>% util</span></div><input type="range" id="rad-frag" min="40" max="120" step="5" value="85"></div>
-      <div class="thr-row"><div class="thr-top"><span class="tl">Fully committed above</span><span class="tv"><b id="rad-comm-val">95</b>% util</span></div><input type="range" id="rad-comm" min="70" max="120" step="5" value="95"></div>
+      <div class="thr-row"><div class="thr-top"><span class="tl">Fully committed above</span><span class="tv"><b id="rad-comm-val">95</b>% util</span></div><input type="range" id="rad-comm" min="50" max="120" step="5" value="95"></div>
       <div class="thr-row"><div class="thr-top"><span class="tl">Cross-train when</span><span class="tv"><b id="rad-few-val">2</b> or fewer</span></div><input type="range" id="rad-few" min="1" max="10" step="1" value="2"></div>
       <div class="thr-row"><div class="thr-top"><span class="tl">Minimum shared skills</span><span class="tv"><b id="rad-adj-val">2</b>+ shared</span></div><input type="range" id="rad-adj" min="1" max="6" step="1" value="2"></div>
     </div>
@@ -1392,7 +1392,7 @@ function renderRisk(){
   document.getElementById('risk-kpis').innerHTML =
       '<div class="rk" style="border-top-color:#E0301E"><div class="v" style="color:#E0301E">' + counts.ss + '</div><div class="l">Scarce &amp; stretched</div></div>'
     + '<div class="rk" style="border-top-color:#EB8C00"><div class="v" style="color:#EB8C00">' + counts.demand + '</div><div class="l">In demand</div></div>'
-    + '<div class="rk" style="border-top-color:#FFB600"><div class="v" style="color:#B8860B">' + counts.niche + '</div><div class="l">Niche / watch</div></div>'
+    + '<div class="rk" style="border-top-color:#FFB600"><div class="v" style="color:#D04A02">' + counts.niche + '</div><div class="l">Niche / watch</div></div>'
     + '<div class="rk" style="border-top-color:#A6A6A6"><div class="v" style="color:var(--g-700)">' + counts.ok + '</div><div class="l">Healthy depth</div></div>';
 
   const shown = riskFocus === 'critical' ? pts.filter(q => q.qd.key !== 'ok') : pts;
@@ -1459,8 +1459,9 @@ function renderRadarMobile(){
     const spare = s.holders.reduce((t, e) => { const u = uOf(e); return (u !== undefined && u < frag) ? t + Math.max(0, 100 - u) / 100 : t; }, 0);
     return { s, us, spare, avg: us.length ? us.reduce((x, y) => x + y, 0) / us.length : null };
   }).filter(r => r.avg !== null);
-  const free  = rows.filter(r => r.spare >= Math.max(0.05, fteBar)).sort((a, b) => b.spare - a.spare).slice(0, 8);
-  const maxed = rows.filter(r => r.us.length && r.us.every(u => u >= commit)).sort((a, b) => b.s.holders.length - a.s.holders.length || b.avg - a.avg).slice(0, 8);
+  // All qualifying skills are shown (no top-8 cap); the page scrolls natively.
+  const free  = rows.filter(r => r.spare >= Math.max(0.05, fteBar)).sort((a, b) => b.spare - a.spare);
+  const maxed = rows.filter(r => r.us.length && r.us.every(u => u >= commit)).sort((a, b) => b.s.holders.length - a.s.holders.length || b.avg - a.avg);
   const maxSpare = Math.max(1, ...free.map(r => r.spare));
   const capRow = (r, col, seg) =>
     '<div class="rad-row" data-k="' + esc(r.s.key) + '" data-seg="' + seg + '">'
@@ -1485,13 +1486,13 @@ function renderRadarMobile(){
 
   body.innerHTML =
     '<div class="rad-h3">Sellable Capacity</div>'
-    + '<div class="rad-seclbl">Ready to deploy &middot; at least ' + fteBar + ' spare FTE, counting people under ' + frag + '%</div>'
+    + '<div class="rad-seclbl">Ready to deploy &middot; ' + free.length + ' of ' + rows.length + ' skills &middot; at least ' + fteBar + ' spare FTE, counting people under ' + frag + '%</div>'
     + (free.length ? free.map(r => capRow(r, '#EB8C00', 'deploy')).join('') : '<div class="rad-empty">No skills clear the ' + fteBar + '-FTE bar.</div>')
-    + '<div class="rad-seclbl">Fully committed &middot; every holder at ' + commit + '%+</div>'
+    + '<div class="rad-seclbl">Fully committed &middot; ' + maxed.length + ' of ' + rows.length + ' skills &middot; every holder at ' + commit + '%+</div>'
     + (maxed.length ? maxed.map(r => capRow(r, '#E0301E', 'committed')).join('') : '<div class="rad-empty">Nothing fully committed at ' + commit + '%.</div>')
     + '<div class="rad-h3">Upskilling Candidates</div>'
-    + '<div class="rad-seclbl">Skills with ' + few + ' or fewer holders &middot; candidates share ' + adj + '+ skills</div>'
-    + (upRows.length ? upRows.slice(0, 8).map(upRow).join('') : '<div class="rad-empty">No scarce skills have candidates sharing ' + adj + '+ skills here.</div>');
+    + '<div class="rad-seclbl">' + upRows.length + ' skill' + (upRows.length === 1 ? '' : 's') + ' with ' + few + ' or fewer holders &middot; candidates share ' + adj + '+ skills</div>'
+    + (upRows.length ? upRows.map(upRow).join('') : '<div class="rad-empty">No scarce skills have candidates sharing ' + adj + '+ skills here.</div>');
 
   body.querySelectorAll('.rad-row').forEach(r => r.addEventListener('click', () => openSkillSheet(r.dataset.k, 'radar', null, { seg: r.dataset.seg, frag: frag })));
 }
