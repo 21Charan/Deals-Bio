@@ -47,6 +47,12 @@
   .stat-card.t5{border-top-color:var(--pwc-pink)}
   .stat-card .value{font-size:28px;font-weight:700}
   .stat-card .label{font-size:12px;color:var(--pwc-grey-600);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
+  /* KPI cards that jump to their detail box on click */
+  .stat-card[data-jump]{cursor:pointer;transition:box-shadow .15s,transform .15s}
+  .stat-card[data-jump]:hover{box-shadow:0 4px 12px rgba(0,0,0,0.14);transform:translateY(-2px)}
+  .stat-card[data-jump] .label::after{content:" \2193";font-weight:700;color:var(--pwc-grey-300)}
+  @keyframes insightFlash{0%{box-shadow:0 1px 3px rgba(0,0,0,0.08)}18%{box-shadow:0 0 0 3px rgba(208,74,2,0.55)}100%{box-shadow:0 1px 3px rgba(0,0,0,0.08)}}
+  .insight-card.flash{animation:insightFlash 1.3s ease-out}
   .controls{display:flex;column-gap:12px;row-gap:5px;flex-wrap:wrap;margin:0 0 18px}
   .controls input,.controls select{padding:10px 14px;border:1px solid var(--pwc-grey-300);border-radius:4px;font-size:14px;font-family:inherit;background:var(--white)}
   .controls input{flex:1 1 280px}
@@ -231,6 +237,8 @@
   .cc-count{flex:0 0 24px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:var(--pwc-grey-700);font-weight:700}
   .comp-card-more{margin-top:10px;font-size:12px;color:var(--pwc-orange);font-weight:600;cursor:pointer;background:transparent;border:none;padding:6px 0 0;font-family:inherit;text-align:left;border-top:1px solid var(--pwc-grey-100)}
   .comp-card-more:hover{text-decoration:underline}
+  .comp-card.expanded .comp-card-title{cursor:pointer}
+  .comp-card.expanded .comp-card-title:hover{color:var(--pwc-orange)}
   .atlas-cards-empty{column-span:all;text-align:center;color:var(--pwc-grey-600);padding:30px;font-size:13px;font-style:italic}
 
   /* View toggle: Competency Cards vs full All Skills catalogue */
@@ -297,8 +305,14 @@
   .ana-subrow td{background:var(--pwc-grey-50);white-space:normal}
   .ana-chip.ana-emp{cursor:pointer;background:var(--white)}
   .ana-chip.ana-emp:hover{border-color:var(--pwc-orange)}
-  .ana-dot{cursor:pointer;transition:r .12s}
+  .ana-dot{cursor:pointer;transition:r .12s,fill-opacity .15s}
   .ana-dot:hover{stroke:#2D2D2D;stroke-width:2}
+  .ana-dot.dim{fill-opacity:.12}
+  .ana-dot.hot{fill-opacity:1;stroke:#2D2D2D;stroke-width:2.5}
+  /* Clickable Utilization Distribution bands */
+  .ana-dist{cursor:pointer;border-radius:4px;padding:2px 4px;margin-left:-4px;margin-right:-4px;transition:background .12s}
+  .ana-dist:hover{background:var(--pwc-grey-100)}
+  .ana-dist.sel{background:rgba(208,74,2,0.12);box-shadow:inset 3px 0 0 var(--pwc-orange)}
   @media (max-width:900px){.ana-grid{grid-template-columns:1fr}.ana-lbl{flex-basis:110px}}
   .mdi-holders{margin:-2px 0 8px;padding:8px 10px;border:1px dashed var(--pwc-grey-300);border-radius:6px;background:var(--pwc-grey-50);max-height:320px;overflow-y:auto}
   .mdi-holders-head{font-size:11px;font-weight:600;color:var(--pwc-grey-600);text-transform:uppercase;letter-spacing:.3px;margin:0 0 6px}
@@ -331,6 +345,13 @@
   .cr-kpi{background:var(--white);border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.08);padding:14px 18px;min-width:150px;flex:1 1 150px;border-top:4px solid var(--pwc-grey-300)}
   .cr-kpi-val{font-size:26px;font-weight:700;line-height:1}
   .cr-kpi-lbl{font-size:11px;color:var(--pwc-grey-600);margin-top:6px;text-transform:uppercase;letter-spacing:.5px}
+  /* Clickable KPI cards jump to their matching rows below */
+  .cr-kpi-jump{cursor:pointer;transition:box-shadow .15s,transform .15s}
+  .cr-kpi-jump:hover{box-shadow:0 4px 12px rgba(0,0,0,0.14);transform:translateY(-2px)}
+  .cr-kpi-jump .cr-kpi-lbl::after{content:" \2193";font-weight:700;color:var(--pwc-grey-300)}
+  @keyframes crRowFlash{0%{background:rgba(208,74,2,0.28)}100%{background:transparent}}
+  .cr-risk-row.cr-flash{animation:crRowFlash 1.4s ease-out}
+  .cr-table tbody tr.cr-flash td{animation:crRowFlash 1.4s ease-out}
   .cr-tick{fill:var(--pwc-grey-600);font-size:10.5px}
   .cr-axlbl{fill:var(--pwc-grey-700);font-size:11.5px;font-weight:600}
   .cr-quad{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.85}
@@ -888,10 +909,10 @@
 
     <section class="stats" id="pulse-kpis">
       <div class="stat-card"><div class="value" id="pl-avg">-</div><div class="label">This-Month Avg Util</div></div>
-      <div class="stat-card t2"><div class="value" id="pl-bench">-</div><div class="label">On the Bench (&lt;40%)</div></div>
+      <div class="stat-card t2" data-jump="insight-bench" title="Jump to the On the Bench list"><div class="value" id="pl-bench">-</div><div class="label">On the Bench (&lt;40%)</div></div>
       <div class="stat-card t3"><div class="value" id="pl-healthy">-</div><div class="label">Healthy (80&ndash;100%)</div></div>
       <div class="stat-card t4"><div class="value" id="pl-stretched">-</div><div class="label">Stretched (&gt;100%)</div></div>
-      <div class="stat-card t5"><div class="value" id="pl-burnout">-</div><div class="label">Burnout Watch (3-mo &gt;100%)</div></div>
+      <div class="stat-card t5" data-jump="insight-watch" title="Jump to the Burnout Watchlist"><div class="value" id="pl-burnout">-</div><div class="label">Burnout Watch (3-mo &gt;100%)</div></div>
     </section>
 
     <div class="pulse-controls">
@@ -1061,6 +1082,7 @@
   // the modal's prev/next buttons walk this filtered/sorted list.
   let visibleOrder = [];
   let navOrder = [];   // order the modal arrows walk: directory order, or a manager's reports
+  let bioNavEnabled = true;   // false hides the prev/next arrows (e.g. the Deployment scatter)
   let currentBioId = null;
   let bioStack = [];   // back-navigation stack of WorkdayIDs
 
@@ -1595,6 +1617,7 @@
     else if (e.key === 'ArrowRight') stepBio(+1);
   });
   function stepBio(delta){
+    if (!bioNavEnabled) return;   // nav disabled for this bio (arrows hidden)
     const order = (navOrder && navOrder.length) ? navOrder : visibleOrder;
     if (!currentBioId || !order.length) return;
     const idx = order.findIndex(id => String(id) === String(currentBioId));
@@ -1603,7 +1626,7 @@
     showBio(next, true, order);
   }
 
-  function showBio(workdayId, keepStack, navList){
+  function showBio(workdayId, keepStack, navList, noNav){
     const emp = EMPLOYEES.find(e => String(e.WorkdayID) === String(workdayId));
     if (!emp) return;
     if (!keepStack) bioStack = [];   // fresh open (directory / arrows) clears history
@@ -1611,6 +1634,10 @@
     // manager's reports) when given, else the directory's grouped order.
     if (Array.isArray(navList)) navOrder = navList;
     else if (!keepStack) navOrder = visibleOrder;
+    // Some contexts (Deployment scatter) open a bio with no prev/next stepping.
+    bioNavEnabled = !noNav;
+    document.getElementById('modal-prev').style.display = noNav ? 'none' : '';
+    document.getElementById('modal-next').style.display = noNav ? 'none' : '';
     currentBioId = workdayId;
 
     // Categorised skills — group by Skill Category, dedupe within each category.
@@ -2082,18 +2109,37 @@
 
     // Wire up clicks
     wrap.querySelectorAll('.cc-skill').forEach(wireSkill);
+    // "+N more" toggles the full list; clicking the card title collapses it again.
     wrap.querySelectorAll('.comp-card-more').forEach(btn => {
       btn.addEventListener('click', () => {
         const card = btn.closest('.comp-card');
         const cat = buildCategoryData().find(c => c.name === btn.dataset.cat);
         if (!cat) return;
         const maxCount = Math.max(...cat.skills.map(s => s.count));
-        card.querySelector('.comp-card-skills').innerHTML =
-          cat.skills.map(s => skillRow(s, cat.color, maxCount)).join('');
-        btn.remove();
-        card.querySelectorAll('.cc-skill').forEach(wireSkill);
+        const box = card.querySelector('.comp-card-skills');
+        const titleEl = card.querySelector('.comp-card-title');
+        const remaining = cat.skills.length - 6;
+        if (card.classList.contains('expanded')){
+          box.innerHTML = cat.skills.slice(0, 6).map(s => skillRow(s, cat.color, maxCount)).join('');
+          btn.innerHTML = '+ ' + remaining + ' more skill' + (remaining === 1 ? '' : 's') + ' &rarr;';
+          card.classList.remove('expanded');
+          if (titleEl) titleEl.removeAttribute('title');
+          try{ card.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }catch(_e){}
+        } else {
+          box.innerHTML = cat.skills.map(s => skillRow(s, cat.color, maxCount)).join('');
+          btn.innerHTML = '&larr; Show fewer skills';
+          card.classList.add('expanded');
+          if (titleEl) titleEl.title = 'Click to collapse';
+        }
+        box.querySelectorAll('.cc-skill').forEach(wireSkill);
       });
     });
+    wrap.querySelectorAll('.comp-card-title').forEach(t => t.addEventListener('click', () => {
+      const card = t.closest('.comp-card');
+      if (!card || !card.classList.contains('expanded')) return;
+      const btn = card.querySelector('.comp-card-more');
+      if (btn) btn.click();
+    }));
   }
   // Group skills by their SKILL CATEGORY (not competency) for the "Skill Category"
   // cloud view. Returns the same shape as buildCategoryData so renderSkillCloud
@@ -2778,6 +2824,18 @@
       pulsePage = 0; renderPulse();
     }));
 
+  // KPI cards with data-jump scroll to their detail box and flash it.
+  document.querySelectorAll('#pulse-kpis .stat-card[data-jump]').forEach(card =>
+    card.addEventListener('click', () => {
+      const list = document.getElementById(card.dataset.jump);
+      const box = list && list.closest('.insight-card');
+      if (!box) return;
+      box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      box.classList.remove('flash');
+      void box.offsetWidth;            // restart the animation if clicked again
+      box.classList.add('flash');
+    }));
+
   // Pulse export: heatmap for the selected fiscal year, filtered, with FY average.
   PAGE_EXPORTS.pulse = function(){
     const FY = FY_DATA[pulseFY];
@@ -2848,7 +2906,7 @@
       return [...map.values()];
     }
     const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
-    function kpi(label, val, col){ return '<div class="cr-kpi" style="border-top-color:' + col + '"><div class="cr-kpi-val" style="color:' + col + '">' + val + '</div><div class="cr-kpi-lbl">' + esc(label) + '</div></div>'; }
+    function kpi(label, val, col, jump){ const cls = 'cr-kpi' + (jump ? ' cr-kpi-jump' : ''); const dj = jump ? ' data-cr-jump="' + jump + '"' : ''; return '<div class="' + cls + '"' + dj + ' style="border-top-color:' + col + '"><div class="cr-kpi-val" style="color:' + col + '">' + val + '</div><div class="cr-kpi-lbl">' + esc(label) + '</div></div>'; }
     function peopleRows(arr, withUtil, availFirst, utilOf){
       // utilOf lets callers pick which utilisation window to show/sort by
       // (radar passes the Latest-month / 3-month-avg accessor); defaults to latest.
@@ -2914,7 +2972,7 @@
         const depthCol = q.supply <= th.scarce ? '#E0301E' : '#A6A6A6';
         const loadPct = Math.max(4, Math.min(100, (q.demand / 150) * 100));
         const lc = utilColor(q.demand);
-        return '<div class="cr-risk-row" data-k="' + esc(q.s.key) + '">'
+        return '<div class="cr-risk-row" data-k="' + esc(q.s.key) + '" data-q="' + esc(q.qd.key) + '">'
           + '<span class="crr-dot" style="background:' + q.qd.col + '"></span>'
           + '<div class="crr-main"><div class="crr-name" title="' + esc(SKILL_DISPLAY[q.s.key]) + '">' + esc(SKILL_DISPLAY[q.s.key]) + '</div>'
           +   '<div class="crr-cat" title="' + esc(catLabel(q.s.key)) + '">' + esc(catLabel(q.s.key)) + '</div></div>'
@@ -2935,7 +2993,7 @@
       }));
 
       const benchN = p.filter(e => typeof e._latestUtil === 'number' && e._latestUtil < 40).length;
-      $('cr-scarce-kpis').innerHTML = kpi('Scarce & stretched', counts.ss, '#E0301E') + kpi('In demand', counts.demand, '#EB8C00') + kpi('Niche / watch', counts.niche, '#FFB600') + kpi('Healthy depth', counts.ok, '#A6A6A6');
+      $('cr-scarce-kpis').innerHTML = kpi('Scarce & stretched', counts.ss, '#E0301E', 'ss') + kpi('In demand', counts.demand, '#EB8C00', 'demand') + kpi('Niche / watch', counts.niche, '#FFB600', 'niche') + kpi('Healthy depth', counts.ok, '#A6A6A6', 'ok');
       cap.innerHTML = 'Skills ranked by capability risk among the <b>' + p.length + '</b> people in scope. Use the sliders to set what counts as <b>scarce</b> and <b>stretched</b> for this slice &mdash; the bands below recalculate live. <b>Depth</b> = how many people hold the skill; <b>Load</b> = how busy they are.'
         + '<div class="cr-criteria">'
         +   '<span class="cr-q"><i style="background:#E0301E"></i>Scarce &amp; stretched</span>'
@@ -2961,13 +3019,13 @@
       });
       rows.sort((a, b) => a.rank - b.rank || a.n - b.n || SKILL_DISPLAY[a.s.key].localeCompare(SKILL_DISPLAY[b.s.key]));
       const cnt = r => rows.filter(x => x.rank === r).length;
-      $('cr-kp-kpis').innerHTML = kpi('Single-expert skills', cnt(0), '#E0301E') + kpi(KN > 1 ? 'Fragile (2–' + KN + ' people)' : 'Fragile (off)', cnt(1), '#EB8C00') + kpi('No senior cover', cnt(2), '#FFB600') + kpi('Skills in scope', stats.length, '#2D2D2D');
+      $('cr-kp-kpis').innerHTML = kpi('Single-expert skills', cnt(0), '#E0301E', 'r0') + kpi(KN > 1 ? 'Fragile (2–' + KN + ' people)' : 'Fragile (off)', cnt(1), '#EB8C00', 'r1') + kpi('No senior cover', cnt(2), '#FFB600', 'r2') + kpi('Skills in scope', stats.length, '#2D2D2D');
       const badge = (risk, rank) => { const c = rank === 0 ? '#E0301E' : rank === 1 ? '#EB8C00' : '#FFB600'; return '<span class="cr-badge" style="background:' + c + '">' + esc(risk) + '</span>'; };
       let h = '<thead><tr><th>Risk</th><th>Skill</th><th>Category</th><th>People</th><th>Senior</th><th>Who holds it</th></tr></thead><tbody>';
       if (!rows.length) h += '<tr><td colspan="6" class="cr-empty">No key-person risks in this slice — capability is well spread.</td></tr>';
       rows.forEach(r => {
         const who = r.s.holders.slice().sort((a, b) => String(a.Name).localeCompare(String(b.Name))).map(e => '<span class="cr-who" data-wid="' + esc(String(e.WorkdayID)) + '">' + esc(e.Name) + (isSenior(e.Role) ? ' ★' : '') + '</span>').join('');
-        h += '<tr><td>' + badge(r.risk, r.rank) + '</td><td class="cr-skill">' + esc(SKILL_DISPLAY[r.s.key]) + '</td><td>' + esc(catLabel(r.s.key)) + '</td><td class="cr-num">' + r.n + '</td><td class="cr-num">' + r.sen + '</td><td>' + who + '</td></tr>';
+        h += '<tr data-r="' + r.rank + '"><td>' + badge(r.risk, r.rank) + '</td><td class="cr-skill">' + esc(SKILL_DISPLAY[r.s.key]) + '</td><td>' + esc(catLabel(r.s.key)) + '</td><td class="cr-num">' + r.n + '</td><td class="cr-num">' + r.sen + '</td><td>' + who + '</td></tr>';
       });
       h += '</tbody>';
       const tbl = $('cr-kp-table'); tbl.innerHTML = h;
@@ -3105,6 +3163,23 @@
 
     function render(){ if (view === 'scarce') renderScarce(); else if (view === 'radar') renderRadar(); else renderKeyPerson(); }
 
+    // KPI cards jump to and flash their matching rows in the list/table below.
+    function crHighlight(scroller, rows){
+      if (!rows.length){ scroller.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+      rows[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      rows.forEach(r => { r.classList.remove('cr-flash'); void r.offsetWidth; r.classList.add('cr-flash'); });
+    }
+    $('cr-scarce-kpis').addEventListener('click', e => {
+      const card = e.target.closest('.cr-kpi-jump'); if (!card) return;
+      const board = $('cr-risklist');
+      crHighlight(board, [...board.querySelectorAll('.cr-risk-row[data-q="' + card.dataset.crJump + '"]')]);
+    });
+    $('cr-kp-kpis').addEventListener('click', e => {
+      const card = e.target.closest('.cr-kpi-jump'); if (!card) return;
+      const tbl = $('cr-kp-table');
+      crHighlight(tbl, [...tbl.querySelectorAll('tbody tr[data-r="' + card.dataset.crJump.slice(1) + '"]')]);
+    });
+
     $('cr-view-toggle').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
       $('cr-view-toggle').querySelectorAll('button').forEach(x => x.classList.remove('active')); b.classList.add('active');
       view = b.dataset.view;
@@ -3196,6 +3271,9 @@
     const tenureYrs = e => { const d = new Date(String(e['Join Date'] || '')); return isNaN(d) ? null : (now - d) / 3.15576e10; };
     const HAS_U = !SHARE_MODE && typeof LATEST_MONTH !== 'undefined' && !!LATEST_MONTH;
     const GRADE_ORDER_T = ROLE_GROUPS.map(g => g.title);
+    // Utilization band index (matches the Distribution histogram bins below).
+    const utilBandIdx = v => (typeof v !== 'number') ? -1
+      : v < 20 ? 0 : v < 40 ? 1 : v < 60 ? 2 : v < 80 ? 3 : v <= 100 ? 4 : 5;
 
     // Filters — same behaviour as Pulse (an RL manager selection keeps the manager's own row too).
     const aChange = () => renderAnalytics();
@@ -3272,7 +3350,22 @@
       else if (anaView === 'mgr')    body.innerHTML = renderMgr(pool);
       else if (anaView === 'mix')    body.innerHTML = renderMix(pool);
       else                           body.innerHTML = renderDeploy(pool);
-      body.querySelectorAll('.ana-dot').forEach(c => c.addEventListener('click', () => showBio(c.dataset.wid)));
+      // Utilization Distribution + scatter both live in the Deploy view.
+      const distRows = [...body.querySelectorAll('.ana-dist')];
+      const distDots = [...body.querySelectorAll('.ana-dot')];
+      let distBand = null;
+      // Scatter dot -> bio, opened with no prev/next arrows (Deployment has no
+      // single meaningful walk order — see the distribution bands instead).
+      distDots.forEach(c => c.addEventListener('click', () => showBio(c.dataset.wid, false, null, true)));
+      distRows.forEach(r => r.addEventListener('click', () => {
+        distBand = (+r.dataset.band === distBand) ? null : +r.dataset.band;
+        distRows.forEach(x => x.classList.toggle('sel', +x.dataset.band === distBand));
+        distDots.forEach(d => {
+          const match = +d.dataset.band === distBand;
+          d.classList.toggle('hot', distBand !== null && match);
+          d.classList.toggle('dim', distBand !== null && !match);
+        });
+      }));
       // Manager Scorecard: click a manager row to unfold their team inline.
       body.querySelectorAll('.ana-mgr-row').forEach(tr => tr.addEventListener('click', () => {
         const wasOpen = tr.nextElementSibling && tr.nextElementSibling.classList.contains('ana-subrow');
@@ -3288,7 +3381,8 @@
         const sub = document.createElement('tr'); sub.className = 'ana-subrow';
         sub.innerHTML = '<td colspan="' + tr.children.length + '">' + (chips || '<span class="mdi-empty">No team members in this slice.</span>') + '</td>';
         tr.after(sub);
-        sub.querySelectorAll('.ana-emp').forEach(c => c.addEventListener('click', ev => { ev.stopPropagation(); showBio(c.dataset.wid); }));
+        const teamIds = [...sub.querySelectorAll('.ana-emp')].map(c => c.dataset.wid);
+        sub.querySelectorAll('.ana-emp').forEach(c => c.addEventListener('click', ev => { ev.stopPropagation(); showBio(c.dataset.wid, false, teamIds); }));
       }));
     }
 
@@ -3343,7 +3437,7 @@
       const yMax = Math.max(120, Math.ceil(Math.max.apply(null, allVals) / 20) * 20);
       const X = i => months.length === 1 ? (L + (W - L - R) / 2) : L + i / (months.length - 1) * (W - L - R);
       const Y = v => H - B - v / yMax * (H - T - B);
-      let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">';
+      let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;max-width:1300px;display:block" xmlns="http://www.w3.org/2000/svg">';
       svg += '<rect x="' + L + '" y="' + Y(100) + '" width="' + (W - L - R) + '" height="' + (Y(80) - Y(100)) + '" fill="rgba(208,74,2,0.05)"/>';
       for (let v = 0; v <= yMax; v += 20)
         svg += '<line x1="' + L + '" y1="' + Y(v) + '" x2="' + (W - R) + '" y2="' + Y(v) + '" stroke="#F2F2F2"/>'
@@ -3453,7 +3547,7 @@
       const counts = hb.map(b => us.filter(b[1]).length);
       const hMax = Math.max(1, Math.max.apply(null, counts));
       const hist = hb.map((b, i) =>
-        '<div class="ana-row"><span class="ana-lbl">' + b[0] + '</span>'
+        '<div class="ana-row ana-dist" data-band="' + i + '" title="Click to highlight these people in the scatter below"><span class="ana-lbl">' + b[0] + '</span>'
         + '<div class="ana-bar"><div class="ana-seg" style="width:' + Math.max(3, Math.round(counts[i] / hMax * 100)) + '%;background:' + b[2] + '"></div></div>'
         + '<span class="ana-val">' + counts[i] + '</span></div>').join('');
       const bg = gradesOf(pool);
@@ -3461,7 +3555,7 @@
         const a = avgOf(bg[t].map(e => uAt(e, last)).filter(v => typeof v === 'number'));
         return [esc(t), a === null ? 0 : a, a === null ? '&mdash;' : Math.round(a) + '%'];
       });
-      return card('Utilization Distribution', 'How ' + esc(fmtMonth(last)) + ' utilization is spread across ' + us.length + ' people.', hist)
+      return card('Utilization Distribution', 'How ' + esc(fmtMonth(last)) + ' utilization is spread across ' + us.length + ' people. Click a band to highlight those people in the scatter below.', hist)
         + card('Avg Utilization by Grade', 'Latest month (' + esc(fmtMonth(last)) + ') averaged per grade.', bars(uRows, ORANGE))
         + card('Utilization vs Experience', 'Each dot is a person (latest month). Top-left: juniors stretched; bottom-right: seniors on the bench. Click a dot for the bio.', scatterSVG(pool), true);
     }
@@ -3470,12 +3564,12 @@
       const pts = pool.map(e => ({ e, x: parseFloat(e[EXP_TOTAL]), y: e._latestUtil })).filter(p => !isNaN(p.x) && typeof p.y === 'number');
       if (!pts.length) return '<div class="mdi-empty">No utilization data in this slice.</div>';
       const grades = GRADE_ORDER_T.filter(t => pts.some(p => groupForRole(p.e.Role) === t));
-      const W = 760, H = 320, L = 46, R = 14, T = 14, B = 36;
+      const W = 1160, H = 340, L = 46, R = 14, T = 14, B = 36;
       const xMax = Math.max(5, Math.ceil(Math.max(...pts.map(p => p.x)) / 5) * 5);
       const yMax = Math.max(120, Math.ceil(Math.max(...pts.map(p => p.y)) / 20) * 20);
       const X = v => L + v / xMax * (W - L - R);
       const Y = v => H - B - v / yMax * (H - T - B);
-      let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">';
+      let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;max-width:1300px;display:block" xmlns="http://www.w3.org/2000/svg">';
       for (let v = 0; v <= yMax; v += 20)
         svg += '<line x1="' + L + '" y1="' + Y(v) + '" x2="' + (W - R) + '" y2="' + Y(v) + '" stroke="#F2F2F2"/>'
              + '<text x="' + (L - 7) + '" y="' + (Y(v) + 3.5) + '" text-anchor="end" class="cr-tick">' + v + '</text>';
@@ -3489,7 +3583,7 @@
            + '<text x="12" y="' + ((T + H - B) / 2) + '" text-anchor="middle" class="cr-axlbl" transform="rotate(-90 12 ' + ((T + H - B) / 2) + ')">Latest-month utilization %</text>';
       pts.forEach(p => {
         const g = groupForRole(p.e.Role);
-        svg += '<circle class="ana-dot" data-wid="' + esc(String(p.e.WorkdayID)) + '" cx="' + X(p.x) + '" cy="' + Y(p.y) + '" r="7" fill="' + (GRADE_COL[g] || GREY) + '" fill-opacity=".85">'
+        svg += '<circle class="ana-dot" data-wid="' + esc(String(p.e.WorkdayID)) + '" data-band="' + utilBandIdx(p.y) + '" cx="' + X(p.x) + '" cy="' + Y(p.y) + '" r="7" fill="' + (GRADE_COL[g] || GREY) + '" fill-opacity=".85">'
              + '<title>' + esc(p.e.Name) + ' &middot; ' + esc(p.e.Role || '') + ' &middot; ' + p.x + ' yrs &middot; ' + Math.round(p.y) + '%</title></circle>';
       });
       svg += '</svg>';
