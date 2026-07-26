@@ -129,6 +129,13 @@
   .dir-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
   .dir-card{background:var(--white);border-radius:6px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.08);cursor:pointer;transition:transform .15s,box-shadow .15s;border:1px solid transparent}
   .dir-card{position:relative}
+  /* At full headcount the directory holds ~900 cards. content-visibility lets
+     the browser skip layout and paint for cards that are off screen, while they
+     stay in the DOM for search, export and the modal's prev/next order.
+     contain-intrinsic-size: auto keeps the last measured height, so the
+     scrollbar does not jump as cards come into view. Browsers without support
+     simply ignore this and behave exactly as before. */
+  .dir-card{content-visibility:auto;contain-intrinsic-size:auto 248px}
   .dir-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,0.12);border-color:var(--pwc-orange)}
   .dir-card .view-hint{position:absolute;top:10px;right:10px;background:var(--pwc-orange);color:var(--white);font-size:10px;font-weight:600;padding:3px 8px;border-radius:3px;letter-spacing:0.5px;text-transform:uppercase;opacity:0;transition:opacity .15s;pointer-events:none}
   .dir-card:hover .view-hint{opacity:1}
@@ -274,19 +281,38 @@
   .mdi-cand .n{color:var(--pwc-grey-600);font-size:11px}
   .mdi-empty{font-size:12.5px;color:var(--pwc-grey-600);font-style:italic;padding:8px 2px}
   .mdi-scroll{max-height:352px;overflow-y:auto;padding-right:4px;overscroll-behavior:contain}
+  /* ---- Entry animation (Skill Atlas + Team Analytics) ---- */
+  .ana-seg,.adt-bar-row .bar-fill{transition:width .75s cubic-bezier(.22,.61,.36,1)}
+  /* Competency-card strength pips rise in sequence when the cards render. */
+  @keyframes ccPop{from{transform:scaleY(.28);opacity:0}to{transform:none;opacity:1}}
+  .cc-anim .cc-pip{animation:ccPop .38s cubic-bezier(.22,.61,.36,1) both}
+  .cc-anim .cc-pip:nth-child(1){animation-delay:.01s}
+  .cc-anim .cc-pip:nth-child(2){animation-delay:.05s}
+  .cc-anim .cc-pip:nth-child(3){animation-delay:.09s}
+  .cc-anim .cc-pip:nth-child(4){animation-delay:.13s}
+  .cc-anim .cc-pip:nth-child(5){animation-delay:.17s}
+  /* Utilization trend draws itself left to right. */
+  .ana-draw{stroke-dasharray:2600;stroke-dashoffset:2600;animation:anaDraw 1.05s ease-out forwards}
+  @keyframes anaDraw{to{stroke-dashoffset:0}}
+  @media (prefers-reduced-motion:reduce){
+    .ana-seg,.adt-bar-row .bar-fill{transition:none}
+    .cc-anim .cc-pip{animation:none}
+    .ana-draw{stroke-dasharray:none;stroke-dashoffset:0;animation:none}
+  }
+
   /* ---- Landing / hub mode ----
      The overview is the front door, not a tab. On the landing the tab bar is
      hidden and the brand block is inert; on a detail page the tab bar appears
      and the brand block becomes the way home. */
-  .brand-home{display:flex;align-items:center;gap:16px;border-radius:6px;padding:4px 10px 4px 4px;margin-left:-4px;transition:background .15s}
+  .brand-home{display:flex;align-items:center;gap:16px;border-radius:6px;padding:4px 12px 4px 4px;margin-left:-4px;
+              transition:background .15s;outline:none}
   body:not(.landing) .brand-home{cursor:pointer}
-  body:not(.landing) .brand-home:hover{background:rgba(255,255,255,0.08)}
+  body:not(.landing) .brand-home:hover{background:rgba(255,255,255,0.07)}
+  /* The logo tile lifts slightly on hover so the block reads as pressable
+     without adding any label to the header. */
+  body:not(.landing) .brand-home:hover .logo-img{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,0.35)}
+  .logo-img{transition:transform .15s,box-shadow .15s}
   body:not(.landing) .brand-home:focus-visible{outline:2px solid var(--pwc-tangerine);outline-offset:2px}
-  .home-hint{display:none;align-items:center;gap:4px;color:var(--pwc-grey-400);font-size:12px;font-weight:600;
-             text-transform:uppercase;letter-spacing:1px;border-left:1px solid #555;padding-left:14px}
-  .home-hint svg{width:14px;height:14px}
-  body:not(.landing) .home-hint{display:inline-flex}
-  body:not(.landing) .brand-home:hover .home-hint{color:var(--pwc-tangerine)}
   body.landing nav.tabs{display:none}
 
   /* ---- Cover: copy left, view picker right ---- */
@@ -465,6 +491,21 @@
   .cr-tr-legend .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
   .cr-tr-none{font-size:12px;color:var(--pwc-grey-700);margin-top:12px;padding-top:10px;border-top:1px solid var(--pwc-grey-100)}
   .cr-tr-none b{color:var(--pwc-orange)}
+
+  /* ---- Workforce Mix cross-filter ---- */
+  .ana-click{cursor:pointer;border-radius:4px;padding:2px 4px;margin-left:-4px;transition:background .12s}
+  .ana-click:hover{background:var(--pwc-grey-50)}
+  .ana-row[data-on]{background:rgba(208,74,2,0.09);box-shadow:inset 3px 0 0 var(--pwc-orange)}
+  .ana-row[data-on] .ana-lbl{font-weight:700;color:var(--pwc-orange)}
+  .ana-chipbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 14px;padding-bottom:12px;
+               border-bottom:1px solid var(--pwc-grey-100)}
+  .ana-chiplbl{font-size:11px;text-transform:uppercase;letter-spacing:.7px;font-weight:700;color:var(--pwc-grey-600)}
+  .ana-mixchip{cursor:pointer;background:rgba(208,74,2,0.10);border:1px solid rgba(208,74,2,0.30);
+               border-radius:14px;padding:4px 10px;font-size:12px;color:var(--pwc-grey-900);transition:background .12s}
+  .ana-mixchip:hover{background:rgba(208,74,2,0.20)}
+  .ana-mixchip i{font-style:normal;margin-left:6px;color:var(--pwc-orange);font-weight:700}
+  .ana-chipclear{background:none;border:none;font-family:inherit;font-size:12px;font-weight:600;
+                 color:var(--pwc-orange);cursor:pointer;text-decoration:underline;padding:4px}
 
   /* ---- Team Analytics ---- */
   .ana-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -838,10 +879,12 @@
 <body class="landing">
 <header class="brand">
   <!-- The brand block doubles as "home": on a detail page it returns to the overview. -->
+  <!-- On a detail page the brand block returns to the overview. No visible
+       label: the affordance is the pointer cursor, the hover lift and the
+       tooltip. On the landing itself it is inert. -->
   <div class="brand-home" id="brand-home" role="button" tabindex="0" title="Back to the overview">
     <img class="logo-img" src="__LOGO_URI__" alt="PwC" onerror="this.style.display='none'">
     <div class="header-title">Employee Bio Dashboard</div>
-    <span class="home-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>Overview</span>
   </div>
   <div class="header-spacer"></div>
   <div class="header-meta">
@@ -1298,7 +1341,6 @@
         <button data-view="trend" class="active">Utilization Trends</button>
         <button data-view="mgr">Manager Scorecard</button>
         <button data-view="mix">Workforce Mix</button>
-        <button data-view="deploy">Deployment</button>
       </div>
       <span class="ana-meta" id="ana-meta"></span>
     </div>
@@ -1376,6 +1418,50 @@
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
+  // ----- Entry animation helpers (Skill Atlas + Team Analytics) -----------
+  // These work by post-processing the DOM after a render rather than by
+  // changing any markup: read the width the bar was given, snap it to zero
+  // without a transition, then release it on the next frame. Nothing downstream
+  // needs to know, and if motion is off the bars simply appear at full width.
+  // requestAnimationFrame is required, not optional: animateBars snaps widths to
+  // zero and relies on the next frame to restore them. Without it the bars would
+  // stay at zero for good, so treat a missing rAF as "no motion" and leave every
+  // value exactly as rendered.
+  const MOTION_OK = (typeof requestAnimationFrame === 'function')
+    && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  function animateBars(root, selector){
+    if (!MOTION_OK || !root) return;
+    const bars = [...root.querySelectorAll(selector)];
+    if (!bars.length || bars.length > 400) return;      // skip if it would be a light show
+    const target = bars.map(b => b.style.width);
+    bars.forEach(b => { b.style.transition = 'none'; b.style.width = '0'; });
+    void root.offsetWidth;                              // force the zero state to paint
+    requestAnimationFrame(() => bars.forEach((b, i) => {
+      b.style.transition = ''; b.style.width = target[i];
+    }));
+  }
+  // Count a KPI up to its value. Keeps any prefix/suffix ("70%", "0.8x",
+  // "5 of 5") and restores the exact original text at the end, so nothing can
+  // be left mis-rendered by a rounding artefact.
+  function countUp(root, selector){
+    if (!MOTION_OK || !root) return;
+    root.querySelectorAll(selector).forEach(el => {
+      const txt = el.textContent.trim();
+      const m = txt.match(/^(-?[\d,]+(?:\.\d+)?)([\s\S]*)$/);
+      if (!m) return;
+      const end = parseFloat(m[1].replace(/,/g, ''));
+      if (!isFinite(end) || end === 0) return;
+      const dec = (m[1].split('.')[1] || '').length, suffix = m[2], D = 520;
+      const t0 = (window.performance && performance.now) ? performance.now() : Date.now();
+      (function step(now){
+        const k = Math.min(1, ((now || Date.now()) - t0) / D);
+        const v = end * (1 - Math.pow(1 - k, 3));
+        el.textContent = v.toFixed(dec).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + suffix;
+        if (k < 1) requestAnimationFrame(step); else el.textContent = txt;
+      })(t0);
+    });
+  }
+
   // Each page registers its filtered-export builder here; the nav button dispatches.
   const PAGE_EXPORTS = {};
   (function(){
@@ -1612,7 +1698,10 @@
       document.querySelectorAll('nav.tabs button[data-tab]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      const panelId = 'tab-' + btn.dataset.tab;
+      document.getElementById(panelId).classList.add('active');
+      // Run whatever re-render was parked while this tab was hidden.
+      flushPending(panelId);
     });
   });
 
@@ -1772,6 +1861,20 @@
   // Analytics. Skill Category and RL Manager stay per-tab (not on every tab).
   const FILTER_SYNC = {};                       // key -> { set, subs: [control] }
   let _syncing = false;                         // re-entry guard
+  // A hidden tab does not need re-rendering the instant a filter changes — it
+  // cannot be seen. Its render is parked here and run when the tab is opened,
+  // so one filter change costs one visible re-render instead of five.
+  const PENDING = new Map();                    // panelId -> onChange
+  function flushPending(panelId){
+    const fn = PENDING.get(panelId);
+    if (fn){ PENDING.delete(panelId); fn(); }
+  }
+  // Route a control's re-render: run it now if its tab is on screen, else park it.
+  function renderOrPark(sub){
+    const panel = sub.panel;
+    if (!panel || document.getElementById(panel) && document.getElementById(panel).classList.contains('active')) sub.onChange();
+    else PENDING.set(panel, sub.onChange);
+  }
   function syncGroup(key){
     return FILTER_SYNC[key] || (FILTER_SYNC[key] = { set: new Set(), subs: [] });
   }
@@ -1779,7 +1882,9 @@
   function broadcastSync(key, origin){
     if (_syncing) return;
     _syncing = true;
-    syncGroup(key).subs.forEach(s => { if (s !== origin){ s.refresh(); s.onChange(); } });
+    // The control itself is always repainted so its chips stay correct even on
+    // a hidden tab; only the expensive re-render is deferred.
+    syncGroup(key).subs.forEach(s => { if (s !== origin){ s.refresh(); renderOrPark(s); } });
     _syncing = false;
   }
   // Used by every Reset button: the shared Sets are already cleared by the
@@ -1790,11 +1895,11 @@
   function broadcastAll(){
     if (_syncing) return;
     _syncing = true;
-    const rendered = new Set();
+    const handled = new Set();
     Object.keys(FILTER_SYNC).forEach(k =>
       FILTER_SYNC[k].subs.forEach(s => {
         s.refresh();
-        if (!rendered.has(s.onChange)){ rendered.add(s.onChange); s.onChange(); }
+        if (!handled.has(s.onChange)){ handled.add(s.onChange); renderOrPark(s); }
       }));
     _syncing = false;
   }
@@ -1846,7 +1951,9 @@
     host.querySelector('.ms-done').addEventListener('click', () => panel.classList.remove('open'));
     panel.addEventListener('click', ev => ev.stopPropagation());
     renderOpts(''); updLabel();
-    self = { selected: sel, onChange, refresh(){ renderOpts(search.value); updLabel(); } };
+    const ownPanel = host.closest ? host.closest('.tab-panel') : null;
+    self = { selected: sel, onChange, panel: ownPanel ? ownPanel.id : '',
+             refresh(){ renderOpts(search.value); updLabel(); } };
     if (syncKey) syncGroup(syncKey).subs.push(self);
     return self;
   }
@@ -2015,15 +2122,17 @@
     }
 
     // Utilization — smooth area+line chart (SVG, Catmull-Rom-style bezier).
-    const utilRows = (UTIL_BY_EMP[String(workdayId)] || []).slice()
+    // Months with no reported utilization are dropped rather than plotted as 0.
+    const utilRows = (UTIL_BY_EMP[String(workdayId)] || [])
+      .filter(r => utilVal(r.Utilization) !== undefined)
       .sort((a, b) => monthKey(a['Month Year']).localeCompare(monthKey(b['Month Year'])));
     let utilHtml;
     if (utilRows.length){
       const W = 960, H = 220, padL = 46, padR = 22, padT = 32, padB = 44;
       const innerW = W - padL - padR, innerH = H - padT - padB;
-      const yMax = Math.max(120, Math.ceil(Math.max(...utilRows.map(u => Number(u.Utilization) || 0)) / 20) * 20);
+      const yMax = Math.max(120, Math.ceil(Math.max(...utilRows.map(u => utilVal(u.Utilization))) / 20) * 20);
       const pts = utilRows.map((u, i) => {
-        const v = Number(u.Utilization) || 0;
+        const v = utilVal(u.Utilization);
         const x = padL + (utilRows.length === 1 ? innerW / 2 : (i / (utilRows.length - 1)) * innerW);
         const y = padT + innerH - (v / yMax) * innerH;
         return { x, y, v, label: monthKey(u['Month Year']) };
@@ -2562,11 +2671,19 @@
   let atlasView = 'catcloud';
   function renderAtlas(q){
     const showCards = atlasView === 'cards';
-    document.getElementById('atlas-cards').style.display = showCards ? '' : 'none';
+    const cardsBox = document.getElementById('atlas-cards');
+    cardsBox.style.display = showCards ? '' : 'none';
     document.getElementById('atlas-cloud').style.display = showCards ? 'none' : '';
     if (atlasView === 'cards') renderCompetencyCards(q);
     else if (atlasView === 'catcloud') renderSkillCloud(q, buildSkillCategoryData);
     else renderSkillCloud(q);
+    // Re-arm the pip animation: removing and re-adding the class restarts it,
+    // which a plain class-add would not do on a re-render.
+    if (showCards && MOTION_OK){
+      cardsBox.classList.remove('cc-anim');
+      void cardsBox.offsetWidth;
+      cardsBox.classList.add('cc-anim');
+    }
   }
   document.querySelectorAll('#atlas-view-toggle button').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -2716,6 +2833,9 @@
       +   '<button id="adt-add-must">Add to must-have</button>'
       +   '<button class="secondary" id="adt-add-nice">Add to nice-to-have</button>'
       + '</div>';
+
+    // Grow the distribution bars once the panel has painted.
+    animateBars(panel, '.adt-bar-row .bar-fill');
 
     // Wire panel interactions — bio arrows walk this panel's list, not the directory.
     const adtIds = [...panel.querySelectorAll('.adt-person')].map(p => p.dataset.id);
@@ -2888,11 +3008,19 @@
 
   // Collect all unique months from UTIL, sorted chronologically.
   const ALL_MONTHS = [...new Set(UTIL.map(u => monthKey(u['Month Year'])))].sort();
-  // Map of "WorkdayID|YYYY-MM" -> utilization value
+  // A blank or non-numeric utilization means "not reported", NOT nought percent.
+  // Coercing it to 0 would count those people as fully on the bench and drag
+  // every average down. Returns undefined for missing; a genuine 0 is kept.
+  function utilVal(v){
+    if (v === null || v === undefined || String(v).trim() === '') return undefined;
+    const n = Number(v);
+    return isFinite(n) ? n : undefined;
+  }
+  // Map of "WorkdayID|YYYY-MM" -> utilization value (absent when not reported)
   const UTIL_LOOKUP = Object.create(null);
   UTIL.forEach(u => {
-    const m = monthKey(u['Month Year']);
-    UTIL_LOOKUP[String(u.WorkdayID) + '|' + m] = Number(u.Utilization) || 0;
+    const v = utilVal(u.Utilization);
+    if (v !== undefined) UTIL_LOOKUP[String(u.WorkdayID) + '|' + monthKey(u['Month Year'])] = v;
   });
   const LATEST_MONTH = ALL_MONTHS[ALL_MONTHS.length - 1] || '';
 
@@ -2900,28 +3028,39 @@
   function buildFYData(rows){
     const months = [...new Set((rows || []).map(u => monthKey(u['Month Year'])))].sort();
     const lookup = Object.create(null);
-    (rows || []).forEach(u => { lookup[String(u.WorkdayID) + '|' + monthKey(u['Month Year'])] = Number(u.Utilization) || 0; });
+    (rows || []).forEach(u => {
+      const v = utilVal(u.Utilization);
+      if (v !== undefined) lookup[String(u.WorkdayID) + '|' + monthKey(u['Month Year'])] = v;
+    });
     return { months, lookup };
   }
+  // A fiscal-year sheet covering fewer than two months is a stub, not a dataset.
+  // Substituting the other year's figures under this year's label would be
+  // worse than showing nothing, so such a view is marked unavailable and its
+  // toggle button is disabled below.
+  const fyUsable = rows => !!rows && [...new Set(rows.map(u => monthKey(u['Month Year'])))].length >= 2;
   const FY_DATA = {
-    jj: buildFYData((UTIL_FY.jj && UTIL_FY.jj.length) ? UTIL_FY.jj : UTIL),
-    am: buildFYData((UTIL_FY.am && UTIL_FY.am.length) ? UTIL_FY.am : UTIL)
+    jj: buildFYData(fyUsable(UTIL_FY.jj) ? UTIL_FY.jj : UTIL),
+    am: buildFYData(fyUsable(UTIL_FY.am) ? UTIL_FY.am : UTIL)
   };
+  const FY_AVAILABLE = { jj: fyUsable(UTIL_FY.jj) || !!UTIL.length, am: fyUsable(UTIL_FY.am) };
   let pulseFY = 'jj';
 
   // Pre-compute per-employee: avg util, latest util, sustained risk flag
+  // The last three calendar months in the data — not each person's own last
+  // three records. Someone whose reporting stopped six months ago would
+  // otherwise be judged on stale months and could show as burnout watch today.
+  const LAST_3_MONTHS = ALL_MONTHS.slice(-3);
   EMPLOYEES.forEach(e => {
     const id = String(e.WorkdayID);
-    const all = (UTIL_BY_EMP[id] || []).map(r => Number(r.Utilization) || 0);
+    const all = (UTIL_BY_EMP[id] || []).map(r => utilVal(r.Utilization)).filter(v => v !== undefined);
     e._avgUtil = all.length ? all.reduce((s,v) => s+v, 0) / all.length : null;
     e._latestUtil = UTIL_LOOKUP[id + '|' + LATEST_MONTH];
-    // 3-month sustained: avg of the most recent 3 months for this employee
-    const last3 = (UTIL_BY_EMP[id] || [])
-      .slice()
-      .sort((a,b) => monthKey(b['Month Year']).localeCompare(monthKey(a['Month Year'])))
-      .slice(0, 3)
-      .map(r => Number(r.Utilization) || 0);
-    e._sustained3 = last3.length ? last3.reduce((s,v) => s+v, 0) / last3.length : null;
+    // Needs at least two of those three months reported, so a single month is
+    // never presented as a three-month average.
+    const win = LAST_3_MONTHS.map(m => UTIL_LOOKUP[id + '|' + m]).filter(v => typeof v === 'number');
+    e._sustained3 = win.length >= Math.min(2, LAST_3_MONTHS.length)
+      ? win.reduce((s,v) => s+v, 0) / win.length : null;
   });
 
   // Colour ramp tuned for PwC palette. Returns {bg, dark}.
@@ -3190,9 +3329,19 @@
   });
 
   // Fiscal-year toggle: switches which utilization dataset the heatmap shows.
+  // A year whose sheet is missing or a stub is disabled rather than silently
+  // showing the other year's numbers under its label.
+  document.querySelectorAll('#pulse-fy-toggle button').forEach(b => {
+    if (FY_AVAILABLE[b.dataset.fy] === false){
+      b.disabled = true;
+      b.style.opacity = '0.45';
+      b.style.cursor = 'not-allowed';
+      b.title = 'No utilization data supplied for this fiscal year';
+    }
+  });
   document.querySelectorAll('#pulse-fy-toggle button').forEach(btn =>
     btn.addEventListener('click', () => {
-      if (btn.dataset.fy === pulseFY) return;
+      if (btn.disabled || btn.dataset.fy === pulseFY) return;
       pulseFY = btn.dataset.fy;
       document.querySelectorAll('#pulse-fy-toggle button').forEach(b => b.classList.toggle('active', b === btn));
       pulsePage = 0; renderPulse();
@@ -3812,6 +3961,7 @@
     const aTerr = buildMS('ana-terr-ms', 'All territories',  orderTerritory(uniqueValues('Territory Filter')), aChange, 'terr');
     document.getElementById('ana-reset').addEventListener('click', () => {
       [aMgr, aRole, aLoc, aComp, aTerr].forEach(ms => { ms.selected.clear(); ms.refresh(); });
+      Object.keys(MIX_SEL).forEach(k => delete MIX_SEL[k]);   // clear the in-view cross-filter too
       renderAnalytics();
       broadcastAll();        // shared filters are cleared everywhere, so repaint every tab
     });
@@ -3835,6 +3985,41 @@
       });
     }
 
+    // ---- Workforce Mix cross-filter -------------------------------------
+    // Clicking a bar narrows the rest of the view. Selections combine across
+    // charts. Each chart ignores its OWN dimension when filtering, so the other
+    // bars in that chart stay visible and you can switch selection without
+    // clearing first — the usual cross-filter convention.
+    const MIX_SEL = Object.create(null);        // dimension -> selected value
+    const TEN_BUCKETS = [['Under 1 yr', y => y < 1], ['1&ndash;3 yrs', y => y >= 1 && y < 3],
+                         ['3&ndash;5 yrs', y => y >= 3 && y < 5], ['5&ndash;10 yrs', y => y >= 5 && y < 10],
+                         ['10+ yrs', y => y >= 10]];
+    const tenureBucket = e => {
+      const y = tenureYrs(e); if (y === null) return '';
+      const b = TEN_BUCKETS.find(b => b[1](y)); return b ? b[0] : '';
+    };
+    const MIX_DIMS = {
+      grade: { label: 'Grade',      of: e => groupForRole(e.Role) },
+      comp:  { label: 'Competency', of: e => String(e['Competency Group'] || e.Competency || '').trim() },
+      terr:  { label: 'Territory',  of: e => String(e.Territory || e['Territory Filter'] || '').trim() },
+      tenure:{ label: 'Tenure',     of: tenureBucket },
+      year:  { label: 'Joined',     of: e => { const d = new Date(String(e['Join Date'] || '')); return isNaN(d) ? '' : String(d.getFullYear()); } }
+    };
+    // Apply every active selection except `except`, so a chart never filters itself.
+    function mixPool(pool, except){
+      const keys = Object.keys(MIX_SEL).filter(k => k !== except);
+      if (!keys.length) return pool;
+      return pool.filter(e => keys.every(k => String(MIX_DIMS[k].of(e)) === MIX_SEL[k]));
+    }
+    const mixOn = () => Object.keys(MIX_SEL).length > 0;
+    function mixChips(){
+      if (!mixOn()) return '';
+      return '<div class="ana-chipbar"><span class="ana-chiplbl">Filtered by</span>'
+        + Object.keys(MIX_SEL).map(k => '<span class="ana-chip ana-mixchip" data-clear="' + esc(k) + '">'
+            + esc(MIX_DIMS[k].label) + ': <b>' + esc(MIX_SEL[k]) + '</b><i>&times;</i></span>').join('')
+        + '<button class="ana-chipclear" id="ana-mix-clear">Clear all</button></div>';
+    }
+
     // -- shared builders --
     const card = (title, sub, body, full) =>
       '<div class="ana-card' + (full ? ' full' : '') + '"><h3 class="ana-h">' + title + '</h3><p class="ana-sub">' + sub + '</p>' + body + '</div>';
@@ -3842,7 +4027,16 @@
       + '<span><span class="sw" style="background:' + BURGUNDY + '"></span>Female</span></div>';
     // Managing Directors are excluded from every utilization computation on this tab.
     const noMD = pool => pool.filter(e => groupForRole(e.Role) !== 'Managing Directors');
-    function stackedGender(pool, labelOf, order){
+    // `dim` makes a chart's rows clickable cross-filters within Workforce Mix.
+    // The attributes are inert everywhere else, so other views are unaffected.
+    function mixAttrs(dim, val){
+      if (!dim) return '';
+      const on = MIX_SEL[dim] === String(val);
+      return ' data-mix-dim="' + esc(dim) + '" data-mix-val="' + esc(String(val)) + '"'
+           + ' title="Click to filter this view by ' + esc(String(val)) + '"'
+           + (on ? ' data-on="1"' : '');
+    }
+    function stackedGender(pool, labelOf, order, dim){
       const groups = Object.create(null);
       pool.forEach(e => { const k = labelOf(e) || 'Unspecified'; (groups[k] = groups[k] || []).push(e); });
       let keys = Object.keys(groups);
@@ -3851,15 +4045,17 @@
         const g = groups[k], n = g.length;
         const m = g.filter(e => gOf(e) === 'm').length, f = g.filter(e => gOf(e) === 'f').length, x = n - m - f;
         const seg = (c, col) => c ? '<div class="ana-seg" style="width:' + (c / n * 100) + '%;background:' + col + '"></div>' : '';
-        return '<div class="ana-row"><span class="ana-lbl" title="' + esc(k) + '">' + esc(k) + '</span>'
+        return '<div class="ana-row' + (dim ? ' ana-click' : '') + '"' + mixAttrs(dim, k) + '>'
+          + '<span class="ana-lbl" title="' + esc(k) + '">' + esc(k) + '</span>'
           + '<div class="ana-bar">' + seg(m, TANGERINE) + seg(f, BURGUNDY) + seg(x, GREY) + '</div>'
           + '<span class="ana-val">' + m + ' : ' + f + (x ? ' (+' + x + ')' : '') + '</span></div>';
       }).join('') || '<div class="mdi-empty">No one in this slice.</div>';
     }
-    function bars(rows, col){   // rows = [label, numericValue, displayValue?]
+    function bars(rows, col, dim){   // rows = [label, numericValue, displayValue?, filterKey?]
       const mx = Math.max(1, ...rows.map(r => r[1]));
       return rows.map(r =>
-        '<div class="ana-row"><span class="ana-lbl" title="' + esc(String(r[0])) + '">' + r[0] + '</span>'
+        '<div class="ana-row' + (dim ? ' ana-click' : '') + '"' + mixAttrs(dim, r[3] !== undefined ? r[3] : r[0]) + '>'
+        + '<span class="ana-lbl" title="' + esc(String(r[0])) + '">' + r[0] + '</span>'
         + '<div class="ana-bar"><div class="ana-seg" style="width:' + Math.max(3, Math.round(r[1] / mx * 100)) + '%;background:' + col + '"></div></div>'
         + '<span class="ana-val">' + (r[2] !== undefined ? r[2] : r[1]) + '</span></div>').join('') || '<div class="mdi-empty">No data in this slice.</div>';
     }
@@ -3875,10 +4071,11 @@
         : 'Showing all <strong>' + pool.length + '</strong> active employees';
       const body = document.getElementById('ana-body');
       if (!pool.length){ body.innerHTML = '<div class="ana-card full"><div class="mdi-empty">No employees match the current filters.</div></div>'; return; }
-      if (anaView === 'trend')       body.innerHTML = renderTrend(pool);
-      else if (anaView === 'mgr')    body.innerHTML = renderMgr(pool);
-      else if (anaView === 'mix')    body.innerHTML = renderMix(pool);
-      else                           body.innerHTML = renderDeploy(pool);
+      // Deployment now lives inside Utilization Trends: the trend line, then how
+      // that month is actually spread across people.
+      if (anaView === 'mgr')      body.innerHTML = renderMgr(pool);
+      else if (anaView === 'mix') body.innerHTML = renderMix(pool);
+      else                        body.innerHTML = renderTrend(pool) + deployCards(pool);
       // Utilization Distribution + scatter both live in the Deploy view.
       const distRows = [...body.querySelectorAll('.ana-dist')];
       const distDots = [...body.querySelectorAll('.ana-dot')];
@@ -3913,6 +4110,23 @@
         const teamIds = [...sub.querySelectorAll('.ana-emp')].map(c => c.dataset.wid);
         sub.querySelectorAll('.ana-emp').forEach(c => c.addEventListener('click', ev => { ev.stopPropagation(); showBio(c.dataset.wid, false, teamIds); }));
       }));
+      // Workforce Mix cross-filter: bars toggle a selection, chips clear one or all.
+      body.querySelectorAll('.ana-row[data-mix-dim]').forEach(row => row.addEventListener('click', () => {
+        const dim = row.dataset.mixDim, val = row.dataset.mixVal;
+        if (MIX_SEL[dim] === val) delete MIX_SEL[dim]; else MIX_SEL[dim] = val;
+        renderAnalytics();
+      }));
+      body.querySelectorAll('.ana-mixchip').forEach(ch => ch.addEventListener('click', () => {
+        delete MIX_SEL[ch.dataset.clear]; renderAnalytics();
+      }));
+      const clearAll = body.querySelector('#ana-mix-clear');
+      if (clearAll) clearAll.addEventListener('click', () => {
+        Object.keys(MIX_SEL).forEach(k => delete MIX_SEL[k]); renderAnalytics();
+      });
+
+      // Grow the bars and count the KPI figures up once the view has rendered.
+      animateBars(body, '.ana-seg');
+      countUp(body, '.cr-kpi-val');
     }
 
     // -- monthly utilization helpers --
@@ -3989,7 +4203,7 @@
       months.forEach((m, i) => { svg += '<text x="' + X(i) + '" y="' + (H - B + 16) + '" text-anchor="middle" class="cr-tick">' + fmtMonth(m) + '</text>'; });
       const path = vals => vals.map((v, i) => v === null ? null : (X(i) + ',' + Y(v))).filter(Boolean).join(' ');
       series.forEach(s => { svg += '<polyline points="' + path(s.vals) + '" fill="none" stroke="' + s.col + '" stroke-width="1.6" stroke-opacity=".5"/>'; });
-      svg += '<polyline points="' + path(overall) + '" fill="none" stroke="' + ORANGE + '" stroke-width="3"/>';
+      svg += '<polyline class="ana-draw" points="' + path(overall) + '" fill="none" stroke="' + ORANGE + '" stroke-width="3"/>';
       overall.forEach((v, i) => { if (v !== null) svg += '<circle cx="' + X(i) + '" cy="' + Y(v) + '" r="3.6" fill="' + ORANGE + '"><title>' + fmtMonth(months[i]) + ' &middot; ' + Math.round(v) + '% avg</title></circle>'; });
       svg += '</svg>';
       return '<div class="ana-legend"><span><span class="sw" style="background:' + ORANGE + '"></span><b>Overall</b></span>'
@@ -4036,7 +4250,10 @@
     }
 
     // ---- View 3: Workforce Mix — auto-highlights + gender & tenure cuts ----
-    function renderMix(pool){
+    function renderMix(basePool){
+      // KPIs and insights reflect every active selection; each chart below is
+      // built from a pool that ignores its own dimension.
+      const pool = mixPool(basePool);
       const m = pool.filter(e => gOf(e) === 'm').length, f = pool.filter(e => gOf(e) === 'f').length;
       const pct = (m + f) ? Math.round(f / (m + f) * 100) : 0;
       const srs = pool.filter(e => isManagerRole(e.Role));
@@ -4057,9 +4274,9 @@
       const topLoc = Object.keys(locs).sort((a, b) => locs[b] - locs[a])[0];
       const kpi = (v, l, c) => '<div class="cr-kpi" style="border-top-color:' + c + '"><div class="cr-kpi-val">' + v + '</div><div class="cr-kpi-lbl">' + l + '</div></div>';
       const n3 = withD.filter(r => r.y < 3).length;
-      const word = filtersOn() ? 'slice' : 'team';
+      const word = (filtersOn() || mixOn()) ? 'slice' : 'team';
       const kpis = '<div class="cr-kpis">'
-        + kpi(pool.length, filtersOn() ? 'People in slice' : 'Active employees', ORANGE)
+        + kpi(pool.length, (filtersOn() || mixOn()) ? 'People in slice' : 'Active employees', ORANGE)
         + kpi(pct + '%', 'Female &mdash; ' + f + ' of ' + (m + f) + ' people', BURGUNDY)
         + kpi(srs.length ? ((pool.length - srs.length) / srs.length).toFixed(1) + '&times;' : '&mdash;',
               'Leverage &mdash; ' + (pool.length - srs.length) + ' staff per ' + srs.length + ' at Manager &amp; above', TANGERINE)
@@ -4081,16 +4298,35 @@
                                    : 'Busiest hiring years: <b>' + top.join(', ') + '</b> (' + mx + ' joiners each).');
         })() : null
       ]);
-      return card('Executive Highlights', (filtersOn() ? 'Auto-computed for the current slice' : 'Auto-computed across the full team') + ' &mdash; updates with every filter.', kpis + ins, true)
-        + card('Gender by Grade', 'Split of each grade.', GLEGEND + '<div class="ana-scroll">' + stackedGender(pool, e => groupForRole(e.Role), GRADE_ORDER_T) + '</div>')
-        + card('Gender by Competency', 'Where the mix skews.', GLEGEND + '<div class="ana-scroll">' + stackedGender(pool, e => String(e['Competency Group'] || e.Competency || '').trim()) + '</div>')
-        + card('Tenure Mix', 'Time since PwC join date.', bars(buckets.map(b => [b[0], withD.filter(r => b[1](r.y)).length]), YELLOW))
-        + card('Joiners by Year', 'Hiring pace (last ' + years.length + ' years with joiners).', '<div class="ana-scroll">' + bars(years.map(y => [y, byYear[y]]), TANGERINE) + '</div>');
+      // Per-chart pools: each excludes its own dimension.
+      const pGrade = mixPool(basePool, 'grade'), pComp = mixPool(basePool, 'comp'),
+            pTerr  = mixPool(basePool, 'terr'),  pTen  = mixPool(basePool, 'tenure'),
+            pYear  = mixPool(basePool, 'year');
+      const tenRows = TEN_BUCKETS.map(b => {
+        const n = pTen.map(e => tenureYrs(e)).filter(y => y !== null && b[1](y)).length;
+        return [b[0], n, n, b[0]];
+      });
+      const yrCount = Object.create(null);
+      pYear.forEach(e => { const d = new Date(String(e['Join Date'] || '')); if (!isNaN(d)) yrCount[d.getFullYear()] = (yrCount[d.getFullYear()] || 0) + 1; });
+      const yrKeys = Object.keys(yrCount).map(Number).sort((a, b) => a - b).slice(-8);
+      const terrCount = Object.create(null);
+      pTerr.forEach(e => { const t = MIX_DIMS.terr.of(e); if (t) terrCount[t] = (terrCount[t] || 0) + 1; });
+      const terrRows = Object.keys(terrCount).sort((a, b) => terrCount[b] - terrCount[a])
+        .map(t => [esc(t), terrCount[t], terrCount[t], t]);
+      const hint = ' Click a bar to filter this view; selections combine.';
+
+      return card('Executive Highlights', (filtersOn() || mixOn() ? 'Auto-computed for the current slice' : 'Auto-computed across the full team') + ' &mdash; updates with every filter.', mixChips() + kpis + ins, true)
+        + card('Gender by Grade', 'Split of each grade.' + hint, GLEGEND + '<div class="ana-scroll">' + stackedGender(pGrade, e => groupForRole(e.Role), GRADE_ORDER_T, 'grade') + '</div>')
+        + card('Gender by Competency', 'Where the mix skews.' + hint, GLEGEND + '<div class="ana-scroll">' + stackedGender(pComp, e => String(e['Competency Group'] || e.Competency || '').trim(), null, 'comp') + '</div>')
+        + card('Gender by Territory', 'Mix across the territories served.' + hint, GLEGEND + '<div class="ana-scroll">' + stackedGender(pTerr, MIX_DIMS.terr.of, null, 'terr') + '</div>')
+        + card('People by Territory', 'Headcount aligned to each territory.' + hint, '<div class="ana-scroll">' + bars(terrRows, PINK, 'terr') + '</div>')
+        + card('Tenure Mix', 'Time since PwC join date.' + hint, bars(tenRows, YELLOW, 'tenure'))
+        + card('Joiners by Year', 'Hiring pace (last ' + yrKeys.length + ' years with joiners).' + hint, '<div class="ana-scroll">' + bars(yrKeys.map(y => [y, yrCount[y], yrCount[y], String(y)]), TANGERINE, 'year') + '</div>');
     }
 
-    // ---- View 4: Deployment — distribution + scatter ----
-    function renderDeploy(pool){
-      if (!HAS_U) return card('Deployment', 'Utilization data is not included in this build, so this view cannot be shown.', '<div class="mdi-empty">No utilization available.</div>', true);
+    // ---- Deployment cards — appended to Utilization Trends ----
+    function deployCards(pool){
+      if (!HAS_U) return '';          // the trend card above already says why
       pool = noMD(pool);   // MDs excluded from all utilization views
       const last = ALL_MONTHS[ALL_MONTHS.length - 1];
       const us = pool.map(e => uAt(e, last)).filter(v => typeof v === 'number');
@@ -4204,7 +4440,14 @@
     // ---- 01 Scale ----
     const xps = ACT.map(e => parseFloat(e[EXP_TOTAL])).filter(v => !isNaN(v));
     const comps = cnt(ACT, cOf), locs = cnt(ACT, e => String(e.Location || '').trim());
-    const terrs = cnt(ACT, e => String(e.Territory || e['Territory Filter'] || '').trim());
+    // "Other" is a catch-all bucket, not a territory the practice serves, so it
+    // is excluded from the count and from the largest-territory insight below.
+    // Same test the tab filters use in orderTerritory().
+    const isOtherTerr = v => String(v).trim().toLowerCase().startsWith('other');
+    const terrs = cnt(ACT, e => {
+      const t = String(e.Territory || e['Territory Filter'] || '').trim();
+      return isOtherTerr(t) ? '' : t;
+    });
     $('ov-scale').innerHTML =
         stat(nfmt(ACT.length), 'Active people') + stat(Object.keys(comps).length, 'Competencies')
       + stat(Object.keys(locs).length, 'Locations')
@@ -4555,7 +4798,10 @@
         bg.style.transform = 'translate3d(0,' + ((r.top + r.height / 2 - vh / 2) * -d).toFixed(1) + 'px,0)';
       });
     }
-    const onScroll = () => { if (!ticking){ ticking = true; requestAnimationFrame(frame); } };
+    // Same guard as the shared helpers: without rAF, skip the parallax entirely
+    // rather than throw on every scroll event.
+    const hasRAF = typeof requestAnimationFrame === 'function';
+    const onScroll = () => { if (!hasRAF){ frame(); return; } if (!ticking){ ticking = true; requestAnimationFrame(frame); } };
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll, { passive: true });
     // Re-run when the tab is opened: rects are all zero while it is display:none.
