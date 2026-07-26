@@ -47,6 +47,9 @@
   .stat-card.t5{border-top-color:var(--pwc-pink)}
   .stat-card .value{font-size:28px;font-weight:700}
   .stat-card .label{font-size:12px;color:var(--pwc-grey-600);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
+  /* Data-lineage caveat shown inside a KPI card (e.g. territory attribution). */
+  .stat-card .stat-note{font-size:11px;line-height:1.45;color:var(--pwc-grey-600);margin-top:10px;padding-top:8px;border-top:1px solid var(--pwc-grey-100);text-transform:none;letter-spacing:0}
+  .stat-card .stat-note b{color:var(--pwc-grey-700);font-weight:600}
   /* KPI cards that jump to their detail box on click */
   .stat-card[data-jump]{cursor:pointer;transition:box-shadow .15s,transform .15s}
   .stat-card[data-jump]:hover{box-shadow:0 4px 12px rgba(0,0,0,0.14);transform:translateY(-2px)}
@@ -271,6 +274,18 @@
   .mdi-cand .n{color:var(--pwc-grey-600);font-size:11px}
   .mdi-empty{font-size:12.5px;color:var(--pwc-grey-600);font-style:italic;padding:8px 2px}
   .mdi-scroll{max-height:352px;overflow-y:auto;padding-right:4px;overscroll-behavior:contain}
+  /* ---- Training Investment (Capability Risk) ---- */
+  .cr-tr-bar{height:9px;border-radius:5px;background:var(--pwc-grey-100);overflow:hidden;min-width:60px}
+  .cr-tr-fill{height:100%;border-radius:5px}
+  .cr-tr-num{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .cr-tr-row{cursor:pointer}
+  .cr-tr-row:hover{background:var(--pwc-grey-50)}
+  .cr-tr-row.sel{background:rgba(208,74,2,0.07)}
+  .cr-tr-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--pwc-grey-600);margin:0 0 10px;align-items:center}
+  .cr-tr-legend .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+  .cr-tr-none{font-size:12px;color:var(--pwc-grey-700);margin-top:12px;padding-top:10px;border-top:1px solid var(--pwc-grey-100)}
+  .cr-tr-none b{color:var(--pwc-orange)}
+
   /* ---- Team Analytics ---- */
   .ana-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   .ana-card{background:var(--white);border-radius:8px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,0.08);border-left:5px solid var(--pwc-orange)}
@@ -779,7 +794,7 @@
   <!-- ===== PORTABLE MODULE START: Capability Risk (HTML). Needs SHARED foundation — see INTEGRATION_GUIDE.md ===== -->
   <section class="tab-panel" id="tab-caprisk">
     <h1>Capability Risk</h1>
-    <p class="subtitle">Three lenses on capability exposure. <strong>Scarce vs Stretched</strong> evaluates each capability's coverage against the utilization of its holders; <strong>Key-Person Risk</strong> surfaces capabilities concentrated in one or two individuals; <strong>Capacity Radar</strong> shows where spare capacity sits today and who to cross-train next.</p>
+    <p class="subtitle">Four lenses on capability exposure. <strong>Scarce vs Stretched</strong> evaluates each capability's coverage against the utilization of its holders; <strong>Key-Person Risk</strong> surfaces capabilities concentrated in one or two individuals; <strong>Capacity Radar</strong> shows where spare capacity sits today and who to cross-train next; <strong>Training Investment</strong> looks backwards at what development has actually been spent, by competency, against how thin each one is.</p>
 
     <details class="cr-help" open>
       <summary><span class="cr-help-ic">&#9432;</span> How to read this page</summary>
@@ -793,6 +808,7 @@
         </ul>
         <p>Thresholds for <em>scarce</em> (number of practitioners) and <em>stretched</em> (utilization) are adjustable via the sliders to reflect the relevant population. The <strong>Key-Person Risk</strong> lens offers a complementary perspective &mdash; capabilities concentrated in one or two individuals, independent of utilization; a &#9733; denotes a holder at Manager grade or above.</p>
         <p>The <strong>Capacity Radar</strong> lens turns the same data into actions: <em>Sellable Capacity</em> ranks skills by spare FTE (each holder's unused utilization, summed) and flags fully-committed skills, while <em>Upskilling Candidates</em> suggests, for each scarce skill, the people whose existing skills most often pair with it. Click a skill row to unfold who holds it; click a name to open their bio. All thresholds on this page are adjustable via the sliders and are remembered by your browser between sessions.</p>
+        <p>The <strong>Training Investment</strong> lens is the only backward-looking view here: it reports training hours actually logged in the utilization sheet, totalled per competency, next to the number of scarce skills sitting in that competency. Where <em>Upskilling Candidates</em> recommends <em>who to train next</em> for a named skill, this asks whether past spend has gone where the thinness is. The two are meant to be read together &mdash; one is the record, the other the plan.</p>
       </div>
     </details>
 
@@ -811,6 +827,7 @@
         <button data-view="scarce" class="active">Scarce vs Stretched</button>
         <button data-view="keyperson">Key-Person Risk</button>
         <button data-view="radar">Capacity Radar</button>
+        <button data-view="training">Training Investment</button>
       </div>
       <div class="smap-meta" id="cr-meta"></div>
     </div>
@@ -898,6 +915,19 @@
       </div>
       <div class="atlas-md" id="cr-radar-body"></div>
     </div>
+
+    <!-- Training Investment: spend per competency shown next to how thin that
+         competency is, so the reader can judge whether the two line up. -->
+    <div id="cr-training-view" style="display:none">
+      <div class="cr-kpis" id="cr-tr-kpis"></div>
+      <div class="smap-grid">
+        <div class="smap-stage">
+          <div class="smap-caption" id="cr-tr-cap"></div>
+          <div id="cr-tr-body"></div>
+        </div>
+        <aside class="atlas-detail smap-detail" id="cr-tr-detail"></aside>
+      </div>
+    </div>
   </section>
 
   <!-- ===== PORTABLE MODULE END: Capability Risk (HTML) ===== -->
@@ -908,7 +938,7 @@
     <p class="subtitle">Monthly utilization per person &mdash; warmer cells are busier. <strong>On bench</strong> &lt;40% &middot; <strong>Healthy</strong> 80&ndash;100% &middot; <strong>Stretched</strong> &gt;100% &middot; <strong>Burnout watch</strong> = 3-month avg &gt;100%. Filter the team, then click any cell to open the bio. Managing Directors are excluded.</p>
 
     <section class="stats" id="pulse-kpis">
-      <div class="stat-card"><div class="value" id="pl-avg">-</div><div class="label">This-Month Avg Util</div></div>
+      <div class="stat-card"><div class="value" id="pl-avg">-</div><div class="label">This-Month Avg Util</div><div class="stat-note" id="pl-avg-note" hidden></div></div>
       <div class="stat-card t2" data-jump="insight-bench" title="Jump to the On the Bench list"><div class="value" id="pl-bench">-</div><div class="label">On the Bench (&lt;40%)</div></div>
       <div class="stat-card t3"><div class="value" id="pl-healthy">-</div><div class="label">Healthy (80&ndash;100%)</div></div>
       <div class="stat-card t4"><div class="value" id="pl-stretched">-</div><div class="label">Stretched (&gt;100%)</div></div>
@@ -1454,9 +1484,46 @@
         || (parseFloat(b[EXP_TOTAL]) || 0) - (parseFloat(a[EXP_TOTAL]) || 0)
         || String(a.Name || '').localeCompare(String(b.Name || ''));
   }
-  function buildMS(hostId, allLabel, items, onChange){
+  // ----- Cross-tab filter sync -----------------------------------------
+  // Competency, Role, Location and Territory exist on every tab and filter on
+  // the same employee fields, so they share one Set: a slice chosen in the
+  // Directory still applies in Skill Atlas, Capability Risk, Pulse and
+  // Analytics. Skill Category and RL Manager stay per-tab (not on every tab).
+  const FILTER_SYNC = {};                       // key -> { set, subs: [control] }
+  let _syncing = false;                         // re-entry guard
+  function syncGroup(key){
+    return FILTER_SYNC[key] || (FILTER_SYNC[key] = { set: new Set(), subs: [] });
+  }
+  // Push a change out to the same filter on every other tab.
+  function broadcastSync(key, origin){
+    if (_syncing) return;
+    _syncing = true;
+    syncGroup(key).subs.forEach(s => { if (s !== origin){ s.refresh(); s.onChange(); } });
+    _syncing = false;
+  }
+  // Used by every Reset button: the shared Sets are already cleared by the
+  // caller, so each tab just needs to repaint its controls and re-render.
+  // Every control is repainted, but each tab is re-rendered only once - the
+  // four synced controls on a tab all share one onChange, so calling it per
+  // control would re-render the same tab four times over.
+  function broadcastAll(){
+    if (_syncing) return;
+    _syncing = true;
+    const rendered = new Set();
+    Object.keys(FILTER_SYNC).forEach(k =>
+      FILTER_SYNC[k].subs.forEach(s => {
+        s.refresh();
+        if (!rendered.has(s.onChange)){ rendered.add(s.onChange); s.onChange(); }
+      }));
+    _syncing = false;
+  }
+
+  function buildMS(hostId, allLabel, items, onChange, syncKey){
     const host = document.getElementById(hostId);
-    const sel = new Set();
+    const sel = syncKey ? syncGroup(syncKey).set : new Set();
+    let self;
+    // Notify this tab, then mirror the change onto every other tab.
+    function fire(){ onChange(); if (syncKey) broadcastSync(syncKey, self); }
     if (!host) return { selected: sel, refresh(){} };
     if (!items.length){ host.style.display = 'none'; return { selected: sel, refresh(){} }; }
     host.innerHTML =
@@ -1474,7 +1541,7 @@
         : '<div class="ms-no-results">No matches</div>';
       optsBox.querySelectorAll('input').forEach(cb => cb.addEventListener('change', () => {
         if (cb.checked) sel.add(cb.value); else sel.delete(cb.value);
-        updLabel(); onChange();
+        updLabel(); fire();
       }));
     }
     function updLabel(){
@@ -1484,7 +1551,7 @@
       label.querySelectorAll('.ms-chip-x').forEach(x => x.addEventListener('click', ev => {
         ev.stopPropagation(); sel.delete(x.dataset.v);
         optsBox.querySelectorAll('input').forEach(cb => { if (cb.value === x.dataset.v) cb.checked = false; });
-        updLabel(); onChange();
+        updLabel(); fire();
       }));
     }
     trigger.addEventListener('click', ev => {
@@ -1494,18 +1561,20 @@
       if (!open){ panel.classList.add('open'); renderOpts(search.value); setTimeout(() => search.focus(), 20); }
     });
     search.addEventListener('input', () => renderOpts(search.value));
-    host.querySelector('.ms-clear').addEventListener('click', () => { sel.clear(); renderOpts(search.value); updLabel(); onChange(); });
+    host.querySelector('.ms-clear').addEventListener('click', () => { sel.clear(); renderOpts(search.value); updLabel(); fire(); });
     host.querySelector('.ms-done').addEventListener('click', () => panel.classList.remove('open'));
     panel.addEventListener('click', ev => ev.stopPropagation());
     renderOpts(''); updLabel();
-    return { selected: sel, refresh(){ renderOpts(search.value); updLabel(); } };
+    self = { selected: sel, onChange, refresh(){ renderOpts(search.value); updLabel(); } };
+    if (syncKey) syncGroup(syncKey).subs.push(self);
+    return self;
   }
   document.addEventListener('click', () => document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open')));
   const _cats = [...new Set(Object.values(SKILL_CATEGORY))].filter(c => c && c !== 'Uncategorised').sort();
-  const msRole = buildMS('dir-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), renderDirectory);
-  const msLoc  = buildMS('dir-loc-ms',  'All locations',        uniqueValues('Location'),                   renderDirectory);
-  const msTerr = buildMS('dir-terr-ms', 'All territories',      orderTerritory(uniqueValues('Territory Filter')),            renderDirectory);
-  const msComp = buildMS('dir-comp-ms', 'All competencies',     orderCompetency(uniqueValues('Competency Filter')), renderDirectory);
+  const msRole = buildMS('dir-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), renderDirectory, 'role');
+  const msLoc  = buildMS('dir-loc-ms',  'All locations',        uniqueValues('Location'),                   renderDirectory, 'loc');
+  const msTerr = buildMS('dir-terr-ms', 'All territories',      orderTerritory(uniqueValues('Territory Filter')),            renderDirectory, 'terr');
+  const msComp = buildMS('dir-comp-ms', 'All competencies',     orderCompetency(uniqueValues('Competency Filter')), renderDirectory, 'comp');
   const msCat  = buildMS('dir-cat-ms',  'All skill categories', _cats,                                       renderDirectory);
   // Experience dual-range slider (custom: two dots + connecting line)
   (function(){
@@ -1571,6 +1640,7 @@
     renderSkillsOptions('');
     skillsPanel.classList.remove('open');
     renderDirectory();
+    broadcastAll();          // shared filters are cleared everywhere, so repaint every tab
   });
 
   renderDirectory();
@@ -1957,10 +2027,10 @@
   // Per-category roll-up: unique people, skill list with counts.
   // ----- Atlas filters (Location / Role / Skill Category / Territory) -----
   const aChange = () => { renderAtlas(document.getElementById('atlas-search').value); renderStaffingResults(); };
-  const aRole = buildMS('atlas-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), aChange);
-  const aLoc  = buildMS('atlas-loc-ms',  'All locations',        uniqueValues('Location'),                  aChange);
-  const aComp = buildMS('atlas-comp-ms', 'All competencies',     orderCompetency(uniqueValues('Competency Filter')), aChange);
-  const aTerr = buildMS('atlas-terr-ms', 'All territories',      orderTerritory(uniqueValues('Territory Filter')),           aChange);
+  const aRole = buildMS('atlas-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), aChange, 'role');
+  const aLoc  = buildMS('atlas-loc-ms',  'All locations',        uniqueValues('Location'),                  aChange, 'loc');
+  const aComp = buildMS('atlas-comp-ms', 'All competencies',     orderCompetency(uniqueValues('Competency Filter')), aChange, 'comp');
+  const aTerr = buildMS('atlas-terr-ms', 'All territories',      orderTerritory(uniqueValues('Territory Filter')),           aChange, 'terr');
   const aCat  = buildMS('atlas-cat-ms',  'All skill categories', ORDERED_CATS.filter(c => c !== 'Uncategorised'), aChange);
   function atlasPoolIds(){
     const ids = new Set();
@@ -2240,6 +2310,7 @@
       + '<p>Click any tile to see who knows that skill, where they sit, and which skills go with it.</p></div>';
     renderAtlas('');
     renderStaffingResults();
+    broadcastAll();          // shared filters are cleared everywhere, so repaint every tab
   });
 
   // ----- Quick-add popover: click a skill -> choose must-have / nice-to-have / details -----
@@ -2592,6 +2663,27 @@
     set('pl-healthy',   list.filter(e => e._latestUtil !== undefined && e._latestUtil >= 80 && e._latestUtil <= 100).length);
     set('pl-stretched', list.filter(e => e._latestUtil !== undefined && e._latestUtil > 100).length);
     set('pl-burnout',   list.filter(e => e._sustained3 !== null && e._sustained3 > 100).length);
+    setTerritoryNote();
+  }
+
+  // Territory is an attribute of the *person*, not of the hours they booked.
+  // Filtering by territory therefore selects employees tagged to it and counts
+  // all of their utilization — including any hours delivered to another
+  // territory. Surface that caveat rather than let the number look exact.
+  function setTerritoryNote(){
+    const el = document.getElementById('pl-avg-note');
+    if (!el) return;
+    // Read the shared territory Set rather than pTerr: setPulseKpis() runs once
+    // before the Pulse controls are constructed, and touching that const early
+    // would hit the temporal dead zone. Both point at the same Set.
+    const grp = FILTER_SYNC && FILTER_SYNC.terr;
+    const sel = grp ? [...grp.set] : [];
+    if (!sel.length){ el.hidden = true; el.innerHTML = ''; return; }
+    const names = sel.length === 1 ? esc(sel[0])
+      : sel.slice(0, -1).map(esc).join(', ') + ' and ' + esc(sel[sel.length - 1]);
+    el.hidden = false;
+    el.innerHTML = '<b>Basis:</b> employees tagged to ' + names
+      + ' &mdash; includes any hours they delivered to other territories.';
   }
   setPulseKpis();
 
@@ -2613,10 +2705,10 @@
   // RL Manager filter: selecting a manager keeps their direct reports AND the
   // manager's own row (all RL managers are also employees in the roster).
   const pMgr  = buildMS('pulse-mgr-ms',  'All RL managers',      uniqueValues('RL Manager'),                pChange);
-  const pRole = buildMS('pulse-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), pChange);
-  const pLoc  = buildMS('pulse-loc-ms',  'All locations',        uniqueValues('Location'),                  pChange);
-  const pComp = buildMS('pulse-comp-ms', 'All competencies',     orderCompetency(uniqueValues('Competency Filter')), pChange);
-  const pTerr = buildMS('pulse-terr-ms', 'All territories',      orderTerritory(uniqueValues('Territory Filter')),           pChange);
+  const pRole = buildMS('pulse-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), pChange, 'role');
+  const pLoc  = buildMS('pulse-loc-ms',  'All locations',        uniqueValues('Location'),                  pChange, 'loc');
+  const pComp = buildMS('pulse-comp-ms', 'All competencies',     orderCompetency(uniqueValues('Competency Filter')), pChange, 'comp');
+  const pTerr = buildMS('pulse-terr-ms', 'All territories',      orderTerritory(uniqueValues('Territory Filter')),           pChange, 'terr');
   const pCat  = buildMS('pulse-cat-ms',  'All skill categories', ORDERED_CATS.filter(c => c !== 'Uncategorised'), pChange);
 
   // Pagination state
@@ -2813,6 +2905,7 @@
     [pMgr, pRole, pLoc, pComp, pTerr, pCat].forEach(ms => { ms.selected.clear(); ms.refresh(); });
     document.getElementById('pulse-sort').value = 'avg-desc';
     pulsePage = 0; renderPulse();
+    broadcastAll();          // shared filters are cleared everywhere, so repaint every tab
   });
 
   // Fiscal-year toggle: switches which utilization dataset the heatmap shows.
@@ -2877,11 +2970,11 @@
     let radarWin = 'latest';   // capacity window: latest month or 3-month avg
 
     function fillSel(id, vals){ const el = $(id); if (!el) return; vals.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; el.appendChild(o); }); el.style.display = vals.length ? '' : 'none'; }
-    const crTerr = buildMS('cr-terr-ms', 'All territories',      orderTerritory(uniqueValues('Territory Filter')),           render);
-    const crComp = buildMS('cr-comp-ms', 'All competencies',     orderCompetency(uniqueValues('Competency Filter')), render);
+    const crTerr = buildMS('cr-terr-ms', 'All territories',      orderTerritory(uniqueValues('Territory Filter')),           render, 'terr');
+    const crComp = buildMS('cr-comp-ms', 'All competencies',     orderCompetency(uniqueValues('Competency Filter')), render, 'comp');
     const crCat  = buildMS('cr-cat-ms',  'All skill categories', ORDERED_CATS.filter(c => c !== 'Uncategorised'), render);
-    const crRole = buildMS('cr-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), render);
-    const crLoc  = buildMS('cr-loc-ms',  'All locations',        uniqueValues('Location'),                  render);
+    const crRole = buildMS('cr-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), render, 'role');
+    const crLoc  = buildMS('cr-loc-ms',  'All locations',        uniqueValues('Location'),                  render, 'loc');
     const crSkill = buildMS('cr-skill-ms', 'All skills',          ALL_SKILLS.map(k => SKILL_DISPLAY[k]).sort((a, b) => a.localeCompare(b)), render);
 
     function pool(){
@@ -3161,7 +3254,155 @@
       $('cr-meta').innerHTML = '<strong>' + stats.length + '</strong> skills &middot; <strong>' + p.length + '</strong> people in scope';
     }
 
-    function render(){ if (view === 'scarce') renderScarce(); else if (view === 'radar') renderRadar(); else renderKeyPerson(); }
+    function render(){
+      if (view === 'scarce') renderScarce();
+      else if (view === 'radar') renderRadar();
+      else if (view === 'training') renderTraining();
+      else renderKeyPerson();
+    }
+
+    // ---- Training Investment -------------------------------------------
+    // Training Hours come from the monthly utilization sheet, so this view is
+    // absent from shared/team builds for the same reason Pulse is.
+    // Spend and thinness are shown side by side, deliberately without a verdict:
+    // whether the two line up is the reader's call, not the page's.
+    const trainingHrs = e => (UTIL_BY_EMP[String(e.WorkdayID)] || [])
+      .reduce((t, r) => { const v = Number(r['Training Hours']); return t + (isFinite(v) ? v : 0); }, 0);
+    const compOf = e => String(e['Competency Group'] || e['Competency'] || '').trim() || 'Unspecified';
+    // Same row markup as peopleRows(), but the trailing badge is training hours
+    // rather than utilization. Wire clicks with wirePeople(), as the other views do.
+    function trPeople(arr){
+      return '<div class="smap-people">' + arr.map(e => {
+        const av = e._photo
+          ? '<div class="sp-av" style="background-image:url(' + e._photo + ');background-size:cover;color:transparent">' + esc(e._initials || '') + '</div>'
+          : '<div class="sp-av">' + esc(e._initials || '?') + '</div>';
+        const h = trainingHrs(e);
+        return '<div class="smap-person" data-wid="' + esc(String(e.WorkdayID)) + '">' + av
+          + '<div style="flex:1 1 auto"><div class="sp-name">' + esc(e.Name) + (isSenior(e.Role) ? ' ★' : '') + '</div>'
+          + '<div class="sp-meta">' + esc([e.Role, e.Territory].filter(Boolean).join(' · ')) + '</div></div>'
+          + '<span class="cr-util" style="background:' + (h ? 'rgba(208,74,2,0.12)' : 'var(--pwc-grey-100)')
+          + ';color:' + (h ? ORANGE : 'var(--pwc-grey-600)') + '">' + Math.round(h) + ' h</span></div>';
+      }).join('') + '</div>';
+    }
+
+    function renderTraining(){
+      const p = pool(), body = $('cr-tr-body'), cap = $('cr-tr-cap'), det = $('cr-tr-detail');
+      if (!HAS_UTIL){
+        body.innerHTML = '<div class="cr-quad-empty">Training hours are not included in this build.</div>';
+        cap.innerHTML = 'This view needs the monthly utilization sheet, which is stripped from shared / team builds.';
+        $('cr-tr-kpis').innerHTML = ''; det.innerHTML = ''; $('cr-meta').innerHTML = '';
+        return;
+      }
+      const th = thresholds();
+      // Scarce skills per competency, using this tab's existing "scarce when" slider.
+      const scarceByComp = Object.create(null);
+      skillStats(p).forEach(s => {
+        if (s.holders.length > th.scarce) return;
+        s.holders.forEach(e => {
+          const c = compOf(e);
+          (scarceByComp[c] = scarceByComp[c] || new Set()).add(s.key);
+        });
+      });
+      const groups = Object.create(null);
+      p.forEach(e => { const c = compOf(e); (groups[c] = groups[c] || []).push(e); });
+      const rows = Object.keys(groups).map(c => {
+        const g = groups[c];
+        const hrs = g.reduce((t, e) => t + trainingHrs(e), 0);
+        return { c, n: g.length, hrs, per: g.length ? hrs / g.length : 0,
+                 scarce: (scarceByComp[c] || new Set()).size,
+                 zero: g.filter(e => trainingHrs(e) === 0) };
+      }).sort((a, b) => b.per - a.per);
+      if (!rows.length){
+        body.innerHTML = '<div class="cr-quad-empty">No one matches the current filters.</div>';
+        cap.innerHTML = ''; $('cr-tr-kpis').innerHTML = ''; det.innerHTML = '';
+        return;
+      }
+      const totHrs = rows.reduce((t, r) => t + r.hrs, 0);
+      const totN   = rows.reduce((t, r) => t + r.n, 0);
+      const noneAll = rows.reduce((a, r) => a.concat(r.zero), []);
+      const maxPer = Math.max(1, ...rows.map(r => r.per));
+      const maxSc  = Math.max(1, ...rows.map(r => r.scarce));
+      const months = ALL_MONTHS.length;
+
+      $('cr-tr-kpis').innerHTML =
+          kpi('Training hours logged', Math.round(totHrs), ORANGE)
+        + kpi('Hours per person', (totN ? totHrs / totN : 0).toFixed(1), TANGERINE)
+        + kpi('People with no training', noneAll.length, noneAll.length ? BURGUNDY : GREY)
+        + kpi('Competencies covered', rows.filter(r => r.hrs > 0).length + ' of ' + rows.length, YELLOW);
+
+      // The Skill Category / Skill filters narrow the scarce-skill count but not
+      // headcount or hours (a person's training hours aren't attributable to one
+      // skill). Say so, otherwise a low scarce count reads as "no gap here".
+      const skillFiltered = !!(crCat.selected.size || crSkill.selected.size);
+      cap.innerHTML = 'Training hours per person in each competency, next to the number of scarce skills '
+        + '(held by ' + th.scarce + ' or fewer people) sitting in that competency. Covers '
+        + months + ' month' + (months === 1 ? '' : 's') + ' of data. Click a row for the people behind it.'
+        + (skillFiltered
+            ? '<br><b>Skill filters are active:</b> the scarce-skill count reflects only the selected skills, '
+              + 'while people and hours cover everyone in the competency.'
+            : '');
+
+      body.innerHTML = '<div class="cr-tr-legend">'
+        + '<span><span class="sw" style="background:' + ORANGE + '"></span>Training hours per person</span>'
+        + '<span><span class="sw" style="background:' + BURGUNDY + '"></span>Scarce skills in this competency</span></div>'
+        + '<div class="cr-table-wrap"><table class="cr-table"><thead><tr>'
+        + '<th>Competency</th><th>People</th><th>Training hrs</th><th>Hrs / person</th><th>Scarce skills</th><th>No training</th>'
+        + '</tr></thead><tbody>'
+        + rows.map(r =>
+            '<tr class="cr-tr-row" data-c="' + esc(r.c) + '"><td><b>' + esc(r.c) + '</b></td>'
+            + '<td class="cr-tr-num">' + r.n + '</td>'
+            + '<td class="cr-tr-num">' + Math.round(r.hrs) + '</td>'
+            + '<td><div style="display:flex;align-items:center;gap:8px"><div class="cr-tr-bar" style="width:90px"><div class="cr-tr-fill" style="width:'
+              + Math.round(r.per / maxPer * 100) + '%;background:' + ORANGE + '"></div></div>'
+              + '<b class="cr-tr-num">' + r.per.toFixed(1) + '</b></div></td>'
+            + '<td><div style="display:flex;align-items:center;gap:8px"><div class="cr-tr-bar" style="width:70px"><div class="cr-tr-fill" style="width:'
+              + Math.round(r.scarce / maxSc * 100) + '%;background:' + BURGUNDY + '"></div></div>'
+              + '<span class="cr-tr-num">' + r.scarce + '</span></div></td>'
+            + '<td class="cr-tr-num">' + (r.zero.length || '') + '</td></tr>').join('')
+        + '</tbody></table></div>'
+        + (noneAll.length
+            ? '<div class="cr-tr-none"><b>' + noneAll.length + '</b> '
+              + (noneAll.length === 1 ? 'person has' : 'people have') + ' logged no training hours in this period.</div>'
+            : '');
+
+      det.innerHTML = '<div class="atlas-detail-empty"><div class="adt-emoji">&#127891;</div>'
+        + '<p>Click a competency to see who trained, who didn&rsquo;t, and how much.</p></div>';
+
+      const trRows = [...body.querySelectorAll('.cr-tr-row')];
+      trRows.forEach(tr => tr.addEventListener('click', () => {
+        const sel = tr.classList.contains('sel');
+        trRows.forEach(x => x.classList.remove('sel'));
+        if (sel){
+          det.innerHTML = '<div class="atlas-detail-empty"><div class="adt-emoji">&#127891;</div>'
+            + '<p>Click a competency to see who trained, who didn&rsquo;t, and how much.</p></div>';
+          return;
+        }
+        tr.classList.add('sel');
+        const c = tr.dataset.c, g = (groups[c] || []).slice()
+          .sort((a, b) => trainingHrs(b) - trainingHrs(a) || String(a.Name).localeCompare(String(b.Name)));
+        const trained = g.filter(e => trainingHrs(e) > 0), untrained = g.filter(e => trainingHrs(e) === 0);
+        // Reuses the tab's own people-row markup so this panel matches the others.
+        // Same header shape as the Skill Atlas detail panel: .adt-cat is a 6px
+        // colour stripe, with the text stacked in a block beside it.
+        det.innerHTML = '<div class="adt-head">'
+          + '<div class="adt-cat" style="background:' + ORANGE + '"></div>'
+          + '<div><div class="adt-cat-name">Training investment</div>'
+          + '<p class="adt-name">' + esc(c) + '</p>'
+          + '<div style="font-size:12px;color:var(--pwc-grey-600)">' + g.length + ' '
+          + (g.length === 1 ? 'person' : 'people') + ' &middot; '
+          + Math.round(g.reduce((t, e) => t + trainingHrs(e), 0)) + ' training hours over ' + months
+          + ' month' + (months === 1 ? '' : 's') + '</div></div></div>'
+          + '<div class="adt-section-title">Trained (' + trained.length + ')</div>'
+          + (trained.length ? trPeople(trained) : '<div class="cr-tr-none">No training hours logged here.</div>')
+          + (untrained.length
+              ? '<div class="adt-section-title">No training logged (' + untrained.length + ')</div>' + trPeople(untrained)
+              : '');
+        wirePeople(det);
+      }));
+
+      $('cr-meta').innerHTML = '<strong>' + Math.round(totHrs) + '</strong> training hours &middot; '
+        + totN + ' people in scope';
+    }
 
     // KPI cards jump to and flash their matching rows in the list/table below.
     function crHighlight(scroller, rows){
@@ -3186,6 +3427,7 @@
       $('cr-scarce-view').style.display = view === 'scarce' ? 'block' : 'none';
       $('cr-keyperson-view').style.display = view === 'keyperson' ? 'block' : 'none';
       $('cr-radar-view').style.display = view === 'radar' ? 'block' : 'none';
+      $('cr-training-view').style.display = view === 'training' ? 'block' : 'none';
       render();
     }));
     $('cr-reset').addEventListener('click', () => {
@@ -3193,6 +3435,7 @@
       const _cd = $('cr-scarce-detail');
       if (_cd) _cd.innerHTML = '<div class="atlas-detail-empty"><div class="adt-emoji">&#9889;</div><p>Click any skill to see who holds it and how busy they are right now.</p></div>';
       render();
+      broadcastAll();        // shared filters are cleared everywhere, so repaint every tab
     });
 
     // Tunable thresholds: re-classify live as the user drags the sliders.
@@ -3237,6 +3480,10 @@
     if (!HAS_UTIL){
       const sb = $('cr-view-toggle').querySelector('button[data-view="scarce"]');
       const kb = $('cr-view-toggle').querySelector('button[data-view="keyperson"]');
+      // Training hours live in the utilization sheet, so that view goes too.
+      const tb = $('cr-view-toggle').querySelector('button[data-view="training"]');
+      if (tb){ tb.style.display = 'none'; tb.classList.remove('active'); }
+      if ($('cr-training-view')) $('cr-training-view').style.display = 'none';
       if (sb){ sb.style.display = 'none'; sb.classList.remove('active'); }
       if (kb) kb.classList.add('active');
       view = 'keyperson';
@@ -3278,13 +3525,14 @@
     // Filters — same behaviour as Pulse (an RL manager selection keeps the manager's own row too).
     const aChange = () => renderAnalytics();
     const aMgr  = buildMS('ana-mgr-ms',  'All RL managers',  uniqueValues('RL Manager'), aChange);
-    const aRole = buildMS('ana-role-ms', 'All roles',        orderBy(uniqueValues('Role'), ROLE_ORDER), aChange);
-    const aLoc  = buildMS('ana-loc-ms',  'All locations',    uniqueValues('Location'), aChange);
-    const aComp = buildMS('ana-comp-ms', 'All competencies', orderCompetency(uniqueValues('Competency Filter')), aChange);
-    const aTerr = buildMS('ana-terr-ms', 'All territories',  orderTerritory(uniqueValues('Territory Filter')), aChange);
+    const aRole = buildMS('ana-role-ms', 'All roles',        orderBy(uniqueValues('Role'), ROLE_ORDER), aChange, 'role');
+    const aLoc  = buildMS('ana-loc-ms',  'All locations',    uniqueValues('Location'), aChange, 'loc');
+    const aComp = buildMS('ana-comp-ms', 'All competencies', orderCompetency(uniqueValues('Competency Filter')), aChange, 'comp');
+    const aTerr = buildMS('ana-terr-ms', 'All territories',  orderTerritory(uniqueValues('Territory Filter')), aChange, 'terr');
     document.getElementById('ana-reset').addEventListener('click', () => {
       [aMgr, aRole, aLoc, aComp, aTerr].forEach(ms => { ms.selected.clear(); ms.refresh(); });
       renderAnalytics();
+      broadcastAll();        // shared filters are cleared everywhere, so repaint every tab
     });
     let anaView = 'trend';
     document.querySelectorAll('#ana-view-toggle button').forEach(b => b.addEventListener('click', () => {
@@ -3390,6 +3638,19 @@
     const uAt = (e, m) => UTIL_LOOKUP[String(e.WorkdayID) + '|' + m];
     function avgAt(pool, m){ const vs = pool.map(e => uAt(e, m)).filter(v => typeof v === 'number'); return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : null; }
     const insights = items => '<ul class="ana-insights">' + items.filter(Boolean).map(t => '<li>' + t + '</li>').join('') + '</ul>';
+    // Utilization data usually lands a month or two in arrears, so never call the
+    // latest data month "this month". Labels below derive from the data itself.
+    const monthsBehind = m => {
+      const a = String(m || '').match(/^(\d{4})-(\d{2})/);
+      return a ? (now.getFullYear() - +a[1]) * 12 + (now.getMonth() + 1 - +a[2]) : 0;
+    };
+    // "this month" only when the latest data month IS the current month.
+    const inMonth = m => monthsBehind(m) <= 0 ? 'this month' : 'in ' + fmtMonth(m);
+    const staleNote = m => {
+      const b = monthsBehind(m);
+      return b <= 0 ? '' : '<div class="ana-note">Latest available utilization is <b>' + esc(fmtMonth(m))
+        + '</b> &mdash; ' + b + ' month' + (b === 1 ? '' : 's') + ' behind the current month. Figures are not live.</div>';
+    };
     const pts1 = v => (v > 0 ? '+' : '') + Math.round(v);
     const avgOf = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
 
@@ -3416,11 +3677,12 @@
                      : ', down <b class="ana-delta-dn">' + Math.abs(Math.round(delta)) + ' points</b> vs ')) + esc(fmtMonth(prev));
       const ins = insights([
         curAvg !== null ? 'Average utilization in ' + esc(fmtMonth(last)) + ' is <b>' + Math.round(curAvg) + '%</b>' + deltaTxt + '.' : null,
-        '<b>' + benchN + '</b> ' + (benchN === 1 ? 'person is' : 'people are') + ' on the bench (&lt;40%) and <b>' + hotN + '</b> running above 100% this month.',
+        '<b>' + benchN + '</b> ' + (benchN === 1 ? 'person is' : 'people are') + ' on the bench (&lt;40%) and <b>' + hotN + '</b> running above 100% ' + inMonth(last) + '.',
         burnN ? '<b>' + burnN + '</b> on burnout watch &mdash; averaging above 100% for three straight months.' : 'No one on burnout watch (3-month average above 100%).'
       ]);
       return card('Utilization Trend', 'Monthly average utilization for this slice (thick orange) with each grade behind it. Shaded band = healthy 80&ndash;100%; dashed line = 100%. Managing Directors are excluded from all utilization figures.', trendSVG(upool, months), true)
-        + card('This Month in Numbers', 'Auto-computed for ' + esc(fmtMonth(last)) + '.', ins)
+        + card(monthsBehind(last) <= 0 ? 'This Month in Numbers' : 'Latest Month &mdash; ' + esc(fmtMonth(last)),
+            'Auto-computed for ' + esc(fmtMonth(last)) + '.', ins + staleNote(last))
         + card('Biggest Movers', 'Utilization from ' + (prev ? esc(fmtMonth(prev)) : '&mdash;') + ' to ' + esc(fmtMonth(last)) + ' &mdash; who got busier, and who freed up.',
             (risers.length ? '<div class="ana-note" style="border:none;margin:0 0 4px;padding:0"><b>Busier</b></div><div>' + risers.map(chip).join('') + '</div>' : '')
             + (fallers.length ? '<div class="ana-note" style="border:none;margin:8px 0 4px;padding:0"><b>Freed up</b></div><div>' + fallers.map(chip).join('') + '</div>' : '')
@@ -3459,6 +3721,9 @@
       const by = Object.create(null);
       pool.forEach(e => { const m = String(e['RL Manager'] || '').trim(); if (m) (by[m] = by[m] || []).push(e); });   // no Unassigned bucket
       _mgrTeams = by;
+      // People with no RL Manager are deliberately not bucketed, so the table can
+      // cover fewer people than the "in scope" count. Say so, or the two disagree.
+      const unassigned = pool.filter(e => !String(e['RL Manager'] || '').trim());
       const last = HAS_U && ALL_MONTHS.length ? ALL_MONTHS[ALL_MONTHS.length - 1] : null;
       const rows = Object.keys(by).map(mg => {
         const g = by[mg], gu = noMD(g);
@@ -3478,7 +3743,14 @@
         + rows.map(r => '<tr class="ana-mgr-row" data-mg="' + esc(r.mg) + '" title="Click to see the team"><td><b>' + esc(r.mg) + '</b></td><td>' + r.n + '</td><td>' + r.mf + '</td><td>' + (r.exp === null ? '&mdash;' : r.exp.toFixed(1) + ' yrs') + '</td>'
           + (last ? '<td>' + ubar(r.a) + '</td><td>' + (r.a3 === null ? '&mdash;' : Math.round(r.a3) + '%') + '</td><td>' + (r.bench || '') + '</td><td>' + (r.hot || '') + '</td><td>' + (r.burn ? '<b class="ana-delta-up">' + r.burn + '</b>' : '') + '</td>' : '')
           + '</tr>').join('')
-        + '</tbody></table></div>';
+        + '</tbody></table></div>'
+        + (unassigned.length
+            ? '<div class="ana-note">Covers <b>' + (pool.length - unassigned.length) + '</b> of <b>' + pool.length
+              + '</b> people in scope. <b>' + unassigned.length + '</b> ' + (unassigned.length === 1 ? 'has' : 'have')
+              + ' no RL Manager recorded and ' + (unassigned.length === 1 ? 'is' : 'are') + ' not counted in any row: '
+              + unassigned.slice(0, 5).map(e => esc(e.Name)).join(', ')
+              + (unassigned.length > 5 ? ' + ' + (unassigned.length - 5) + ' more' : '') + '.</div>'
+            : '');
       return card('Manager Scorecard', 'Each RL manager&rsquo;s team within the current slice' + (last ? ', measured on ' + esc(fmtMonth(last)) : '') + '. Bench &lt;40% &middot; Stretched &gt;100% &middot; Burnout = 3-month average &gt;100%. <b>Click a row to see the team</b>; click a name for the bio. Managing Directors are excluded from the utilization columns.', tbl, true);
     }
 
@@ -3593,13 +3865,16 @@
     // Export: the current filtered slice, one row per person (pivots nicely in Excel).
     PAGE_EXPORTS.analytics = function(){
       const pool = poolA();
-      const rows = [['Name', 'Grade', 'Role', 'Gender', 'Location', 'Competency', 'RL Manager', 'Experience (yrs)', 'Tenure (yrs)', 'Latest Util %']];
+      const rows = [['Name', 'Grade', 'Role', 'Gender', 'Location', 'Competency', 'Territory', 'RL Manager', 'Experience (yrs)', 'Tenure (yrs)', 'Latest Util %']];
       pool.forEach(e => {
         const t = tenureYrs(e);
-        rows.push([e.Name, groupForRole(e.Role), e.Role || '', e.Gender || '', e.Location || '', e['Competency Group'] || '', e['RL Manager'] || '',
+        // Match the on-screen views: Managing Directors are excluded from every
+        // utilization figure, so their util cell must be blank here too.
+        const isMD = groupForRole(e.Role) === 'Managing Directors';
+        rows.push([e.Name, groupForRole(e.Role), e.Role || '', e.Gender || '', e.Location || '', e['Competency Group'] || '', e.Territory || '', e['RL Manager'] || '',
                    isNaN(parseFloat(e[EXP_TOTAL])) ? '' : parseFloat(e[EXP_TOTAL]),
                    t === null ? '' : t.toFixed(1),
-                   (HAS_U && typeof e._latestUtil === 'number') ? Math.round(e._latestUtil) : '']);
+                   (HAS_U && !isMD && typeof e._latestUtil === 'number') ? Math.round(e._latestUtil) : '']);
       });
       downloadCSV('Team_Analytics', rows);
     };
