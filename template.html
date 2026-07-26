@@ -274,6 +274,186 @@
   .mdi-cand .n{color:var(--pwc-grey-600);font-size:11px}
   .mdi-empty{font-size:12.5px;color:var(--pwc-grey-600);font-style:italic;padding:8px 2px}
   .mdi-scroll{max-height:352px;overflow-y:auto;padding-right:4px;overscroll-behavior:contain}
+  /* ---- Landing / hub mode ----
+     The overview is the front door, not a tab. On the landing the tab bar is
+     hidden and the brand block is inert; on a detail page the tab bar appears
+     and the brand block becomes the way home. */
+  .brand-home{display:flex;align-items:center;gap:16px;border-radius:6px;padding:4px 10px 4px 4px;margin-left:-4px;transition:background .15s}
+  body:not(.landing) .brand-home{cursor:pointer}
+  body:not(.landing) .brand-home:hover{background:rgba(255,255,255,0.08)}
+  body:not(.landing) .brand-home:focus-visible{outline:2px solid var(--pwc-tangerine);outline-offset:2px}
+  .home-hint{display:none;align-items:center;gap:4px;color:var(--pwc-grey-400);font-size:12px;font-weight:600;
+             text-transform:uppercase;letter-spacing:1px;border-left:1px solid #555;padding-left:14px}
+  .home-hint svg{width:14px;height:14px}
+  body:not(.landing) .home-hint{display:inline-flex}
+  body:not(.landing) .brand-home:hover .home-hint{color:var(--pwc-tangerine)}
+  body.landing nav.tabs{display:none}
+
+  /* ---- Cover: copy left, view picker right ---- */
+  .ov-cover-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(300px,0.95fr);gap:56px;align-items:center}
+  .ov-quick{display:grid;gap:10px;align-content:center}
+  .ov-q{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;width:100%;
+        background:rgba(0,0,0,0.18);border:1px solid rgba(255,255,255,0.26);border-radius:8px;
+        padding:15px 18px;cursor:pointer;font-family:inherit;text-align:left;
+        transition:background .18s,border-color .18s,transform .18s}
+  .ov-q:hover{background:rgba(0,0,0,0.30);border-color:#FFE3C2;transform:translateX(3px)}
+  .ov-q:focus-visible{outline:2px solid var(--pwc-tangerine);outline-offset:2px}
+  /* Both are spans, so they need display:block or they run onto one line. */
+  .ov-q .t{display:block;font-size:15px;font-weight:700;color:var(--white);line-height:1.25}
+  .ov-q .f{display:block;font-size:12px;color:#FFE3C2;font-weight:600;margin-top:4px;line-height:1.35}
+  .ov-q .a{color:#FFE3C2;display:flex;align-items:center}
+  .ov-q .a svg{width:17px;height:17px}
+  .ov-q .ic{width:38px;height:38px;border-radius:8px;background:rgba(255,255,255,0.12);
+            display:flex;align-items:center;justify-content:center;color:#FFE3C2;flex:0 0 auto;
+            transition:background .18s,color .18s}
+  .ov-q .ic svg{width:20px;height:20px}
+  .ov-q:hover .ic{background:#FFE3C2;color:#9E3702}
+  .ov-card .ic{width:40px;height:40px;border-radius:9px;background:rgba(255,255,255,0.12);
+               display:flex;align-items:center;justify-content:center;color:#FFE3C2;margin-bottom:4px;
+               transition:background .18s,color .18s}
+  .ov-card .ic svg{width:21px;height:21px}
+  .ov-card:hover .ic{background:#FFE3C2;color:#9E3702}
+  @media (max-width:1080px){
+    .ov-cover-grid{grid-template-columns:1fr;gap:34px}
+    .ov-cover{min-height:auto}
+  }
+
+  /* ---- Where-to-next cards on the landing ---- */
+  .ov-nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:16px;margin-top:34px}
+  .ov-card{background:rgba(0,0,0,0.18);border:1px solid rgba(255,255,255,0.26);border-radius:8px;
+           padding:20px 22px;cursor:pointer;text-align:left;font-family:inherit;color:inherit;
+           transition:background .18s,border-color .18s,transform .18s;display:flex;flex-direction:column;gap:7px}
+  .ov-card:hover{background:rgba(0,0,0,0.30);border-color:#FFE3C2;transform:translateY(-2px)}
+  .ov-card:focus-visible{outline:2px solid var(--pwc-tangerine);outline-offset:2px}
+  .ov-card .t{font-size:16px;font-weight:700;color:var(--white);display:flex;align-items:center;gap:8px}
+  .ov-card .t svg{width:15px;height:15px;color:#FFE3C2;flex:0 0 auto}
+  .ov-card .s{font-size:13px;line-height:1.5;color:rgba(255,255,255,0.82)}
+  .ov-card .f{font-size:12px;font-weight:700;color:#FFE3C2;letter-spacing:.3px;margin-top:2px}
+
+  /* Inline hand-off at the foot of a scene: narrative passes to the tool. */
+  .ov-jump{display:inline-flex;align-items:center;gap:7px;margin-top:24px;font-size:13px;font-weight:700;
+           color:var(--pwc-orange);background:none;border:none;padding:6px 0;font-family:inherit;cursor:pointer;
+           border-bottom:2px solid transparent;transition:border-color .15s,gap .15s}
+  .ov-dark .ov-jump{color:var(--pwc-yellow)}
+  .ov-jump:hover{border-bottom-color:currentColor;gap:11px}
+  .ov-jump:focus-visible{outline:2px solid var(--pwc-tangerine);outline-offset:3px}
+  .ov-jump svg{width:14px;height:14px}
+
+  /* ---- Overview tab (scrollytelling) ----
+     Every rule is scoped to #tab-overview and prefixed .ov- so nothing here can
+     reach the other tabs. Scenes stay inside <main>'s width rather than going
+     full-bleed: 100vw breakout fights the sticky tab bar and can add a
+     horizontal scrollbar. */
+  /* Full-bleed scenes: <main> is capped at 1280px, so without this the page
+     background shows as gutters either side of every scene. Breaking out to
+     100vw can exceed the viewport by the scrollbar width, hence overflow-x
+     clipped on the landing only. */
+  #tab-overview{margin:-28px 0 -60px}
+  body.landing{overflow-x:hidden}
+  .ov-scene{position:relative;overflow:hidden;padding:76px 0;display:flex;align-items:center;min-height:72vh;
+            margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);width:100vw}
+  .ov-scene:last-child{min-height:auto;padding-bottom:88px}
+  .ov-inner{position:relative;z-index:2;width:100%;max-width:1280px;margin:0 auto;padding:0 44px}
+  @media (min-width:1500px){ .ov-inner{max-width:min(1680px, 92vw)} }
+  @media (min-width:2200px){ .ov-inner{max-width:1920px} }
+  .ov-bg{position:absolute;inset:-18% 0;z-index:1;will-change:transform;pointer-events:none}
+  /* PwC orange surfaces. The gradient runs orange -> deeper burnt orange rather
+     than orange -> tangerine: tangerine is too light to keep small text legible.
+     On these panels accents are cream, not yellow — PwC yellow on orange is
+     roughly 3:1 and fails for small text. */
+  .ov-dark{background:linear-gradient(135deg,#D04A02 0%,#BC4202 48%,#9E3702 100%);color:var(--white)}
+  .ov-dark .ov-eyebrow,.ov-dark .ov-stat .n,.ov-dark .ov-ins b,.ov-dark .ov-callout b{color:#FFE3C2}
+  .ov-dark .ov-lede,.ov-dark .ov-stat .k,.ov-dark .ov-ins li,.ov-dark .ov-legend{color:rgba(255,255,255,0.85)}
+  .ov-dark .ov-note{color:rgba(255,255,255,0.62)}
+  .ov-dark .ov-ins li::before{background:#FFE3C2}
+  .ov-dark .ov-track,.ov-dark .ov-stack{background:rgba(0,0,0,0.22)}
+  .ov-dark .ov-callout{background:rgba(0,0,0,0.16);border-left-color:#FFE3C2;color:rgba(255,255,255,0.9)}
+  .ov-dark .ov-spark{background:rgba(0,0,0,0.16)}
+  .ov-dark .ov-spark-h{color:rgba(255,255,255,0.72)}
+  .ov-dark .ov-jump{color:#FFE3C2}
+  .ov-light{background:var(--pwc-grey-50)}
+  .ov-mid{background:var(--white)}
+  /* On orange the wash adds depth with light, not more colour. */
+  .ov-wash-a{background:radial-gradient(circle at 22% 26%,rgba(255,255,255,0.10),transparent 60%),radial-gradient(circle at 82% 78%,rgba(0,0,0,0.14),transparent 62%)}
+  .ov-wash-b{background:radial-gradient(circle at 80% 25%,rgba(208,74,2,0.07),transparent 55%),radial-gradient(circle at 15% 80%,rgba(255,182,0,0.08),transparent 55%)}
+  .ov-wash-c{background:radial-gradient(circle at 50% 15%,rgba(219,83,106,0.08),transparent 60%)}
+
+  #tab-overview .ov-eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:2.4px;font-weight:700;color:var(--pwc-orange);margin:0 0 12px}
+  #tab-overview .ov-dark .ov-eyebrow{color:var(--pwc-yellow)}
+  #tab-overview .ov-h{font-size:clamp(26px,3.4vw,40px);line-height:1.12;font-weight:700;margin:0 0 14px;letter-spacing:-0.3px}
+  #tab-overview .ov-lede{font-size:clamp(14px,1.4vw,17px);line-height:1.6;max-width:62ch;color:var(--pwc-grey-600);margin:0}
+  #tab-overview .ov-dark .ov-lede{color:rgba(255,255,255,0.72)}
+  #tab-overview .ov-note{font-size:12px;color:var(--pwc-grey-400);margin-top:16px;line-height:1.5;max-width:72ch}
+  #tab-overview .ov-dark .ov-note{color:rgba(255,255,255,0.45)}
+
+  .ov-rise{opacity:0;transform:translate3d(0,22px,0);transition:opacity .65s cubic-bezier(.22,.61,.36,1),transform .65s cubic-bezier(.22,.61,.36,1)}
+  .ov-rise.in{opacity:1;transform:none}
+  .ov-d1{transition-delay:.07s}.ov-d2{transition-delay:.14s}.ov-d3{transition-delay:.21s}
+
+  .ov-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:24px;margin-top:36px}
+  .ov-stat .n{font-size:clamp(30px,4vw,46px);font-weight:700;line-height:1;letter-spacing:-1px;color:var(--pwc-orange)}
+  .ov-dark .ov-stat .n{color:var(--pwc-yellow)}
+  .ov-stat .k{font-size:12px;text-transform:uppercase;letter-spacing:1.1px;font-weight:600;color:var(--pwc-grey-600);margin-top:9px;line-height:1.35}
+  .ov-dark .ov-stat .k{color:rgba(255,255,255,0.6)}
+
+  .ov-bars{margin-top:30px;display:grid;gap:11px}
+  .ov-row{display:grid;grid-template-columns:minmax(110px,200px) 1fr auto;align-items:center;gap:15px;font-size:14px}
+  .ov-lbl{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ov-track{background:var(--pwc-grey-300);height:11px;border-radius:6px;overflow:hidden}
+  .ov-dark .ov-track{background:rgba(255,255,255,0.14)}
+  .ov-fill{height:100%;border-radius:6px;width:0;transition:width 1s cubic-bezier(.22,.61,.36,1)}
+  .in .ov-fill{width:var(--w)}
+  .ov-stack{display:flex;height:13px;border-radius:7px;overflow:hidden;background:var(--pwc-grey-300)}
+  .ov-dark .ov-stack{background:rgba(255,255,255,0.14)}
+  .ov-seg{height:100%;width:0;transition:width .9s cubic-bezier(.22,.61,.36,1)}
+  .in .ov-seg{width:var(--w)}
+  .ov-val{font-variant-numeric:tabular-nums;font-weight:700;min-width:56px;text-align:right}
+
+  .ov-pyramid{margin-top:32px;display:grid;gap:8px;justify-items:center}
+  .ov-tier{height:34px;border-radius:5px;display:flex;align-items:center;justify-content:center;color:var(--white);font-size:13px;font-weight:600;width:0;transition:width .9s cubic-bezier(.22,.61,.36,1);white-space:nowrap;overflow:hidden}
+  .in .ov-tier{width:var(--w)}
+  .ov-tier.empty{background:var(--pwc-grey-300)!important;color:var(--pwc-grey-600)}
+
+  .ov-legend{display:flex;gap:20px;flex-wrap:wrap;font-size:12px;color:var(--pwc-grey-600);margin:24px 0 2px;align-items:center}
+  .ov-dark .ov-legend{color:rgba(255,255,255,0.6)}
+  .ov-legend .sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:7px;vertical-align:-1px}
+
+  .ov-ins{margin:26px 0 0;padding:0;list-style:none;display:grid;gap:11px;max-width:80ch}
+  .ov-ins li{position:relative;padding-left:25px;font-size:14px;line-height:1.6;color:var(--pwc-grey-700)}
+  .ov-dark .ov-ins li{color:rgba(255,255,255,0.78)}
+  .ov-ins li::before{content:"";position:absolute;left:0;top:7px;width:9px;height:9px;border-radius:2px;background:var(--pwc-orange)}
+  .ov-dark .ov-ins li::before{background:var(--pwc-yellow)}
+  .ov-ins b,.ov-callout b{color:var(--pwc-orange)}
+  .ov-dark .ov-ins b,.ov-dark .ov-callout b{color:var(--pwc-yellow)}
+
+  .ov-callout{border-left:4px solid var(--pwc-orange);padding:16px 22px;background:var(--white);border-radius:0 6px 6px 0;margin-top:28px;box-shadow:0 2px 10px rgba(0,0,0,0.06);max-width:74ch;font-size:14px;line-height:1.65;color:var(--pwc-grey-700)}
+  .ov-dark .ov-callout{background:rgba(255,255,255,0.06);box-shadow:none;border-left-color:var(--pwc-yellow);color:rgba(255,255,255,0.82)}
+
+  .ov-spark{margin-top:28px;background:rgba(255,255,255,0.05);border-radius:8px;padding:16px 18px}
+  .ov-light .ov-spark,.ov-mid .ov-spark{background:var(--white);box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+  .ov-spark-h{font-size:11px;text-transform:uppercase;letter-spacing:1.1px;font-weight:700;color:rgba(255,255,255,0.55);margin-bottom:9px}
+  .ov-light .ov-spark-h,.ov-mid .ov-spark-h{color:var(--pwc-grey-600)}
+  .ov-spark svg{width:100%;height:auto;display:block}
+  .ov-line{stroke-dasharray:1400;stroke-dashoffset:1400;transition:stroke-dashoffset 1.5s ease-out}
+  .in .ov-line{stroke-dashoffset:0}
+
+  .ov-tks{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin-top:34px}
+  .ov-tk{background:rgba(0,0,0,0.18);border-left:4px solid #FFE3C2;border-radius:0 6px 6px 0;padding:18px 20px}
+  .ov-tk .n{font-size:11px;text-transform:uppercase;letter-spacing:1.3px;font-weight:700;color:#FFE3C2;margin-bottom:9px}
+  .ov-tk p{margin:0;font-size:14px;line-height:1.6;color:rgba(255,255,255,0.88)}
+  .ov-tk b{color:var(--white)}
+
+  @media (max-width:720px){
+    #tab-overview{margin:-28px -16px -60px}
+    .ov-scene{padding:52px 20px;min-height:auto}
+    .ov-row{grid-template-columns:minmax(84px,116px) 1fr auto;gap:10px;font-size:13px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .ov-rise{opacity:1;transform:none;transition:none}
+    .ov-fill,.ov-seg,.ov-tier,.ov-line{transition:none}
+    .ov-bg{transform:none!important}
+  }
+
   /* ---- Training Investment (Capability Risk) ---- */
   .cr-tr-bar{height:9px;border-radius:5px;background:var(--pwc-grey-100);overflow:hidden;min-width:60px}
   .cr-tr-fill{height:100%;border-radius:5px}
@@ -654,10 +834,15 @@
   }
 </style>
 </head>
-<body>
+<!-- Starts on the landing; the overview script clears this if it cannot build. -->
+<body class="landing">
 <header class="brand">
-  <img class="logo-img" src="__LOGO_URI__" alt="PwC" onerror="this.style.display='none'">
-  <div class="header-title">Employee Bio Dashboard</div>
+  <!-- The brand block doubles as "home": on a detail page it returns to the overview. -->
+  <div class="brand-home" id="brand-home" role="button" tabindex="0" title="Back to the overview">
+    <img class="logo-img" src="__LOGO_URI__" alt="PwC" onerror="this.style.display='none'">
+    <div class="header-title">Employee Bio Dashboard</div>
+    <span class="home-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>Overview</span>
+  </div>
   <div class="header-spacer"></div>
   <div class="header-meta">
     <span class="lbl">Generated</span>
@@ -667,7 +852,7 @@
 <div class="brand-bar"></div>
 
 <nav class="tabs">
-  <button data-tab="directory" class="active">Directory</button>
+  <button data-tab="directory">Directory</button>
   <button data-tab="skills">Skill Atlas</button>
   <button data-tab="caprisk">Capability Risk</button>
   <button data-tab="pulse">Pulse</button>
@@ -676,7 +861,103 @@
 </nav>
 
 <main>
-  <section class="tab-panel active" id="tab-directory">
+  <!-- ===== Overview: scrollytelling practice summary. All figures are derived
+       from the same indexes the other tabs use, so nothing here can drift. ===== -->
+  <section class="tab-panel active" id="tab-overview">
+    <div class="ov-scene ov-dark ov-cover" data-depth="0.20">
+      <div class="ov-bg ov-wash-a"></div>
+      <div class="ov-inner ov-cover-grid">
+        <div>
+          <p class="ov-eyebrow ov-rise">Deals &mdash; People &amp; Capability</p>
+          <h1 class="ov-h ov-rise ov-d1">Deals Practice Overview</h1>
+          <p class="ov-lede ov-rise ov-d2">A summary of people, skills, utilization and capability
+            depth. Choose a view on the right to explore the detail.</p>
+        </div>
+        <!-- Compact picker: same destinations as the closing grid, title + figure only. -->
+        <div class="ov-quick ov-rise ov-d3" id="ov-quick"></div>
+      </div>
+    </div>
+
+    <div class="ov-scene ov-light" data-depth="0.14">
+      <div class="ov-bg ov-wash-b"></div>
+      <div class="ov-inner">
+        <p class="ov-eyebrow ov-rise">01 &mdash; Scale</p>
+        <h2 class="ov-h ov-rise ov-d1">Who we are</h2>
+        <p class="ov-lede ov-rise ov-d2">The active population behind every number that follows.</p>
+        <div class="ov-stats ov-rise ov-d3" id="ov-scale"></div>
+        <div class="ov-stats ov-rise" id="ov-scale2"></div>
+        <div class="ov-pyramid ov-rise" id="ov-pyramid"></div>
+        <p class="ov-note ov-rise" id="ov-scale-note"></p>
+        <ul class="ov-ins ov-rise" id="ov-scale-ins"></ul>
+        <button class="ov-jump ov-rise" data-goto="directory">Explore the Directory<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </div>
+    </div>
+
+    <div class="ov-scene ov-mid" data-depth="0.14">
+      <div class="ov-bg ov-wash-c"></div>
+      <div class="ov-inner">
+        <p class="ov-eyebrow ov-rise">02 &mdash; Capability</p>
+        <h2 class="ov-h ov-rise ov-d1">What we can do</h2>
+        <p class="ov-lede ov-rise ov-d2">Headcount by competency, and the skills underneath it.</p>
+        <div class="ov-stats ov-rise ov-d3" id="ov-capstats"></div>
+        <div class="ov-bars ov-rise" id="ov-comp"></div>
+        <div class="ov-spark ov-rise" id="ov-topskills-wrap">
+          <div class="ov-spark-h">Most widely held skills</div>
+          <div class="ov-bars" id="ov-topskills" style="margin-top:0"></div>
+        </div>
+        <ul class="ov-ins ov-rise" id="ov-cap-ins"></ul>
+        <button class="ov-jump ov-rise" data-goto="skills">Open the Skill Atlas<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </div>
+    </div>
+
+    <div class="ov-scene ov-dark" data-depth="0.18">
+      <div class="ov-bg ov-wash-a"></div>
+      <div class="ov-inner">
+        <p class="ov-eyebrow ov-rise">03 &mdash; Capacity</p>
+        <h2 class="ov-h ov-rise ov-d1">How busy we are</h2>
+        <p class="ov-lede ov-rise ov-d2" id="ov-cap-lede"></p>
+        <div class="ov-stats ov-rise ov-d3" id="ov-util"></div>
+        <div class="ov-stats ov-rise" id="ov-util2"></div>
+        <div class="ov-spark ov-rise" id="ov-trend-wrap">
+          <div class="ov-spark-h" id="ov-trend-h">Monthly average utilization</div>
+          <div id="ov-trend"></div>
+        </div>
+        <ul class="ov-ins ov-rise" id="ov-util-ins"></ul>
+        <button class="ov-jump ov-rise" data-goto="pulse">Open Workforce Pulse<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </div>
+    </div>
+
+    <div class="ov-scene ov-light" data-depth="0.14">
+      <div class="ov-bg ov-wash-b"></div>
+      <div class="ov-inner">
+        <p class="ov-eyebrow ov-rise">04 &mdash; Depth</p>
+        <h2 class="ov-h ov-rise ov-d1">Where we're thin</h2>
+        <p class="ov-lede ov-rise ov-d2">Capabilities carried by only a handful of people are the ones
+          that constrain what the practice can take on at once.</p>
+        <div class="ov-stats ov-rise ov-d3" id="ov-risk"></div>
+        <div class="ov-legend ov-rise" id="ov-risk-legend"></div>
+        <div class="ov-bars ov-rise" id="ov-risk-bars"></div>
+        <ul class="ov-ins ov-rise" id="ov-risk-ins"></ul>
+        <div class="ov-callout ov-rise" id="ov-risk-callout"></div>
+        <button class="ov-jump ov-rise" data-goto="caprisk">Open Capability Risk<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </div>
+    </div>
+
+    <div class="ov-scene ov-dark" data-depth="0.20">
+      <div class="ov-bg ov-wash-a"></div>
+      <div class="ov-inner">
+        <p class="ov-eyebrow ov-rise">05 &mdash; In summary</p>
+        <h2 class="ov-h ov-rise ov-d1">What this adds up to</h2>
+        <p class="ov-lede ov-rise ov-d2">Four things worth a decision, generated from the figures above.</p>
+        <div class="ov-tks ov-rise ov-d3" id="ov-tks"></div>
+        <h2 class="ov-h ov-rise" style="font-size:clamp(20px,2.2vw,26px);margin:56px 0 6px">Where to next</h2>
+        <p class="ov-lede ov-rise">Each view opens the detail behind the figures above.</p>
+        <div class="ov-nav ov-rise" id="ov-nav"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tab-panel" id="tab-directory">
     <div class="dir-head"><h1>Team Directory</h1></div>
     <section class="stats">
       <div class="stat-card"><div class="value" id="kpi-total">-</div><div class="label">Active Employees</div></div>
@@ -3880,6 +4161,407 @@
     };
 
     renderAnalytics();
+  })();
+
+  // ===== Overview tab — scrollytelling summary ==========================
+  // Reuses the shared foundation rather than recomputing: groupForRole,
+  // isManagerRole, esc, the skills index on e._skills (already split on , and ;),
+  // ALL_MONTHS / UTIL_LOOKUP, and the PwC colour consts. Wrapped in an IIFE so
+  // nothing leaks into the other tabs.
+  (function(){
+    // If the landing cannot be built for any reason, fall back to the plain
+    // tabbed dashboard rather than leaving the tab bar hidden behind nothing.
+    const bail = () => {
+      document.body.classList.remove('landing');
+      const ov = document.getElementById('tab-overview'); if (ov) ov.remove();
+      const dir = document.querySelector('nav.tabs button[data-tab="directory"]');
+      const dirPanel = document.getElementById('tab-directory');
+      if (dir) dir.classList.add('active');
+      if (dirPanel) dirPanel.classList.add('active');
+    };
+    const root = document.getElementById('tab-overview'); if (!root){ bail(); return; }
+    const $ = id => document.getElementById(id);
+    const nfmt = n => Math.round(n).toLocaleString('en-US');
+    const THIN = 3;   // matches Capability Risk's default "scarce when <= 3 people"
+
+    const ACT = EMPLOYEES.filter(e => {
+      const s = String(e.Status || '').trim().toLowerCase();
+      return s === '' || s === 'active' || s === 'in leave';
+    });
+    if (!ACT.length){ bail(); return; }
+    const cOf = e => String(e['Competency Group'] || e['Competency'] || '').trim() || 'Unspecified';
+    const cnt = (arr, fn) => arr.reduce((o, x) => { const k = fn(x); if (k) o[k] = (o[k] || 0) + 1; return o; }, Object.create(null));
+    const pairs = o => Object.keys(o).map(k => [k, o[k]]).sort((a, b) => b[1] - a[1]);
+    const stat = (n, k) => '<div class="ov-stat"><div class="n">' + n + '</div><div class="k">' + esc(k) + '</div></div>';
+    const bullets = items => items.filter(Boolean).map(t => '<li>' + t + '</li>').join('');
+    const barRow = (label, w, val, col) =>
+      '<div class="ov-row"><span class="ov-lbl" title="' + esc(label) + '">' + esc(label) + '</span>'
+      + '<div class="ov-track"><div class="ov-fill" style="--w:' + w + '%;background:' + col + '"></div></div>'
+      + '<span class="ov-val">' + val + '</span></div>';
+    const GRADE_COL = { 'Managing Directors': BLACK, 'Directors': ORANGE, 'Senior Managers': TANGERINE,
+                        'Managers': YELLOW, 'Senior Associates': BURGUNDY, 'Associates': PINK, 'Other': GREY };
+
+    // ---- 01 Scale ----
+    const xps = ACT.map(e => parseFloat(e[EXP_TOTAL])).filter(v => !isNaN(v));
+    const comps = cnt(ACT, cOf), locs = cnt(ACT, e => String(e.Location || '').trim());
+    const terrs = cnt(ACT, e => String(e.Territory || e['Territory Filter'] || '').trim());
+    $('ov-scale').innerHTML =
+        stat(nfmt(ACT.length), 'Active people') + stat(Object.keys(comps).length, 'Competencies')
+      + stat(Object.keys(locs).length, 'Locations')
+      + stat(xps.length ? (xps.reduce((a, b) => a + b, 0) / xps.length).toFixed(1) : '—', 'Avg years experience');
+
+    const NOW = new Date();
+    const tenOf = e => { const d = new Date(String(e['Join Date'] || '')); return isNaN(d) ? null : (NOW - d) / 3.15576e10; };
+    const gOf = e => { const g = String(e.Gender || '').trim().toLowerCase(); return g === 'male' ? 'm' : (g === 'female' ? 'f' : 'x'); };
+    const males = ACT.filter(e => gOf(e) === 'm').length, females = ACT.filter(e => gOf(e) === 'f').length;
+    const femPct = (males + females) ? Math.round(females / (males + females) * 100) : 0;
+    const tens = ACT.map(tenOf).filter(v => v !== null);
+    const avgTen = tens.length ? tens.reduce((a, b) => a + b, 0) / tens.length : 0;
+    const join12 = tens.filter(v => v < 1).length;
+    $('ov-scale2').innerHTML =
+        stat(femPct + '%', 'Female representation') + stat(avgTen.toFixed(1), 'Avg years at PwC')
+      + stat(join12, 'Joined in last 12 months') + stat(Object.keys(terrs).length, 'Territories served');
+
+    const byGrade = cnt(ACT, e => groupForRole(e.Role));
+    const gMax = Math.max(1, ...Object.values(byGrade));
+    $('ov-pyramid').innerHTML = ROLE_GROUPS.map(g => g.title)
+      .filter(t => t !== 'Other' || byGrade['Other'])
+      .map(t => { const n = byGrade[t] || 0;
+        return '<div class="ov-tier' + (n ? '' : ' empty') + '" style="--w:' + (n ? Math.max(16, n / gMax * 100) : 9)
+          + '%;background:' + (GRADE_COL[t] || GREY) + '">' + esc(t) + (n ? ' &middot; ' + n : '') + '</div>'; }).join('');
+
+    const srs = ACT.filter(e => isManagerRole(e.Role));
+    $('ov-scale-note').innerHTML = 'Leverage &mdash; ' + (ACT.length - srs.length) + ' staff below Manager for '
+      + srs.length + ' at Manager and above'
+      + (srs.length ? ' (' + ((ACT.length - srs.length) / srs.length).toFixed(1) + '&times;)' : '')
+      + '. Faded bars are grades with no one in them.';
+    const srF = srs.filter(e => gOf(e) === 'f').length, srM = srs.filter(e => gOf(e) === 'm').length;
+    const topLoc = pairs(locs)[0], topTerr = pairs(terrs)[0];
+    $('ov-scale-ins').innerHTML = bullets([
+      topLoc ? '<b>' + esc(topLoc[0]) + '</b> is the largest location, holding '
+        + Math.round(topLoc[1] / ACT.length * 100) + '% of the practice.' : null,
+      topTerr ? 'Most people are aligned to <b>' + esc(topTerr[0]) + '</b> (' + topTerr[1] + ' of ' + ACT.length + ').' : null,
+      (males + females) ? 'Gender mix is <b>' + males + ' : ' + females + '</b> male to female'
+        + ((srF + srM) ? ', and <b>' + Math.round(srF / (srF + srM) * 100) + '%</b> female at Manager and above.' : '.') : null,
+      tens.length ? 'Average tenure is <b>' + avgTen.toFixed(1) + ' years</b>'
+        + (join12 ? ', with ' + join12 + ' ' + (join12 === 1 ? 'person' : 'people') + ' joining in the last year.' : '.') : null
+    ]);
+
+    // ---- 02 Capability ---- (skills come from the shared index on e._skills)
+    const holders = Object.create(null);
+    ACT.forEach(e => (e._skills || new Set()).forEach(k => {
+      (holders[k] = holders[k] || new Set()).add(String(e.WorkdayID));
+    }));
+    const keys = Object.keys(holders);
+    const held = ACT.reduce((t, e) => t + ((e._skills || { size: 0 }).size), 0);
+    const perPerson = Math.round(ACT.length ? held / ACT.length : 0);   // skills are whole things
+    const cats = new Set(keys.map(k => SKILL_CATEGORY[k]).filter(c => c && c !== 'Uncategorised'));
+    $('ov-capstats').innerHTML =
+        stat(keys.length, 'Distinct skills') + stat(cats.size, 'Skill categories')
+      + stat('~' + perPerson, 'Skills per person') + stat(Object.keys(comps).length, 'Competencies');
+
+    const cRows = pairs(comps), cMax = Math.max(1, ...cRows.map(r => r[1]));
+    $('ov-comp').innerHTML = cRows.map((r, i) =>
+      barRow(r[0], r[1] / cMax * 100, r[1], PALETTE[i % PALETTE.length])).join('');
+
+    const top5 = keys.map(k => ({ k, n: holders[k].size })).sort((a, b) => b.n - a.n).slice(0, 5);
+    const tMax = Math.max(1, ...top5.map(s => s.n));
+    if (top5.length) $('ov-topskills').innerHTML = top5.map((s, i) =>
+      barRow(SKILL_DISPLAY[s.k] || s.k, s.n / tMax * 100, s.n, PALETTE[i % PALETTE.length])).join('');
+    else $('ov-topskills-wrap').style.display = 'none';
+
+    const noSenior = cRows.filter(([c]) => !ACT.some(e => cOf(e) === c && isManagerRole(e.Role))).map(([c]) => c);
+    $('ov-cap-ins').innerHTML = bullets([
+      cRows[0] ? 'Deepest capability by headcount is <b>' + esc(cRows[0][0]) + '</b> with ' + cRows[0][1] + ' people.' : null,
+      top5.length ? 'The most widely held skill is <b>' + esc(SKILL_DISPLAY[top5[0].k] || top5[0].k)
+        + '</b>, known by ' + top5[0].n + ' ' + (top5[0].n === 1 ? 'person' : 'people') + '.' : null,
+      noSenior.length ? '<b>' + noSenior.length + '</b> ' + (noSenior.length === 1 ? 'competency has' : 'competencies have')
+        + ' no one at Manager grade or above: ' + noSenior.slice(0, 3).map(esc).join(', ')
+        + (noSenior.length > 3 ? ' and others' : '') + '.'
+        : 'Every competency has at least one person at Manager grade or above.',
+      'Around <b>' + perPerson + '</b> skills are recorded per person across ' + cats.size + ' categories.'
+    ]);
+
+    // ---- 03 Capacity ---- (MDs excluded, as on every other tab)
+    const HAS_U = !SHARE_MODE && typeof ALL_MONTHS !== 'undefined' && ALL_MONTHS.length && LATEST_MONTH;
+    const uPool = ACT.filter(e => groupForRole(e.Role) !== 'Managing Directors');
+    const uAt = (e, m) => UTIL_LOOKUP[String(e.WorkdayID) + '|' + m];
+    const uVals = HAS_U ? uPool.map(e => uAt(e, LATEST_MONTH)).filter(v => typeof v === 'number') : [];
+    let spare = null, bench = 0;
+    if (!uVals.length){
+      $('ov-cap-lede').textContent = 'Utilization data is not included in this build, so this section is not shown.';
+      ['ov-util','ov-util2','ov-trend-wrap','ov-util-ins'].forEach(id => { const n = $(id); if (n) n.style.display = 'none'; });
+    } else {
+      const avgU = uVals.reduce((a, b) => a + b, 0) / uVals.length;
+      bench = uVals.filter(v => v < 40).length;
+      const hot = uVals.filter(v => v > 100).length;
+      const healthy = uVals.filter(v => v >= 80 && v <= 100).length;
+      spare = uVals.reduce((t, v) => t + Math.max(0, 100 - v) / 100, 0);
+      const burn = uPool.filter(e => typeof e._sustained3 === 'number' && e._sustained3 > 100).length;
+      const trainH = UTIL.reduce((t, u) => { const v = Number(u['Training Hours']); return t + (isFinite(v) ? v : 0); }, 0);
+      const chargeH = UTIL.reduce((t, u) => { const v = Number(u['Chargeable Hours']); return t + (isFinite(v) ? v : 0); }, 0);
+      $('ov-cap-lede').innerHTML = 'Latest month with data is <strong>' + esc(fmtMonth(LATEST_MONTH))
+        + '</strong>, across ' + uVals.length + ' people. Managing Directors are excluded.';
+      $('ov-util').innerHTML = stat(Math.round(avgU) + '%', 'Average utilization')
+        + stat(bench, 'On the bench (<40%)') + stat(hot, 'Stretched (>100%)')
+        + stat(spare.toFixed(1), 'Spare capacity (FTE)');
+      $('ov-util2').innerHTML = stat(healthy, 'In the healthy band (80-100%)')
+        + stat(burn, 'Burnout watch (3-mo >100%)')
+        + stat(nfmt(chargeH), 'Chargeable hours booked') + stat(nfmt(trainH), 'Training hours logged');
+
+      const series = ALL_MONTHS.map(m => {
+        const vs = uPool.map(e => uAt(e, m)).filter(v => typeof v === 'number');
+        return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : null;
+      });
+      const pts = series.map((v, i) => ({ v, i })).filter(p => p.v !== null);
+      if (pts.length > 1){
+        const W = 900, H = 180, L = 34, R = 12, T = 14, B = 26;
+        const yMax = Math.max(120, Math.ceil(Math.max(...pts.map(p => p.v)) / 20) * 20);
+        const X = i => L + i / (ALL_MONTHS.length - 1) * (W - L - R);
+        const Y = v => H - B - v / yMax * (H - T - B);
+        let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">';
+        for (let v = 0; v <= yMax; v += 40)
+          svg += '<line x1="' + L + '" y1="' + Y(v) + '" x2="' + (W - R) + '" y2="' + Y(v) + '" stroke="rgba(255,255,255,0.14)"/>'
+               + '<text x="' + (L - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end" fill="rgba(255,255,255,0.5)" font-size="11">' + v + '</text>';
+        svg += '<polyline class="ov-line" points="' + pts.map(p => X(p.i) + ',' + Y(p.v)).join(' ')
+             + '" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>';
+        pts.forEach(p => { svg += '<circle cx="' + X(p.i) + '" cy="' + Y(p.v) + '" r="3.5" fill="#FFFFFF"/>'; });
+        // The first and last labels sit on the plot edges, so centring them
+        // pushes half the text outside the viewBox and it gets clipped
+        // ("May '26" rendered as "May '2"). Anchor the outer two inward.
+        const lastI = ALL_MONTHS.length - 1;
+        [...new Set([0, Math.floor(lastI / 2), lastI])].forEach(i => {
+          const anchor = i === 0 ? 'start' : (i === lastI ? 'end' : 'middle');
+          svg += '<text x="' + X(i) + '" y="' + (H - 6) + '" text-anchor="' + anchor + '" fill="rgba(255,255,255,0.5)" font-size="11">'
+               + esc(fmtMonth(ALL_MONTHS[i])) + '</text>'; });
+        $('ov-trend').innerHTML = svg + '</svg>';
+        $('ov-trend-h').innerHTML = 'Monthly average utilization &mdash; ' + esc(fmtMonth(ALL_MONTHS[0]))
+          + ' to ' + esc(fmtMonth(LATEST_MONTH));
+      } else { $('ov-trend-wrap').style.display = 'none'; }
+
+      const first = pts.length ? pts[0].v : null, last = pts.length ? pts[pts.length - 1].v : null;
+      const prev = pts.length > 1 ? pts[pts.length - 2].v : null;
+      const d = (prev !== null && last !== null) ? last - prev : null;
+      $('ov-util-ins').innerHTML = bullets([
+        d !== null ? 'Utilization ' + (Math.abs(d) < 0.5 ? 'held steady' : (d > 0 ? 'rose <b>' + Math.round(d)
+          + ' points</b>' : 'fell <b>' + Math.abs(Math.round(d)) + ' points</b>')) + ' against the previous month.' : null,
+        (first !== null && pts.length > 2) ? 'Across the period it moved from <b>' + Math.round(first)
+          + '%</b> to <b>' + Math.round(last) + '%</b>.' : null,
+        '<b>' + healthy + '</b> of ' + uVals.length + ' people sit in the healthy 80-100% band, while '
+          + bench + ' ' + (bench === 1 ? 'is' : 'are') + ' under 40% and ' + hot + ' above 100%.',
+        burn ? '<b>' + burn + '</b> ' + (burn === 1 ? 'person has' : 'people have')
+          + ' averaged above 100% for three straight months.'
+          : 'No one has averaged above 100% for three consecutive months.'
+      ]);
+    }
+
+    // ---- 04 Depth ---- (thin = few holders; a band, not a single individual)
+    const thin = keys.filter(k => holders[k].size <= THIN);
+    const thinPct = keys.length ? Math.round(thin.length / keys.length * 100) : 0;
+    const avgHold = keys.length ? keys.reduce((t, k) => t + holders[k].size, 0) / keys.length : 0;
+    $('ov-risk').innerHTML =
+        stat(thin.length, 'Thinly covered skills (' + THIN + ' or fewer people)')
+      + stat(thinPct + '%', 'Of all recorded skills')
+      + stat(keys.length - thin.length, 'Deeply covered skills')
+      + stat('~' + Math.round(avgHold), 'People per skill on average');
+
+    // Depth measured within each competency's own people, so the bars and the
+    // sentences below them are the same measure.
+    const depth = cRows.map(([c]) => {
+      const ids = new Set(ACT.filter(e => cOf(e) === c).map(e => String(e.WorkdayID)));
+      const ks = keys.filter(k => [...holders[k]].some(id => ids.has(id)));
+      return { c, skills: ks.length,
+               thin: ks.filter(k => [...holders[k]].filter(id => ids.has(id)).length <= THIN).length };
+    }).filter(r => r.skills);
+    $('ov-risk-legend').innerHTML =
+        '<span><span class="sw" style="background:' + ROSE + '"></span>Thinly covered (' + THIN + ' or fewer)</span>'
+      + '<span><span class="sw" style="background:' + TANGERINE + '"></span>Deeply covered (more than ' + THIN + ')</span>';
+    $('ov-risk-bars').innerHTML = depth.slice().sort((a, b) => (b.thin / b.skills) - (a.thin / a.skills))
+      .map(r => { const p = r.thin / r.skills * 100;
+        return '<div class="ov-row"><span class="ov-lbl" title="' + esc(r.c) + '">' + esc(r.c) + '</span>'
+          + '<div class="ov-stack"><div class="ov-seg" style="--w:' + p + '%;background:' + ROSE + '"></div>'
+          + '<div class="ov-seg" style="--w:' + (100 - p) + '%;background:' + TANGERINE + '"></div></div>'
+          + '<span class="ov-val">' + r.thin + '/' + r.skills + '</span></div>'; }).join('');
+
+    const mostThin = depth.slice().sort((a, b) => b.thin - a.thin)[0];
+    const bestDeep = depth.slice().sort((a, b) => (b.skills - b.thin) - (a.skills - a.thin))[0];
+    const allThin = depth.filter(r => r.thin === r.skills);
+    const spans = cnt(ACT, e => String(e['RL Manager'] || '').trim());
+    const spanPairs = pairs(spans), widest = spanPairs[0];
+    $('ov-risk-ins').innerHTML = bullets([
+      mostThin ? '<b>' + esc(mostThin.c) + '</b> carries the most thinly covered skills &mdash; '
+        + mostThin.thin + ' of its ' + mostThin.skills + '.' : null,
+      (bestDeep && bestDeep.skills > bestDeep.thin)
+        ? '<b>' + esc(bestDeep.c) + '</b> has the deepest bench: ' + (bestDeep.skills - bestDeep.thin)
+          + ' of its ' + bestDeep.skills + ' skills have more than ' + THIN + ' people behind them.'
+        : 'No competency yet has a skill covered by more than ' + THIN + ' of its own people.',
+      allThin.length ? '<b>' + allThin.length + '</b> ' + (allThin.length === 1 ? 'competency has' : 'competencies have')
+        + ' no deeply covered skills at all: ' + allThin.slice(0, 3).map(r => esc(r.c)).join(', ')
+        + (allThin.length > 3 ? ' and others' : '') + '.' : null,
+      widest ? 'Reporting load sits across <b>' + spanPairs.length + '</b> managers, the widest span being '
+        + widest[1] + ' direct ' + (widest[1] === 1 ? 'report' : 'reports') + '.' : null
+    ]);
+    $('ov-risk-callout').innerHTML = '<b>' + thinPct + '%</b> of recorded skills sit with ' + THIN
+      + ' or fewer people. Depth is what lets the practice take on concurrent work &mdash; these are the '
+      + 'capabilities where a reassignment, a holiday or a departure is felt immediately.';
+
+    // ---- 05 Takeaways ----
+    const noSkill = ACT.filter(e => !(e._skills && e._skills.size)).length;
+    $('ov-tks').innerHTML = [
+      ['Capacity', spare !== null
+        ? 'Roughly <b>' + spare.toFixed(1) + ' FTE</b> of capacity is unused'
+          + (bench ? ', concentrated in the ' + bench + ' ' + (bench === 1 ? 'person' : 'people') + ' under 40%' : '')
+          + '. That is sellable if the pipeline can absorb it.'
+        : 'Utilization is not included in this build, so capacity cannot be assessed here.'],
+      ['Depth', '<b>' + thin.length + '</b> of ' + keys.length + ' skills sit with ' + THIN + ' or fewer people'
+        + (mostThin ? ', most of them in <b>' + esc(mostThin.c) + '</b>' : '')
+        + '. Cross-training there buys the most resilience per hour invested.'],
+      ['Shape', 'Leverage runs at <b>' + (srs.length ? ((ACT.length - srs.length) / srs.length).toFixed(1) : '—')
+        + '&times;</b>' + (noSenior.length ? ', and ' + noSenior.length + ' '
+        + (noSenior.length === 1 ? 'competency has' : 'competencies have') + ' no senior cover' : '') + '.'],
+      ['Coverage', noSkill
+        ? '<b>' + noSkill + '</b> of ' + ACT.length + ' people have no skills logged, so they are invisible to '
+          + 'skill search and staffing. Closing that gap sharpens every figure above.'
+        : 'Every active person has skills recorded, so the depth figures rest on complete coverage.']
+    ].map(t => '<div class="ov-tk"><div class="n">' + esc(t[0]) + '</div><p>' + t[1] + '</p></div>').join('');
+
+    // ---- Hub navigation ----
+    // Destination cards are built from the tab buttons actually present, so a
+    // tab removed at build time (Pulse and Analytics in the shared build) simply
+    // has no card. Each carries a live figure so the choice is an informed one.
+    const DEST = {
+      directory: ['Directory',        'Search, filter and open any bio.',
+                  () => nfmt(ACT.length) + ' people · ' + Object.keys(locs).length + ' locations'],
+      skills:    ['Skill Atlas',      'Who knows what, and who to staff on a pitch.',
+                  () => keys.length + ' skills · ' + cats.size + ' categories'],
+      caprisk:   ['Capability Risk',  'Coverage, concentration and where to cross-train.',
+                  () => thin.length + ' of ' + keys.length + ' skills thinly covered'],
+      pulse:     ['Workforce Pulse',  'Monthly utilization, bench and burnout watch.',
+                  () => uVals.length ? Math.round(uVals.reduce((a, b) => a + b, 0) / uVals.length) + '% average utilization' : 'Utilization by month'],
+      analytics: ['Team Analytics',   'Trends, manager scorecards and workforce mix.',
+                  () => (srs.length ? ((ACT.length - srs.length) / srs.length).toFixed(1) + '× leverage · ' : '') + femPct + '% female']
+    };
+    const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+    // Icons are drawn inline as SVG paths rather than fetched or embedded as
+    // images: no network call, no licensing question, a few hundred bytes each,
+    // crisp at any zoom, and they inherit colour from the surrounding text.
+    const ICO = p => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '
+      + 'stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
+    const ICONS = {
+      // people
+      directory: ICO('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>'
+                   + '<path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+      // layered map
+      skills:    ICO('<path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/>'),
+      // shield with alert
+      caprisk:   ICO('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="M12 8.5v4"/><path d="M12 16h.01"/>'),
+      // pulse trace
+      pulse:     ICO('<path d="M22 12h-4l-3 8L9 4l-3 8H2"/>'),
+      // bar chart
+      analytics: ICO('<path d="M3 3v18h18"/><path d="M7.5 16v-5"/><path d="M12 16V8"/><path d="M16.5 16v-3"/>')
+    };
+    const tabBtns = [...document.querySelectorAll('nav.tabs button[data-tab]')];
+    // Both pickers are built from the same list, so they can never disagree:
+    // the cover one is compact (title + figure), the closing one carries the
+    // descriptions. A tab stripped at build time appears in neither.
+    const dests = tabBtns.map(b => {
+      const dst = DEST[b.dataset.tab]; if (!dst) return null;
+      let fact = ''; try { fact = dst[2](); } catch (_e) {}
+      return { tab: b.dataset.tab, title: dst[0], sub: dst[1], fact };
+    }).filter(Boolean);
+
+    const navEl = $('ov-nav');
+    if (navEl) navEl.innerHTML = dests.map(x =>
+      '<button class="ov-card" data-goto="' + esc(x.tab) + '">'
+      + '<span class="ic">' + (ICONS[x.tab] || '') + '</span>'
+      + '<span class="t">' + esc(x.title) + ARROW + '</span>'
+      + '<span class="s">' + esc(x.sub) + '</span>'
+      + (x.fact ? '<span class="f">' + esc(x.fact) + '</span>' : '') + '</button>').join('');
+
+    const quickEl = $('ov-quick');
+    if (quickEl) quickEl.innerHTML = dests.map(x =>
+      '<button class="ov-q" data-goto="' + esc(x.tab) + '">'
+      + '<span class="ic">' + (ICONS[x.tab] || '') + '</span>'
+      + '<span><span class="t">' + esc(x.title) + '</span>'
+      + (x.fact ? '<span class="f">' + esc(x.fact) + '</span>' : '') + '</span>'
+      + '<span class="a">' + ARROW + '</span></button>').join('');
+
+    // A tab stripped at build time (Pulse and Analytics in the shared build)
+    // leaves its inline hand-off pointing nowhere — drop those links.
+    root.querySelectorAll('.ov-jump[data-goto]').forEach(j => {
+      if (!document.querySelector('nav.tabs button[data-tab="' + j.dataset.goto + '"]')) j.remove();
+    });
+
+    function goTo(tab){
+      const btn = document.querySelector('nav.tabs button[data-tab="' + tab + '"]');
+      if (!btn) return;
+      document.body.classList.remove('landing');
+      btn.click();                                  // reuse the existing tab handler
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+    function goHome(){
+      document.body.classList.add('landing');
+      tabBtns.forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p === root));
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      setTimeout(frame, 30);
+    }
+    root.addEventListener('click', ev => {
+      const j = ev.target.closest('[data-goto]'); if (j) goTo(j.dataset.goto);
+    });
+    const home = document.getElementById('brand-home');
+    if (home){
+      home.addEventListener('click', () => { if (!document.body.classList.contains('landing')) goHome(); });
+      home.addEventListener('keydown', ev => {
+        if ((ev.key === 'Enter' || ev.key === ' ') && !document.body.classList.contains('landing')){
+          ev.preventDefault(); goHome();
+        }
+      });
+    }
+    // Any tab click leaves the landing, including the tab bar itself.
+    tabBtns.forEach(b => b.addEventListener('click', () => document.body.classList.remove('landing')));
+
+    // ---- Motion ----
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const risers = [...root.querySelectorAll('.ov-rise')];
+    if (typeof IntersectionObserver === 'function'){
+      // Replay on scroll-back, but with hysteresis: reveal once 15% is showing,
+      // and only re-arm once the element is fully out of view. A plain toggle
+      // flickers, because an element parked near the threshold crosses it
+      // repeatedly as you scroll and restarts the width animations each time.
+      // Elements taller than the viewport can never reach 15%, so they reveal
+      // as soon as any part of them is visible.
+      const io = new IntersectionObserver(entries => {
+        entries.forEach(en => {
+          const tall = en.boundingClientRect.height > window.innerHeight * 0.7;
+          if (en.isIntersecting && (tall || en.intersectionRatio >= 0.15)) en.target.classList.add('in');
+          else if (!en.isIntersecting) en.target.classList.remove('in');
+        });
+      }, { threshold: [0, 0.15], rootMargin: '0px 0px -6% 0px' });
+      risers.forEach(n => io.observe(n));
+    } else {
+      risers.forEach(n => n.classList.add('in'));   // else everything stays at opacity:0
+    }
+    const scenes = [...root.querySelectorAll('.ov-scene[data-depth]')]
+      .map(s => ({ s, bg: s.querySelector('.ov-bg'), d: parseFloat(s.dataset.depth) || 0.15 })).filter(x => x.bg);
+    let ticking = false;
+    function frame(){
+      ticking = false;
+      if (reduce || !root.classList.contains('active')) return;   // hidden tab: nothing to move
+      const vh = window.innerHeight;
+      scenes.forEach(({ s, bg, d }) => {
+        const r = s.getBoundingClientRect();
+        if (r.bottom < -80 || r.top > vh + 80) return;
+        bg.style.transform = 'translate3d(0,' + ((r.top + r.height / 2 - vh / 2) * -d).toFixed(1) + 'px,0)';
+      });
+    }
+    const onScroll = () => { if (!ticking){ ticking = true; requestAnimationFrame(frame); } };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    // Re-run when the tab is opened: rects are all zero while it is display:none.
+    document.querySelectorAll('nav.tabs button[data-tab]').forEach(b =>
+      b.addEventListener('click', () => setTimeout(frame, 30)));
+    frame();
   })();
 
   // ----- Back-to-top / bottom scroll nav -----
