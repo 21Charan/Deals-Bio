@@ -3991,8 +3991,11 @@
     // bars in that chart stay visible and you can switch selection without
     // clearing first — the usual cross-filter convention.
     const MIX_SEL = Object.create(null);        // dimension -> selected value
-    const TEN_BUCKETS = [['Under 1 yr', y => y < 1], ['1&ndash;3 yrs', y => y >= 1 && y < 3],
-                         ['3&ndash;5 yrs', y => y >= 3 && y < 5], ['5&ndash;10 yrs', y => y >= 5 && y < 10],
+    // Plain en-dashes, not HTML entities: these labels are also used as filter
+    // keys and appear in chips and tooltips, where an entity would show as
+    // literal "1&ndash;3 yrs" text.
+    const TEN_BUCKETS = [['Under 1 yr', y => y < 1], ['1–3 yrs', y => y >= 1 && y < 3],
+                         ['3–5 yrs', y => y >= 3 && y < 5], ['5–10 yrs', y => y >= 5 && y < 10],
                          ['10+ yrs', y => y >= 10]];
     const tenureBucket = e => {
       const y = tenureYrs(e); if (y === null) return '';
@@ -4262,7 +4265,6 @@
       const withD = pool.map(e => ({ e, y: tenureYrs(e) })).filter(r => r.y !== null);
       const avgTen = avgOf(withD.map(r => r.y));
       const r3 = withD.length ? Math.round(withD.filter(r => r.y < 3).length / withD.length * 100) : 0;
-      const buckets = [['Under 1 yr', y => y < 1], ['1&ndash;3 yrs', y => y >= 1 && y < 3], ['3&ndash;5 yrs', y => y >= 3 && y < 5], ['5&ndash;10 yrs', y => y >= 5 && y < 10], ['10+ yrs', y => y >= 10]];
       const byYear = Object.create(null);
       withD.forEach(r => { const y = new Date(String(r.e['Join Date'])).getFullYear(); byYear[y] = (byYear[y] || 0) + 1; });
       const years = Object.keys(byYear).map(Number).sort((a, b) => a - b).slice(-8);
