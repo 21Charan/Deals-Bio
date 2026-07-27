@@ -357,7 +357,8 @@
   .ov-card .f{font-size:12px;font-weight:700;color:#FFE3C2;letter-spacing:.3px;margin-top:2px}
 
   /* Inline hand-off at the foot of a scene: narrative passes to the tool. */
-  .ov-jump{display:inline-flex;align-items:center;gap:7px;margin-top:24px;font-size:13px;font-weight:700;
+  /* Sits close under the last insight rather than floating as its own block. */
+  .ov-jump{display:inline-flex;align-items:center;gap:7px;margin-top:10px;font-size:13px;font-weight:700;
            color:var(--pwc-orange);background:none;border:none;padding:6px 0;font-family:inherit;cursor:pointer;
            border-bottom:2px solid transparent;transition:border-color .15s,gap .15s}
   .ov-dark .ov-jump{color:var(--pwc-yellow)}
@@ -932,6 +933,7 @@
         <p class="ov-lede ov-rise ov-d2">Headcount by competency, and the skills underneath it.</p>
         <div class="ov-stats ov-rise ov-d3" id="ov-capstats"></div>
         <div class="ov-bars ov-rise" id="ov-comp"></div>
+        <p class="ov-note ov-rise" id="ov-cap-note" style="display:none"></p>
         <div class="ov-spark ov-rise" id="ov-topskills-wrap">
           <div class="ov-spark-h">Most widely held skills</div>
           <div class="ov-bars" id="ov-topskills" style="margin-top:0"></div>
@@ -4292,7 +4294,15 @@
         stat(femPct + '%', 'Female representation') + stat(avgTen.toFixed(1), 'Avg years at PwC')
       + stat(join12, 'Joined in last 12 months') + stat(Object.keys(terrs).length, 'Territories served');
 
+    // The practice has a Managing Director who is not carried in the workbook.
+    // Until an MD row exists this stands in for them, and it disappears on its
+    // own the moment the source contains one. The footnote below says so, so the
+    // pyramid never quietly overstates what the data actually holds.
+    const MD_TIER = 'Managing Directors';
+    const MD_PLACEHOLDER = 1;
     const byGrade = cnt(ACT, e => groupForRole(e.Role));
+    const mdAssumed = !byGrade[MD_TIER] && MD_PLACEHOLDER > 0;
+    if (mdAssumed) byGrade[MD_TIER] = MD_PLACEHOLDER;
     const gMax = Math.max(1, ...Object.values(byGrade));
     $('ov-pyramid').innerHTML = ROLE_GROUPS.map(g => g.title)
       .filter(t => t !== 'Other' || byGrade['Other'])
@@ -4304,7 +4314,9 @@
     $('ov-scale-note').innerHTML = 'Leverage &mdash; ' + (ACT.length - srs.length) + ' staff below Manager for '
       + srs.length + ' at Manager and above'
       + (srs.length ? ' (' + ((ACT.length - srs.length) / srs.length).toFixed(1) + '&times;)' : '')
-      + '. Faded bars are grades with no one in them.';
+      + '. Faded bars are grades with no one in them.'
+      + (mdAssumed ? ' The Managing Director tier shows <b>' + MD_PLACEHOLDER
+          + '</b>, which is not in the source workbook &mdash; it updates automatically once an MD record is added.' : '');
     const srF = srs.filter(e => gOf(e) === 'f').length, srM = srs.filter(e => gOf(e) === 'm').length;
     const topLoc = pairs(locs)[0], topTerr = pairs(terrs)[0];
     $('ov-scale-ins').innerHTML = bullets([
@@ -4363,30 +4375,40 @@
       const ks = keys.filter(k => [...holders[k]].some(id => ids.has(id)));
       return { c, per: ids.size ? ks.length / ids.size : 0, skills: ks.length, n: ids.size };
     }).filter(r => r.n).sort((a, b) => b.per - a.per)[0];
-    // People whose skills span more than one category are the flexible ones.
-    // Counted from the skills rows themselves rather than via SKILL_CATEGORY:
-    // that map holds one category per skill (first seen), so a skill logged
-    // under two categories would otherwise mis-attribute the person.
-    const catsByPerson = Object.create(null);
-    SKILLS.forEach(r => {
-      const c = String(r['Skill Category'] || '').trim();
-      if (c) (catsByPerson[String(r.WorkdayID)] = catsByPerson[String(r.WorkdayID)] || new Set()).add(c);
-    });
-    const multiCat = ACT.filter(e => (catsByPerson[String(e.WorkdayID)] || { size: 0 }).size > 1).length;
+    // How lopsided the skill base is: does one category carry most of it?
+    const catSize = Object.create(null);
+    keys.forEach(k => { const c = SKILL_CATEGORY[k]; if (c && c !== 'Uncategorised') catSize[c] = (catSize[c] || 0) + 1; });
+    const topCat = pairs(catSize)[0];
 
     $('ov-cap-ins').innerHTML = bullets([
       noSenior.length ? '<b>' + noSenior.length + '</b> ' + (noSenior.length === 1 ? 'competency has' : 'competencies have')
         + ' no one at Manager grade or above: ' + noSenior.slice(0, 3).map(esc).join(', ')
         + (noSenior.length > 3 ? ' and others' : '') + '.'
         : 'Every competency has at least one person at Manager grade or above.',
-      keys.length ? '<b>' + shared + '</b> of ' + keys.length + ' skills are held in more than one competency &mdash; '
-        + (shared ? 'those are the ones that let people move between teams.'
-                  : 'every skill currently sits inside a single team, so there is no ready bridge between them.') : null,
+      keys.length ? '<b>' + shared + '</b> of ' + keys.length + ' skills span more than one competency'
+        + (shared ? ' &mdash; the bridges between teams.' : ', so each team&rsquo;s skills sit entirely on its own.') : null,
       strain ? '<b>' + esc(strain.c) + '</b> is spread thinnest: ' + strain.skills + ' skills across '
-        + strain.n + ' ' + (strain.n === 1 ? 'person' : 'people') + ', about ' + strain.per.toFixed(1) + ' each.' : null,
-      ACT.length ? '<b>' + multiCat + '</b> of ' + ACT.length + ' people hold skills in more than one category'
-        + (multiCat ? ' &mdash; the ones easiest to redeploy.' : ', so redeployment means retraining.') : null
+        + strain.n + ' ' + (strain.n === 1 ? 'person' : 'people') + '.' : null,
+      topCat ? '<b>' + esc(topCat[0]) + '</b> is the largest skill category, covering ' + topCat[1]
+        + ' of ' + keys.length + ' skills (' + Math.round(topCat[1] / keys.length * 100) + '%).' : null
     ]);
+
+    // If any competency bucket is a catch-all, say what is inside it. Otherwise
+    // an MD reading "Others" has no idea what it represents.
+    const otherBuckets = cRows.map(([c]) => c).filter(c => c.toLowerCase().startsWith('other'));
+    const noteEl = $('ov-cap-note');
+    if (noteEl){
+      if (otherBuckets.length){
+        const inside = new Set();
+        ACT.forEach(e => { if (otherBuckets.indexOf(cOf(e)) >= 0){
+          const d = String(e['Competency'] || '').trim(); if (d) inside.add(d); } });
+        const list = [...inside].sort();
+        noteEl.innerHTML = otherBuckets.map(esc).join(' and ') + ' covers '
+          + (list.length ? list.slice(0, 8).map(esc).join(', ') + (list.length > 8 ? ' and others' : '') + '.'
+                         : 'competencies with no more specific grouping.');
+        noteEl.style.display = '';
+      } else { noteEl.style.display = 'none'; }
+    }
 
     // ---- 03 Capacity ---- (MDs excluded, as on every other tab)
     const HAS_U = !SHARE_MODE && typeof ALL_MONTHS !== 'undefined' && ALL_MONTHS.length && LATEST_MONTH;
