@@ -480,18 +480,6 @@
     .ov-bg{transform:none!important}
   }
 
-  /* ---- Training Investment (Capability Risk) ---- */
-  .cr-tr-bar{height:9px;border-radius:5px;background:var(--pwc-grey-100);overflow:hidden;min-width:60px}
-  .cr-tr-fill{height:100%;border-radius:5px}
-  .cr-tr-num{font-variant-numeric:tabular-nums;white-space:nowrap}
-  .cr-tr-row{cursor:pointer}
-  .cr-tr-row:hover{background:var(--pwc-grey-50)}
-  .cr-tr-row.sel{background:rgba(208,74,2,0.07)}
-  .cr-tr-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--pwc-grey-600);margin:0 0 10px;align-items:center}
-  .cr-tr-legend .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
-  .cr-tr-none{font-size:12px;color:var(--pwc-grey-700);margin-top:12px;padding-top:10px;border-top:1px solid var(--pwc-grey-100)}
-  .cr-tr-none b{color:var(--pwc-orange)}
-
   /* ---- Workforce Mix cross-filter ---- */
   .ana-click{cursor:pointer;border-radius:4px;padding:2px 4px;margin-left:-4px;transition:background .12s}
   .ana-click:hover{background:var(--pwc-grey-50)}
@@ -1118,7 +1106,7 @@
   <!-- ===== PORTABLE MODULE START: Capability Risk (HTML). Needs SHARED foundation — see INTEGRATION_GUIDE.md ===== -->
   <section class="tab-panel" id="tab-caprisk">
     <h1>Capability Risk</h1>
-    <p class="subtitle">Four lenses on capability exposure. <strong>Scarce vs Stretched</strong> evaluates each capability's coverage against the utilization of its holders; <strong>Key-Person Risk</strong> surfaces capabilities concentrated in one or two individuals; <strong>Capacity Radar</strong> shows where spare capacity sits today and who to cross-train next; <strong>Training Investment</strong> looks backwards at what development has actually been spent, by competency, against how thin each one is.</p>
+    <p class="subtitle">Three lenses on capability exposure. <strong>Scarce vs Stretched</strong> evaluates each capability's coverage against the utilization of its holders; <strong>Key-Person Risk</strong> surfaces capabilities concentrated in one or two individuals; <strong>Capacity Radar</strong> shows where spare capacity sits today and who to cross-train next;</p>
 
     <details class="cr-help" open>
       <summary><span class="cr-help-ic">&#9432;</span> How to read this page</summary>
@@ -1132,7 +1120,6 @@
         </ul>
         <p>Thresholds for <em>scarce</em> (number of practitioners) and <em>stretched</em> (utilization) are adjustable via the sliders to reflect the relevant population. The <strong>Key-Person Risk</strong> lens offers a complementary perspective &mdash; capabilities concentrated in one or two individuals, independent of utilization; a &#9733; denotes a holder at Manager grade or above.</p>
         <p>The <strong>Capacity Radar</strong> lens turns the same data into actions: <em>Sellable Capacity</em> ranks skills by spare FTE (each holder's unused utilization, summed) and flags fully-committed skills, while <em>Upskilling Candidates</em> suggests, for each scarce skill, the people whose existing skills most often pair with it. Click a skill row to unfold who holds it; click a name to open their bio. All thresholds on this page are adjustable via the sliders and are remembered by your browser between sessions.</p>
-        <p>The <strong>Training Investment</strong> lens is the only backward-looking view here: it reports training hours actually logged in the utilization sheet, totalled per competency, next to the number of scarce skills sitting in that competency. Where <em>Upskilling Candidates</em> recommends <em>who to train next</em> for a named skill, this asks whether past spend has gone where the thinness is. The two are meant to be read together &mdash; one is the record, the other the plan.</p>
       </div>
     </details>
 
@@ -1151,7 +1138,6 @@
         <button data-view="scarce" class="active">Scarce vs Stretched</button>
         <button data-view="keyperson">Key-Person Risk</button>
         <button data-view="radar">Capacity Radar</button>
-        <button data-view="training">Training Investment</button>
       </div>
       <div class="smap-meta" id="cr-meta"></div>
     </div>
@@ -1240,18 +1226,6 @@
       <div class="atlas-md" id="cr-radar-body"></div>
     </div>
 
-    <!-- Training Investment: spend per competency shown next to how thin that
-         competency is, so the reader can judge whether the two line up. -->
-    <div id="cr-training-view" style="display:none">
-      <div class="cr-kpis" id="cr-tr-kpis"></div>
-      <div class="smap-grid">
-        <div class="smap-stage">
-          <div class="smap-caption" id="cr-tr-cap"></div>
-          <div id="cr-tr-body"></div>
-        </div>
-        <aside class="atlas-detail smap-detail" id="cr-tr-detail"></aside>
-      </div>
-    </div>
   </section>
 
   <!-- ===== PORTABLE MODULE END: Capability Risk (HTML) ===== -->
@@ -3687,151 +3661,7 @@
     function render(){
       if (view === 'scarce') renderScarce();
       else if (view === 'radar') renderRadar();
-      else if (view === 'training') renderTraining();
       else renderKeyPerson();
-    }
-
-    // ---- Training Investment -------------------------------------------
-    // Training Hours come from the monthly utilization sheet, so this view is
-    // absent from shared/team builds for the same reason Pulse is.
-    // Spend and thinness are shown side by side, deliberately without a verdict:
-    // whether the two line up is the reader's call, not the page's.
-    const trainingHrs = e => (UTIL_BY_EMP[String(e.WorkdayID)] || [])
-      .reduce((t, r) => { const v = Number(r['Training Hours']); return t + (isFinite(v) ? v : 0); }, 0);
-    const compOf = e => String(e['Competency Group'] || e['Competency'] || '').trim() || 'Unspecified';
-    // Same row markup as peopleRows(), but the trailing badge is training hours
-    // rather than utilization. Wire clicks with wirePeople(), as the other views do.
-    function trPeople(arr){
-      return '<div class="smap-people">' + arr.map(e => {
-        const av = e._photo
-          ? '<div class="sp-av" style="background-image:url(' + e._photo + ');background-size:cover;color:transparent">' + esc(e._initials || '') + '</div>'
-          : '<div class="sp-av">' + esc(e._initials || '?') + '</div>';
-        const h = trainingHrs(e);
-        return '<div class="smap-person" data-wid="' + esc(String(e.WorkdayID)) + '">' + av
-          + '<div style="flex:1 1 auto"><div class="sp-name">' + esc(e.Name) + (isSenior(e.Role) ? ' ★' : '') + '</div>'
-          + '<div class="sp-meta">' + esc([e.Role, e.Territory].filter(Boolean).join(' · ')) + '</div></div>'
-          + '<span class="cr-util" style="background:' + (h ? 'rgba(208,74,2,0.12)' : 'var(--pwc-grey-100)')
-          + ';color:' + (h ? ORANGE : 'var(--pwc-grey-600)') + '">' + Math.round(h) + ' h</span></div>';
-      }).join('') + '</div>';
-    }
-
-    function renderTraining(){
-      const p = pool(), body = $('cr-tr-body'), cap = $('cr-tr-cap'), det = $('cr-tr-detail');
-      if (!HAS_UTIL){
-        body.innerHTML = '<div class="cr-quad-empty">Training hours are not included in this build.</div>';
-        cap.innerHTML = 'This view needs the monthly utilization sheet, which is stripped from shared / team builds.';
-        $('cr-tr-kpis').innerHTML = ''; det.innerHTML = ''; $('cr-meta').innerHTML = '';
-        return;
-      }
-      const th = thresholds();
-      // Scarce skills per competency, using this tab's existing "scarce when" slider.
-      const scarceByComp = Object.create(null);
-      skillStats(p).forEach(s => {
-        if (s.holders.length > th.scarce) return;
-        s.holders.forEach(e => {
-          const c = compOf(e);
-          (scarceByComp[c] = scarceByComp[c] || new Set()).add(s.key);
-        });
-      });
-      const groups = Object.create(null);
-      p.forEach(e => { const c = compOf(e); (groups[c] = groups[c] || []).push(e); });
-      const rows = Object.keys(groups).map(c => {
-        const g = groups[c];
-        const hrs = g.reduce((t, e) => t + trainingHrs(e), 0);
-        return { c, n: g.length, hrs, per: g.length ? hrs / g.length : 0,
-                 scarce: (scarceByComp[c] || new Set()).size,
-                 zero: g.filter(e => trainingHrs(e) === 0) };
-      }).sort((a, b) => b.per - a.per);
-      if (!rows.length){
-        body.innerHTML = '<div class="cr-quad-empty">No one matches the current filters.</div>';
-        cap.innerHTML = ''; $('cr-tr-kpis').innerHTML = ''; det.innerHTML = '';
-        return;
-      }
-      const totHrs = rows.reduce((t, r) => t + r.hrs, 0);
-      const totN   = rows.reduce((t, r) => t + r.n, 0);
-      const noneAll = rows.reduce((a, r) => a.concat(r.zero), []);
-      const maxPer = Math.max(1, ...rows.map(r => r.per));
-      const maxSc  = Math.max(1, ...rows.map(r => r.scarce));
-      const months = ALL_MONTHS.length;
-
-      $('cr-tr-kpis').innerHTML =
-          kpi('Training hours logged', Math.round(totHrs), ORANGE)
-        + kpi('Hours per person', (totN ? totHrs / totN : 0).toFixed(1), TANGERINE)
-        + kpi('People with no training', noneAll.length, noneAll.length ? BURGUNDY : GREY)
-        + kpi('Competencies covered', rows.filter(r => r.hrs > 0).length + ' of ' + rows.length, YELLOW);
-
-      // The Skill Category / Skill filters narrow the scarce-skill count but not
-      // headcount or hours (a person's training hours aren't attributable to one
-      // skill). Say so, otherwise a low scarce count reads as "no gap here".
-      const skillFiltered = !!(crCat.selected.size || crSkill.selected.size);
-      cap.innerHTML = 'Training hours per person in each competency, next to the number of scarce skills '
-        + '(held by ' + th.scarce + ' or fewer people) sitting in that competency. Covers '
-        + months + ' month' + (months === 1 ? '' : 's') + ' of data. Click a row for the people behind it.'
-        + (skillFiltered
-            ? '<br><b>Skill filters are active:</b> the scarce-skill count reflects only the selected skills, '
-              + 'while people and hours cover everyone in the competency.'
-            : '');
-
-      body.innerHTML = '<div class="cr-tr-legend">'
-        + '<span><span class="sw" style="background:' + ORANGE + '"></span>Training hours per person</span>'
-        + '<span><span class="sw" style="background:' + BURGUNDY + '"></span>Scarce skills in this competency</span></div>'
-        + '<div class="cr-table-wrap"><table class="cr-table"><thead><tr>'
-        + '<th>Competency</th><th>People</th><th>Training hrs</th><th>Hrs / person</th><th>Scarce skills</th><th>No training</th>'
-        + '</tr></thead><tbody>'
-        + rows.map(r =>
-            '<tr class="cr-tr-row" data-c="' + esc(r.c) + '"><td><b>' + esc(r.c) + '</b></td>'
-            + '<td class="cr-tr-num">' + r.n + '</td>'
-            + '<td class="cr-tr-num">' + Math.round(r.hrs) + '</td>'
-            + '<td><div style="display:flex;align-items:center;gap:8px"><div class="cr-tr-bar" style="width:90px"><div class="cr-tr-fill" style="width:'
-              + Math.round(r.per / maxPer * 100) + '%;background:' + ORANGE + '"></div></div>'
-              + '<b class="cr-tr-num">' + r.per.toFixed(1) + '</b></div></td>'
-            + '<td><div style="display:flex;align-items:center;gap:8px"><div class="cr-tr-bar" style="width:70px"><div class="cr-tr-fill" style="width:'
-              + Math.round(r.scarce / maxSc * 100) + '%;background:' + BURGUNDY + '"></div></div>'
-              + '<span class="cr-tr-num">' + r.scarce + '</span></div></td>'
-            + '<td class="cr-tr-num">' + (r.zero.length || '') + '</td></tr>').join('')
-        + '</tbody></table></div>'
-        + (noneAll.length
-            ? '<div class="cr-tr-none"><b>' + noneAll.length + '</b> '
-              + (noneAll.length === 1 ? 'person has' : 'people have') + ' logged no training hours in this period.</div>'
-            : '');
-
-      det.innerHTML = '<div class="atlas-detail-empty"><div class="adt-emoji">&#127891;</div>'
-        + '<p>Click a competency to see who trained, who didn&rsquo;t, and how much.</p></div>';
-
-      const trRows = [...body.querySelectorAll('.cr-tr-row')];
-      trRows.forEach(tr => tr.addEventListener('click', () => {
-        const sel = tr.classList.contains('sel');
-        trRows.forEach(x => x.classList.remove('sel'));
-        if (sel){
-          det.innerHTML = '<div class="atlas-detail-empty"><div class="adt-emoji">&#127891;</div>'
-            + '<p>Click a competency to see who trained, who didn&rsquo;t, and how much.</p></div>';
-          return;
-        }
-        tr.classList.add('sel');
-        const c = tr.dataset.c, g = (groups[c] || []).slice()
-          .sort((a, b) => trainingHrs(b) - trainingHrs(a) || String(a.Name).localeCompare(String(b.Name)));
-        const trained = g.filter(e => trainingHrs(e) > 0), untrained = g.filter(e => trainingHrs(e) === 0);
-        // Reuses the tab's own people-row markup so this panel matches the others.
-        // Same header shape as the Skill Atlas detail panel: .adt-cat is a 6px
-        // colour stripe, with the text stacked in a block beside it.
-        det.innerHTML = '<div class="adt-head">'
-          + '<div class="adt-cat" style="background:' + ORANGE + '"></div>'
-          + '<div><div class="adt-cat-name">Training investment</div>'
-          + '<p class="adt-name">' + esc(c) + '</p>'
-          + '<div style="font-size:12px;color:var(--pwc-grey-600)">' + g.length + ' '
-          + (g.length === 1 ? 'person' : 'people') + ' &middot; '
-          + Math.round(g.reduce((t, e) => t + trainingHrs(e), 0)) + ' training hours over ' + months
-          + ' month' + (months === 1 ? '' : 's') + '</div></div></div>'
-          + '<div class="adt-section-title">Trained (' + trained.length + ')</div>'
-          + (trained.length ? trPeople(trained) : '<div class="cr-tr-none">No training hours logged here.</div>')
-          + (untrained.length
-              ? '<div class="adt-section-title">No training logged (' + untrained.length + ')</div>' + trPeople(untrained)
-              : '');
-        wirePeople(det);
-      }));
-
-      $('cr-meta').innerHTML = '<strong>' + Math.round(totHrs) + '</strong> training hours &middot; '
-        + totN + ' people in scope';
     }
 
     // KPI cards jump to and flash their matching rows in the list/table below.
@@ -3857,7 +3687,6 @@
       $('cr-scarce-view').style.display = view === 'scarce' ? 'block' : 'none';
       $('cr-keyperson-view').style.display = view === 'keyperson' ? 'block' : 'none';
       $('cr-radar-view').style.display = view === 'radar' ? 'block' : 'none';
-      $('cr-training-view').style.display = view === 'training' ? 'block' : 'none';
       render();
     }));
     $('cr-reset').addEventListener('click', () => {
@@ -3910,10 +3739,6 @@
     if (!HAS_UTIL){
       const sb = $('cr-view-toggle').querySelector('button[data-view="scarce"]');
       const kb = $('cr-view-toggle').querySelector('button[data-view="keyperson"]');
-      // Training hours live in the utilization sheet, so that view goes too.
-      const tb = $('cr-view-toggle').querySelector('button[data-view="training"]');
-      if (tb){ tb.style.display = 'none'; tb.classList.remove('active'); }
-      if ($('cr-training-view')) $('cr-training-view').style.display = 'none';
       if (sb){ sb.style.display = 'none'; sb.classList.remove('active'); }
       if (kb) kb.classList.add('active');
       view = 'keyperson';
@@ -4488,8 +4313,17 @@
       topTerr ? 'Most people are aligned to <b>' + esc(topTerr[0]) + '</b> (' + topTerr[1] + ' of ' + ACT.length + ').' : null,
       (males + females) ? 'Gender mix is <b>' + males + ' : ' + females + '</b> male to female'
         + ((srF + srM) ? ', and <b>' + Math.round(srF / (srF + srM) * 100) + '%</b> female at Manager and above.' : '.') : null,
-      tens.length ? 'Average tenure is <b>' + avgTen.toFixed(1) + ' years</b>'
-        + (join12 ? ', with ' + join12 + ' ' + (join12 === 1 ? 'person' : 'people') + ' joining in the last year.' : '.') : null
+      // Two KPIs above read in years — total experience and time at PwC — and
+      // they can look identical. Say what the gap between them means instead of
+      // repeating either figure.
+      (tens.length && xps.length) ? (function(){
+        const totalExp = xps.reduce((a, b) => a + b, 0) / xps.length;
+        const outside = totalExp - avgTen;
+        return outside < 0.5
+          ? 'Almost all experience on the team was built at PwC &mdash; little of it came from outside.'
+          : 'Of the <b>' + totalExp.toFixed(1) + ' years</b> of experience the average person brings, <b>'
+            + outside.toFixed(1) + '</b> were earned before joining PwC.';
+      })() : null
     ]);
 
     // ---- 02 Capability ---- (skills come from the shared index on e._skills)
@@ -4515,16 +4349,43 @@
       barRow(SKILL_DISPLAY[s.k] || s.k, s.n / tMax * 100, s.n, PALETTE[i % PALETTE.length])).join('');
     else $('ov-topskills-wrap').style.display = 'none';
 
+    // These read off the same data as the charts above but say things the charts
+    // cannot: senior cover, how transferable the skill base is, which competency
+    // is stretched thinnest across its own skills, and who spans more than one.
     const noSenior = cRows.filter(([c]) => !ACT.some(e => cOf(e) === c && isManagerRole(e.Role))).map(([c]) => c);
+    // A skill held inside more than one competency is one you can move people for.
+    const compsOfSkill = k => new Set([...holders[k]].map(id => {
+      const e = ACT.find(x => String(x.WorkdayID) === id); return e ? cOf(e) : ''; }).filter(Boolean));
+    const shared = keys.filter(k => compsOfSkill(k).size > 1).length;
+    // Skills carried per person, by competency — high means broad but thin.
+    const strain = cRows.map(([c]) => {
+      const ids = new Set(ACT.filter(e => cOf(e) === c).map(e => String(e.WorkdayID)));
+      const ks = keys.filter(k => [...holders[k]].some(id => ids.has(id)));
+      return { c, per: ids.size ? ks.length / ids.size : 0, skills: ks.length, n: ids.size };
+    }).filter(r => r.n).sort((a, b) => b.per - a.per)[0];
+    // People whose skills span more than one category are the flexible ones.
+    // Counted from the skills rows themselves rather than via SKILL_CATEGORY:
+    // that map holds one category per skill (first seen), so a skill logged
+    // under two categories would otherwise mis-attribute the person.
+    const catsByPerson = Object.create(null);
+    SKILLS.forEach(r => {
+      const c = String(r['Skill Category'] || '').trim();
+      if (c) (catsByPerson[String(r.WorkdayID)] = catsByPerson[String(r.WorkdayID)] || new Set()).add(c);
+    });
+    const multiCat = ACT.filter(e => (catsByPerson[String(e.WorkdayID)] || { size: 0 }).size > 1).length;
+
     $('ov-cap-ins').innerHTML = bullets([
-      cRows[0] ? 'Deepest capability by headcount is <b>' + esc(cRows[0][0]) + '</b> with ' + cRows[0][1] + ' people.' : null,
-      top5.length ? 'The most widely held skill is <b>' + esc(SKILL_DISPLAY[top5[0].k] || top5[0].k)
-        + '</b>, known by ' + top5[0].n + ' ' + (top5[0].n === 1 ? 'person' : 'people') + '.' : null,
       noSenior.length ? '<b>' + noSenior.length + '</b> ' + (noSenior.length === 1 ? 'competency has' : 'competencies have')
         + ' no one at Manager grade or above: ' + noSenior.slice(0, 3).map(esc).join(', ')
         + (noSenior.length > 3 ? ' and others' : '') + '.'
         : 'Every competency has at least one person at Manager grade or above.',
-      'Around <b>' + perPerson + '</b> skills are recorded per person across ' + cats.size + ' categories.'
+      keys.length ? '<b>' + shared + '</b> of ' + keys.length + ' skills are held in more than one competency &mdash; '
+        + (shared ? 'those are the ones that let people move between teams.'
+                  : 'every skill currently sits inside a single team, so there is no ready bridge between them.') : null,
+      strain ? '<b>' + esc(strain.c) + '</b> is spread thinnest: ' + strain.skills + ' skills across '
+        + strain.n + ' ' + (strain.n === 1 ? 'person' : 'people') + ', about ' + strain.per.toFixed(1) + ' each.' : null,
+      ACT.length ? '<b>' + multiCat + '</b> of ' + ACT.length + ' people hold skills in more than one category'
+        + (multiCat ? ' &mdash; the ones easiest to redeploy.' : ', so redeployment means retraining.') : null
     ]);
 
     // ---- 03 Capacity ---- (MDs excluded, as on every other tab)
