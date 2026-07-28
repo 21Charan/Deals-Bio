@@ -481,6 +481,60 @@
     .ov-bg{transform:none!important}
   }
 
+  /* ---- Scenario planner ---- */
+  .sc-wrap{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(240px,0.65fr);gap:26px;align-items:start}
+  @media (max-width:1080px){ .sc-wrap{grid-template-columns:1fr} }
+  .sc-plan{display:grid;gap:8px}
+  .sc-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;
+          padding:7px 0;border-bottom:1px solid var(--pwc-grey-100)}
+  .sc-row:last-child{border-bottom:none}
+  .sc-name{font-size:13px;font-weight:600}
+  .sc-have{font-size:12px;color:var(--pwc-grey-600);font-variant-numeric:tabular-nums}
+  .sc-step{display:flex;align-items:center;gap:0;border:1px solid var(--pwc-grey-300);border-radius:6px;overflow:hidden}
+  .sc-step button{width:30px;height:30px;border:none;background:var(--white);font-family:inherit;font-size:16px;
+                  font-weight:700;color:var(--pwc-orange);cursor:pointer;line-height:1}
+  .sc-step button:hover{background:var(--pwc-grey-50)}
+  .sc-step button:disabled{color:var(--pwc-grey-300);cursor:not-allowed}
+  .sc-step .v{min-width:44px;text-align:center;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;
+              border-left:1px solid var(--pwc-grey-300);border-right:1px solid var(--pwc-grey-300);line-height:30px}
+  .sc-step .v.pos{color:var(--pwc-orange)} .sc-step .v.neg{color:var(--pwc-rose)}
+  .sc-assume{background:var(--pwc-grey-50);border-radius:8px;padding:16px 18px;display:grid;gap:16px}
+  .sc-a label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;
+              color:var(--pwc-grey-600);margin-bottom:6px}
+  .sc-sel{width:100%;padding:8px 10px;border:1px solid var(--pwc-grey-300);border-radius:6px;
+          font-family:inherit;font-size:13px;background:var(--white)}
+  /* Thicker track than the browser default. accent-color cannot be made taller,
+     so the fill is drawn as a gradient stopped at --fill, which paintRange()
+     keeps in step with the value. Applied to the Capability Risk sliders too so
+     every slider in the dashboard matches. */
+  .sc-assume input[type=range],
+  .cr-thr input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:22px;
+                            background:transparent;cursor:pointer;margin:2px 0}
+  .sc-assume input[type=range]:focus-visible,
+  .cr-thr input[type=range]:focus-visible{outline:2px solid var(--pwc-tangerine);outline-offset:3px;border-radius:6px}
+  .sc-assume input[type=range]::-webkit-slider-runnable-track,
+  .cr-thr input[type=range]::-webkit-slider-runnable-track{
+    height:9px;border-radius:5px;
+    background:linear-gradient(to right,var(--pwc-orange) 0,var(--pwc-orange) var(--fill,0%),
+                               var(--pwc-grey-300) var(--fill,0%),var(--pwc-grey-300) 100%)}
+  .sc-assume input[type=range]::-webkit-slider-thumb,
+  .cr-thr input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+    background:var(--pwc-orange);border:3px solid var(--white);box-shadow:0 1px 4px rgba(0,0,0,.28);margin-top:-5.5px}
+  .sc-assume input[type=range]::-moz-range-track,
+  .cr-thr input[type=range]::-moz-range-track{height:9px;border-radius:5px;background:var(--pwc-grey-300)}
+  .sc-assume input[type=range]::-moz-range-progress,
+  .cr-thr input[type=range]::-moz-range-progress{height:9px;border-radius:5px;background:var(--pwc-orange)}
+  .sc-assume input[type=range]::-moz-range-thumb,
+  .cr-thr input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;
+    background:var(--pwc-orange);border:3px solid var(--white)}
+  .sc-delta{font-size:12px;font-weight:700;margin-top:6px}
+  /* Favourable / unfavourable only where the direction genuinely means something.
+     Headcount and leverage move for reasons that are neither good nor bad, so
+     they stay neutral rather than implying a verdict. Green is outside the core
+     PwC palette but is the convention readers expect on financial deltas. */
+  .sc-good{color:#177B4B} .sc-bad{color:var(--pwc-rose)}
+  .sc-neutral{color:var(--pwc-grey-700)} .sc-flat{color:var(--pwc-grey-600)}
+
   /* ---- Workforce Mix cross-filter ---- */
   .ana-click{cursor:pointer;border-radius:4px;padding:2px 4px;margin-left:-4px;transition:background .12s}
   .ana-click:hover{background:var(--pwc-grey-50)}
@@ -603,7 +657,6 @@
   .cr-thr-lbl{font-weight:700;text-transform:uppercase;letter-spacing:.4px;font-size:11px;color:var(--pwc-grey-600)}
   .cr-thr-val{font-size:13px;color:var(--pwc-grey-700)}
   .cr-thr-val b{font-size:17px;color:var(--pwc-orange)}
-  .cr-thr input[type=range]{width:100%;accent-color:var(--pwc-orange);cursor:pointer;height:4px}
   .cr-thr-focus{flex:0 0 auto;align-self:center}
   .cr-thr-group{display:flex;flex-direction:column;gap:11px;padding:0 24px;border-right:1px solid var(--pwc-grey-200)}
   .cr-thr-group:first-of-type{padding-left:0}
@@ -889,6 +942,7 @@
   <button data-tab="caprisk">Capability Risk</button>
   <button data-tab="pulse">Pulse</button>
   <button data-tab="analytics">Team Analytics</button>
+  <button data-tab="rates">Rate Analysis</button>
   <button class="nav-export-btn" id="nav-export" title="Export the current page to Excel (with filters applied)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg><span class="nx-lbl">Export to Excel</span></button>
 </nav>
 
@@ -960,10 +1014,23 @@
       </div>
     </div>
 
+    <div class="ov-scene ov-mid" data-depth="0.14">
+      <div class="ov-bg ov-wash-c"></div>
+      <div class="ov-inner">
+        <p class="ov-eyebrow ov-rise">04 &mdash; Value</p>
+        <h2 class="ov-h ov-rise ov-d1">What the hours are worth</h2>
+        <p class="ov-lede ov-rise ov-d2" id="ov-val-lede"></p>
+        <div class="ov-stats ov-rise ov-d3" id="ov-value"></div>
+        <div class="ov-bars ov-rise" id="ov-value-bars"></div>
+        <ul class="ov-ins ov-rise" id="ov-val-ins"></ul>
+        <button class="ov-jump ov-rise" data-goto="rates">Open Rate Analysis<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </div>
+    </div>
+
     <div class="ov-scene ov-light" data-depth="0.14">
       <div class="ov-bg ov-wash-b"></div>
       <div class="ov-inner">
-        <p class="ov-eyebrow ov-rise">04 &mdash; Depth</p>
+        <p class="ov-eyebrow ov-rise">05 &mdash; Depth</p>
         <h2 class="ov-h ov-rise ov-d1">Where we're thin</h2>
         <p class="ov-lede ov-rise ov-d2">Capabilities carried by only a handful of people are the ones
           that constrain what the practice can take on at once.</p>
@@ -979,7 +1046,7 @@
     <div class="ov-scene ov-dark" data-depth="0.20">
       <div class="ov-bg ov-wash-a"></div>
       <div class="ov-inner">
-        <p class="ov-eyebrow ov-rise">05 &mdash; In summary</p>
+        <p class="ov-eyebrow ov-rise">06 &mdash; In summary</p>
         <h2 class="ov-h ov-rise ov-d1">What this adds up to</h2>
         <p class="ov-lede ov-rise ov-d2">Four things worth a decision, generated from the figures above.</p>
         <div class="ov-tks ov-rise ov-d3" id="ov-tks"></div>
@@ -1323,6 +1390,56 @@
     <div class="ana-grid" id="ana-body"></div>
   </section>
 
+  <!-- ===== Rate Analysis: chargeable hours priced through the rate card ===== -->
+  <section class="tab-panel" id="tab-rates">
+    <h1>Rate Analysis</h1>
+    <p class="subtitle">Chargeable hours priced through the <strong>Hourly Rates</strong> sheet &mdash; rate is
+      matched on grade and territory. This is <strong>indicative billable value</strong>, not booked revenue:
+      it assumes every chargeable hour is billed at card rate, with no discount, write-off or fixed-fee effect.</p>
+    <div class="controls smap-controls" id="rt-filters">
+      <div class="multiselect ms-compact" id="rt-role-ms"></div>
+      <div class="multiselect ms-compact" id="rt-loc-ms"></div>
+      <div class="multiselect ms-compact" id="rt-comp-ms"></div>
+      <div class="multiselect ms-compact" id="rt-terr-ms"></div>
+      <button class="reset-btn" id="rt-reset" title="Clear filters">Reset</button>
+    </div>
+    <div class="ana-toolbar">
+      <div class="atlas-view-toggle" id="rt-mode">
+        <button data-mode="actual" class="active">Current position</button>
+        <button data-mode="scenario">Scenario planner</button>
+      </div>
+      <span class="ana-meta" id="rt-meta"></span>
+    </div>
+    <div class="ana-grid" id="rt-body"></div>
+    <div id="rt-scenario" style="display:none">
+      <div class="ana-card full">
+        <h3 class="ana-h">Build a scenario</h3>
+        <p class="ana-sub">Adjust headcount by grade and set the assumptions for anyone added. Everything to the
+          right recalculates against the current position. Figures are annualised from the rate card, so they
+          are indicative billable value, not booked revenue.</p>
+        <div class="sc-wrap">
+          <div class="sc-plan" id="sc-plan"></div>
+          <div class="sc-assume">
+            <div class="sc-a">
+              <label for="sc-terr">New hires priced as</label>
+              <select id="sc-terr" class="sc-sel"></select>
+            </div>
+            <div class="sc-a">
+              <div class="cr-thr-top"><span class="cr-thr-lbl">Target utilization</span><span class="cr-thr-val"><b id="sc-util-val">80</b>%</span></div>
+              <input type="range" id="sc-util" min="40" max="110" step="5" value="80">
+            </div>
+            <div class="sc-a">
+              <div class="cr-thr-top"><span class="cr-thr-lbl">Rate change</span><span class="cr-thr-val"><b id="sc-rate-val">0</b>%</span></div>
+              <input type="range" id="sc-rate" min="-20" max="30" step="1" value="0">
+            </div>
+            <button class="reset-btn" id="sc-reset">Clear scenario</button>
+          </div>
+        </div>
+      </div>
+      <div class="ana-grid" id="sc-out"></div>
+    </div>
+  </section>
+
 </main>
 <div class="scroll-nav" id="scroll-nav">
   <button id="scroll-up" type="button" title="Back to top" aria-label="Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg></button>
@@ -1423,16 +1540,17 @@
     if (!MOTION_OK || !root) return;
     root.querySelectorAll(selector).forEach(el => {
       const txt = el.textContent.trim();
-      const m = txt.match(/^(-?[\d,]+(?:\.\d+)?)([\s\S]*)$/);
+      // Allow a leading symbol so currency figures animate too ("$2.6M", "$105").
+      const m = txt.match(/^([^\d-]*)(-?[\d,]+(?:\.\d+)?)([\s\S]*)$/);
       if (!m) return;
-      const end = parseFloat(m[1].replace(/,/g, ''));
+      const end = parseFloat(m[2].replace(/,/g, ''));
       if (!isFinite(end) || end === 0) return;
-      const dec = (m[1].split('.')[1] || '').length, suffix = m[2], D = 520;
+      const prefix = m[1], dec = (m[2].split('.')[1] || '').length, suffix = m[3], D = 520;
       const t0 = (window.performance && performance.now) ? performance.now() : Date.now();
       (function step(now){
         const k = Math.min(1, ((now || Date.now()) - t0) / D);
         const v = end * (1 - Math.pow(1 - k, 3));
-        el.textContent = v.toFixed(dec).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + suffix;
+        el.textContent = prefix + v.toFixed(dec).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + suffix;
         if (k < 1) requestAnimationFrame(step); else el.textContent = txt;
       })(t0);
     });
@@ -4228,6 +4346,404 @@
     renderAnalytics();
   })();
 
+  // ===== Rate Analysis — chargeable hours priced through the rate card =====
+  // Rates come from the "Hourly Rates" sheet as Role x Territory. A territory
+  // with no row of its own falls back to the Standard band, so adding a new
+  // territory to the data does not silently price at zero.
+  (function(){
+    const root = document.getElementById('tab-rates'); if (!root) return;
+    const $ = id => document.getElementById(id);
+    const RATES = __RATES_JSON__;
+    const HAS_RATES = Array.isArray(RATES) && RATES.length && ALL_MONTHS.length && !SHARE_MODE;
+    if (!HAS_RATES){
+      const btn = document.querySelector('nav.tabs button[data-tab="rates"]');
+      if (btn) btn.remove();
+      root.remove();
+      return;
+    }
+    const norm = v => String(v || '').trim().toLowerCase();
+    const rateOf = Object.create(null);          // "role|territory" -> rate
+    RATES.forEach(r => {
+      const v = Number(r['Hourly Rate (USD)'] ?? r['Hourly Rate'] ?? r.Rate);
+      if (isFinite(v)) rateOf[norm(r.Role) + '|' + norm(r.Territory)] = v;
+    });
+    const STANDARD = 'standard';
+    function rate(e){
+      const rl = norm(e.Role), tr = norm(e.Territory || e['Territory Filter']);
+      return rateOf[rl + '|' + tr] ?? rateOf[rl + '|' + STANDARD] ?? 0;
+    }
+    // Chargeable hours per person per month, from the same rows Pulse uses.
+    const CH = Object.create(null);
+    UTIL.forEach(u => {
+      const h = Number(u['Chargeable Hours']);
+      if (isFinite(h)) CH[String(u.WorkdayID) + '|' + monthKey(u['Month Year'])] = h;
+    });
+    const hoursOf = e => ALL_MONTHS.reduce((t, m) => t + (CH[String(e.WorkdayID) + '|' + m] || 0), 0);
+    const valueOf = e => hoursOf(e) * rate(e);
+    // Capacity is implied by the data rather than assumed: chargeable hours
+    // divided by that month's utilization gives the hours the month could hold.
+    // Months with no utilization contribute nothing, so nothing is invented.
+    function capacityOf(e){
+      return ALL_MONTHS.reduce((t, m) => {
+        const h = CH[String(e.WorkdayID) + '|' + m], u = UTIL_LOOKUP[String(e.WorkdayID) + '|' + m];
+        return (typeof h === 'number' && typeof u === 'number' && u > 0) ? t + h / (u / 100) : t;
+      }, 0);
+    }
+    const unbilledOf = e => Math.max(0, capacityOf(e) - hoursOf(e)) * rate(e);
+    const money = v => '$' + Math.round(v).toLocaleString('en-US');
+    const compact = v => v >= 1e6 ? '$' + (v / 1e6).toFixed(1) + 'M'
+                       : v >= 1e3 ? '$' + Math.round(v / 1e3) + 'k' : '$' + Math.round(v);
+
+    const rtChange = () => renderRates();
+    const rRole = buildMS('rt-role-ms', 'All roles',        orderBy(uniqueValues('Role'), ROLE_ORDER), rtChange, 'role');
+    const rLoc  = buildMS('rt-loc-ms',  'All locations',    uniqueValues('Location'), rtChange, 'loc');
+    const rComp = buildMS('rt-comp-ms', 'All competencies', orderCompetency(uniqueValues('Competency Filter')), rtChange, 'comp');
+    const rTerr = buildMS('rt-terr-ms', 'All territories',  orderTerritory(uniqueValues('Territory Filter')), rtChange, 'terr');
+    $('rt-reset').addEventListener('click', () => {
+      [rRole, rLoc, rComp, rTerr].forEach(ms => { ms.selected.clear(); ms.refresh(); });
+      renderRates(); broadcastAll();
+    });
+
+    function poolR(){
+      return EMPLOYEES.filter(e => {
+        const s = String(e.Status || '').trim().toLowerCase();
+        if (!(s === '' || s === 'active' || s === 'in leave')) return false;
+        if (rRole.selected.size && !rRole.selected.has(String(e.Role || ''))) return false;
+        if (rLoc.selected.size  && !rLoc.selected.has(String(e.Location || ''))) return false;
+        if (rComp.selected.size && !rComp.selected.has(String(e['Competency Filter'] || ''))) return false;
+        if (rTerr.selected.size && !rTerr.selected.has(String(e['Territory Filter'] || ''))) return false;
+        return true;
+      });
+    }
+    const card = (title, sub, body, full) =>
+      '<div class="ana-card' + (full ? ' full' : '') + '"><h3 class="ana-h">' + title + '</h3><p class="ana-sub">' + sub + '</p>' + body + '</div>';
+    function valueBars(groups, colour){
+      const rows = Object.keys(groups).map(k => ({ k, v: groups[k].reduce((t, e) => t + valueOf(e), 0), n: groups[k].length }))
+        .filter(r => r.v > 0).sort((a, b) => b.v - a.v);
+      if (!rows.length) return '<div class="mdi-empty">No chargeable hours in this slice.</div>';
+      const mx = Math.max(...rows.map(r => r.v));
+      return rows.map(r =>
+        '<div class="ana-row"><span class="ana-lbl" title="' + esc(r.k) + '">' + esc(r.k) + '</span>'
+        + '<div class="ana-bar"><div class="ana-seg" style="width:' + Math.max(3, Math.round(r.v / mx * 100)) + '%;background:' + colour + '"></div></div>'
+        + '<span class="ana-val">' + compact(r.v) + '</span></div>').join('');
+    }
+    const groupBy = (pool, fn) => pool.reduce((o, e) => { const k = fn(e); if (k) (o[k] = o[k] || []).push(e); return o; }, Object.create(null));
+
+    function monthlySVG(series){
+      const n = series.length;
+      if (!n) return '<div class="mdi-empty">No chargeable hours in this slice.</div>';
+      const mx = Math.max(1, ...series);
+      const W = 920, H = 310, L = 72, R = 18, T = 30, B = 32;   // T leaves room for the value labels
+      const slot = (W - L - R) / n;                 // one band per month
+      const bw = Math.min(46, slot * 0.62);
+      const cx = i => L + slot * (i + 0.5);         // centre of the band
+      const Y = v => H - B - v / mx * (H - T - B);
+      let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block" xmlns="http://www.w3.org/2000/svg">';
+      for (let i = 0; i <= 4; i++){
+        const v = mx / 4 * i;
+        svg += '<line x1="' + L + '" y1="' + Y(v) + '" x2="' + (W - R) + '" y2="' + Y(v) + '" stroke="#F2F2F2"/>'
+             + '<text x="' + (L - 10) + '" y="' + (Y(v) + 3.5) + '" text-anchor="end" class="cr-tick">' + compact(v) + '</text>';
+      }
+      series.forEach((v, i) => {
+        svg += '<rect x="' + (cx(i) - bw / 2).toFixed(1) + '" y="' + Y(v).toFixed(1) + '" width="' + bw.toFixed(1)
+             + '" height="' + Math.max(0, Y(0) - Y(v)).toFixed(1) + '" fill="' + ORANGE + '" rx="2">'
+             + '<title>' + esc(fmtMonth(ALL_MONTHS[i])) + ' &middot; ' + money(v) + '</title></rect>'
+             // Value sits above the bar; T is 14 so there is room for it.
+             + '<text x="' + cx(i).toFixed(1) + '" y="' + Math.max(10, Y(v) - 6).toFixed(1)
+             + '" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--pwc-grey-700)">'
+             + compact(v) + '</text>';
+      });
+      [...new Set([0, Math.floor((n - 1) / 2), n - 1])].forEach(i => {
+        svg += '<text x="' + cx(i).toFixed(1) + '" y="' + (H - B + 17) + '" text-anchor="middle" class="cr-tick">'
+             + esc(fmtMonth(ALL_MONTHS[i])) + '</text>';
+      });
+      return svg + '</svg>';
+    }
+
+    function renderRates(){
+      const pool = poolR(), body = $('rt-body');
+      const totalV = pool.reduce((t, e) => t + valueOf(e), 0);
+      const totalH = pool.reduce((t, e) => t + hoursOf(e), 0);
+      const priced = pool.filter(e => rate(e) > 0).length;
+      $('rt-meta').innerHTML = '<strong>' + compact(totalV) + '</strong> across ' + pool.length + ' people'
+        + (priced < pool.length ? ' &middot; <b>' + (pool.length - priced) + '</b> unpriced' : '');
+      if (!pool.length){ body.innerHTML = '<div class="ana-card full"><div class="mdi-empty">No one matches the current filters.</div></div>'; return; }
+
+      const totalU = pool.reduce((t, e) => t + unbilledOf(e), 0);
+      const kpi = (v, l, c) => '<div class="cr-kpi" style="border-top-color:' + c + '"><div class="cr-kpi-val">' + v + '</div><div class="cr-kpi-lbl">' + l + '</div></div>';
+      const kpis = '<div class="cr-kpis">'
+        + kpi(compact(totalV), 'Indicative billable value', ORANGE)
+        + kpi(Math.round(totalH).toLocaleString('en-US'), 'Chargeable hours', TANGERINE)
+        + kpi(totalH ? '$' + Math.round(totalV / totalH) : '&mdash;', 'Blended rate per hour', YELLOW)
+        + kpi(compact(totalU), 'Unbilled capacity at card rate', ROSE)
+        + kpi(pool.length ? compact(totalV / pool.length) : '&mdash;', 'Value per person', BURGUNDY) + '</div>';
+
+      // ---- auto-generated commentary -------------------------------------
+      const seniors = pool.filter(e => isManagerRole(e.Role));
+      const sv = seniors.reduce((t, e) => t + valueOf(e), 0);
+      const vals = pool.map(valueOf).filter(v => v > 0).sort((a, b) => b - a);
+      const topN = Math.max(1, Math.round(vals.length * 0.2));
+      const topShareV = vals.length ? vals.slice(0, topN).reduce((a, b) => a + b, 0) / totalV * 100 : 0;
+      const rateByComp = Object.entries(groupBy(pool, e => String(e['Competency Group'] || e.Competency || '').trim()))
+        .map(([c, g]) => { const h = g.reduce((t, e) => t + hoursOf(e), 0);
+                           return { c, blended: h ? g.reduce((t, e) => t + valueOf(e), 0) / h : 0 }; })
+        .filter(r => r.blended).sort((a, b) => b.blended - a.blended);
+      const rtIns = '<ul class="ana-insights">' + [
+        (totalV && seniors.length)
+          ? '<b>' + Math.round(sv / totalV * 100) + '%</b> of billable value comes from the <b>' + seniors.length
+            + '</b> people at Manager grade and above &mdash; ' + (sv / totalV > 0.75
+              ? 'the pyramid is carrying its value at the top, which is expensive to scale.'
+              : 'value is spread down the grades rather than concentrated at the top.') : null,
+        totalU ? 'Unbilled capacity is worth <b>' + compact(totalU) + '</b> at card rate, <b>'
+          + Math.round(totalU / (totalV + totalU) * 100) + '%</b> of what the team could have billed. '
+          + 'Not all of it is winnable, but it is the size of the prize.' : null,
+        vals.length > 4 ? 'The top <b>' + topN + '</b> earners (' + Math.round(topN / vals.length * 100)
+          + '% of the team) generate <b>' + Math.round(topShareV) + '%</b> of the value'
+          + (topShareV > 50 ? ' &mdash; a concentration worth understanding before anyone moves on.' : '.') : null,
+        rateByComp.length > 1 ? '<b>' + esc(rateByComp[0].c) + '</b> bills richest at <b>$'
+          + Math.round(rateByComp[0].blended) + '/hr</b> blended, against <b>$'
+          + Math.round(rateByComp[rateByComp.length - 1].blended) + '/hr</b> for <b>'
+          + esc(rateByComp[rateByComp.length - 1].c) + '</b> &mdash; a mix effect, not a performance gap.' : null
+      ].filter(Boolean).map(t => '<li>' + t + '</li>').join('') + '</ul>';
+
+      const rateBars = (function(){
+        if (!rateByComp.length) return '<div class="mdi-empty">No chargeable hours in this slice.</div>';
+        const mx = Math.max(...rateByComp.map(r => r.blended));
+        return rateByComp.map(r =>
+          '<div class="ana-row"><span class="ana-lbl" title="' + esc(r.c) + '">' + esc(r.c) + '</span>'
+          + '<div class="ana-bar"><div class="ana-seg" style="width:' + Math.max(3, Math.round(r.blended / mx * 100)) + '%;background:' + YELLOW + '"></div></div>'
+          + '<span class="ana-val">$' + Math.round(r.blended) + '</span></div>').join('');
+      })();
+
+      // Everything on one page: headline figures, where the value sits, the
+      // monthly shape, then every person priced.
+      const series = ALL_MONTHS.map(m => pool.reduce((t, e) => t + (CH[String(e.WorkdayID) + '|' + m] || 0) * rate(e), 0));
+      const first = series[0], last = series[series.length - 1];
+      const dir = (first && last) ? (last - first) / first * 100 : 0;
+
+      const rows = pool.map(e => ({ e, h: hoursOf(e), r: rate(e), v: valueOf(e) }))
+        .filter(r => r.h > 0).sort((a, b) => b.v - a.v);
+      const tbl = '<div class="ana-tblwrap"><table class="ana-table"><thead><tr>'
+        + '<th>Name</th><th>Grade</th><th>Territory</th><th>Rate</th><th>Chargeable hrs</th><th>Indicative value</th></tr></thead><tbody>'
+        + rows.map(r => '<tr class="ana-mgr-row" data-wid="' + esc(String(r.e.WorkdayID)) + '" title="Open bio">'
+            + '<td><b>' + esc(r.e.Name) + '</b></td><td>' + esc(groupForRole(r.e.Role)) + '</td>'
+            + '<td>' + esc(r.e.Territory || r.e['Territory Filter'] || '') + '</td>'
+            + '<td>' + (r.r ? '$' + r.r : '<span style="color:var(--pwc-grey-400)">not priced</span>') + '</td>'
+            + '<td>' + Math.round(r.h).toLocaleString('en-US') + '</td>'
+            + '<td><b>' + money(r.v) + '</b></td></tr>').join('')
+        + '</tbody></table></div>';
+
+      body.innerHTML =
+          card('Value at a glance', 'Across ' + ALL_MONTHS.length + ' months of chargeable hours.', kpis + rtIns, true)
+        + card('Blended rate by competency', 'What an hour is worth in each team &mdash; grade mix and territory, not effort.', rateBars)
+        + card('By grade', 'Where billable value is generated.', valueBars(groupBy(pool, e => groupForRole(e.Role)), ORANGE))
+        + card('By competency', 'Value contributed by each competency.', valueBars(groupBy(pool, e => String(e['Competency Group'] || e.Competency || '').trim()), TANGERINE))
+        + card('By territory', 'Rate cards differ by territory, so this blends volume and price.', valueBars(groupBy(pool, e => String(e.Territory || e['Territory Filter'] || '').trim()), BURGUNDY))
+        + card('By location', 'Where the hours are actually worked.', valueBars(groupBy(pool, e => String(e.Location || '').trim()), PINK))
+        + card('Billable value by month', esc(fmtMonth(ALL_MONTHS[0])) + ' to ' + esc(fmtMonth(LATEST_MONTH))
+            + (first ? ' &mdash; ' + (dir >= 0 ? 'up' : 'down') + ' ' + Math.abs(Math.round(dir)) + '% across the period.' : '.'),
+            monthlySVG(series), true)
+        + card('Every person, priced', 'Rate is matched on grade and territory. Click a row to open the bio.', tbl, true);
+      body.querySelectorAll('.ana-mgr-row').forEach(tr =>
+        tr.addEventListener('click', () => showBio(tr.dataset.wid, false, rows.map(r => String(r.e.WorkdayID)))));
+
+      animateBars(body, '.ana-seg');
+      countUp(body, '.cr-kpi-val');
+    }
+    // ---- Scenario planner ------------------------------------------------
+    // Answers "what changes if we hire or release people". Existing people keep
+    // their actual hours; anyone added is modelled at the median monthly
+    // capacity found in the data, run at the target utilization, priced from the
+    // rate card. Nothing here is booked revenue - it is the rate card applied
+    // forward, so it inherits every caveat of the Current position view.
+    const GRADES = ROLE_GROUPS.map(g => g.title).filter(t => t !== 'Other');
+    // One role per grade, so a scenario hire can be priced. Uses the most common
+    // role found at that grade in the data.
+    const roleForGrade = Object.create(null);
+    (function(){
+      const tally = Object.create(null);
+      EMPLOYEES.forEach(e => {
+        const g = groupForRole(e.Role), r = String(e.Role || '').trim();
+        if (!g || !r) return;
+        (tally[g] = tally[g] || Object.create(null));
+        tally[g][r] = (tally[g][r] || 0) + 1;
+      });
+      GRADES.forEach(g => {
+        const t = tally[g];
+        roleForGrade[g] = t ? Object.keys(t).sort((a, b) => t[b] - t[a])[0] : g.replace(/s$/, '');
+      });
+    })();
+    // Median monthly capacity per person, implied by the data rather than assumed.
+    const CAP_PM = (function(){
+      const v = [];
+      EMPLOYEES.forEach(e => ALL_MONTHS.forEach(m => {
+        const h = CH[String(e.WorkdayID) + '|' + m], u = UTIL_LOOKUP[String(e.WorkdayID) + '|' + m];
+        if (typeof h === 'number' && typeof u === 'number' && u > 0) v.push(h / (u / 100));
+      }));
+      if (!v.length) return 160;
+      v.sort((a, b) => a - b);
+      return v[Math.floor(v.length / 2)];
+    })();
+    const MONTHS_N = Math.max(1, ALL_MONTHS.length);
+    const plan = Object.create(null);            // grade -> +/- headcount
+    let scMode = 'actual';
+
+    (function initScenario(){
+      const sel = $('sc-terr');
+      const bands = [...new Set(RATES.map(r => String(r.Territory || '').trim()).filter(Boolean))];
+      const preferred = bands.indexOf('Standard') >= 0 ? 'Standard' : bands[0];
+      sel.innerHTML = bands.map(b => '<option value="' + esc(b) + '"' + (b === preferred ? ' selected' : '') + '>' + esc(b) + '</option>').join('');
+      $('sc-plan').innerHTML = GRADES.map(g => {
+        const have = EMPLOYEES.filter(e => {
+          const s = String(e.Status || '').trim().toLowerCase();
+          return (s === '' || s === 'active' || s === 'in leave') && groupForRole(e.Role) === g;
+        }).length;
+        return '<div class="sc-row" data-g="' + esc(g) + '">'
+          + '<span class="sc-name">' + esc(g) + '</span>'
+          + '<span class="sc-have">' + have + ' today</span>'
+          + '<span class="sc-step"><button data-d="-1" aria-label="Remove one ' + esc(g) + '">&minus;</button>'
+          + '<span class="v" data-v>0</span>'
+          + '<button data-d="1" aria-label="Add one ' + esc(g) + '">+</button></span></div>';
+      }).join('');
+      $('sc-plan').querySelectorAll('button[data-d]').forEach(b => b.addEventListener('click', () => {
+        const row = b.closest('.sc-row'), g = row.dataset.g;
+        const have = parseInt(row.querySelector('.sc-have').textContent, 10) || 0;
+        plan[g] = Math.max(-have, (plan[g] || 0) + parseInt(b.dataset.d, 10));
+        renderScenario();
+      }));
+      ['sc-util', 'sc-rate'].forEach(id => $(id).addEventListener('input', renderScenario));
+      $('sc-terr').addEventListener('change', renderScenario);
+      $('sc-reset').addEventListener('click', () => {
+        Object.keys(plan).forEach(k => delete plan[k]);
+        $('sc-util').value = 80; $('sc-rate').value = 0;
+        renderScenario();
+      });
+      root.querySelectorAll('#rt-mode button').forEach(b => b.addEventListener('click', () => {
+        if (b.dataset.mode === scMode) return;
+        root.querySelectorAll('#rt-mode button').forEach(x => x.classList.remove('active'));
+        b.classList.add('active'); scMode = b.dataset.mode;
+        $('rt-body').style.display = scMode === 'actual' ? '' : 'none';
+        $('rt-scenario').style.display = scMode === 'actual' ? 'none' : '';
+        if (scMode === 'scenario') renderScenario();
+      }));
+    })();
+
+    function renderScenario(){
+      const pool = poolR();
+      const targetU = parseInt($('sc-util').value, 10) || 80;
+      const rateAdj = parseInt($('sc-rate').value, 10) || 0;
+      const terr = $('sc-terr').value;
+      $('sc-util-val').textContent = targetU;
+      $('sc-rate-val').textContent = (rateAdj > 0 ? '+' : '') + rateAdj;
+      $('sc-plan').querySelectorAll('.sc-row').forEach(row => {
+        const g = row.dataset.g, n = plan[g] || 0;
+        const cell = row.querySelector('[data-v]');
+        cell.textContent = (n > 0 ? '+' : '') + n;
+        cell.className = 'v' + (n > 0 ? ' pos' : n < 0 ? ' neg' : '');
+        const have = parseInt(row.querySelector('.sc-have').textContent, 10) || 0;
+        row.querySelector('button[data-d="-1"]').disabled = (n <= -have);
+      });
+
+      // --- current position, annualised from the actuals in scope ---
+      const nowHeads = pool.length;
+      const nowValue = pool.reduce((t, e) => t + valueOf(e), 0) / MONTHS_N * 12;
+      const nowHours = pool.reduce((t, e) => t + hoursOf(e), 0) / MONTHS_N * 12;
+      const nowSrs   = pool.filter(e => isManagerRole(e.Role)).length;
+
+      // --- the scenario ---
+      const factor = 1 + rateAdj / 100;
+      const cardRate = g => (rateOf[norm(roleForGrade[g]) + '|' + norm(terr)]
+                          ?? rateOf[norm(roleForGrade[g]) + '|' + STANDARD] ?? 0) * factor;
+      let addHeads = 0, addValue = 0, addHours = 0, addSrs = 0, unpriced = [];
+      const lines = [];
+      GRADES.forEach(g => {
+        const n = plan[g] || 0; if (!n) return;
+        const r = cardRate(g);
+        if (!r && n > 0) unpriced.push(g);
+        const hrs = CAP_PM * (targetU / 100) * 12 * n;      // negative n removes hours
+        addHeads += n; addHours += hrs; addValue += hrs * r;
+        if (isManagerRole(roleForGrade[g])) addSrs += n;
+        lines.push({ g, n, r, hrs, v: hrs * r });
+      });
+      // Existing value also moves if the rate card is changed.
+      const nowValueAdj = nowValue * factor;
+      const newHeads = nowHeads + addHeads;
+      const newValue = nowValueAdj + addValue;
+      const newHours = nowHours + addHours;
+      const newSrs   = nowSrs + addSrs;
+      const lev = (h, s) => s ? ((h - s) / s) : null;
+
+      // polarity: 'good-up' colours a rise green and a fall red; 'neutral' just
+      // shows the direction without passing judgement on it.
+      const delta = (a, b, fmt, polarity) => {
+        const d = b - a;
+        if (Math.abs(d) < 0.0001) return '<div class="sc-delta sc-flat">no change</div>';
+        const cls = polarity === 'good-up' ? (d > 0 ? 'sc-good' : 'sc-bad') : 'sc-neutral';
+        return '<div class="sc-delta ' + cls + '">' + (d > 0 ? '+' : '&minus;') + fmt(Math.abs(d)) + '</div>';
+      };
+      const kpi = (v, l, c, d) => '<div class="cr-kpi" style="border-top-color:' + c + '"><div class="cr-kpi-val">' + v
+        + '</div><div class="cr-kpi-lbl">' + l + '</div>' + (d || '') + '</div>';
+      const nl = v => Math.round(v).toLocaleString('en-US');
+
+      // Every delta compares against the position as it stands today, so a rate
+      // change shows its full effect. Comparing against a rate-adjusted baseline
+      // would hide the benefit of the very change being modelled.
+      const kpis = '<div class="cr-kpis">'
+        + kpi(nl(newHeads), 'Headcount', ORANGE, delta(nowHeads, newHeads, v => nl(v), 'neutral'))
+        + kpi(compact(newValue), 'Annualised billable value', TANGERINE, delta(nowValue, newValue, v => compact(v), 'good-up'))
+        + kpi(newHours ? '$' + Math.round(newValue / newHours) : '&mdash;', 'Blended rate / hr', YELLOW,
+              delta(nowHours ? nowValue / nowHours : 0, newHours ? newValue / newHours : 0, v => '$' + Math.round(v), 'good-up'))
+        + kpi(lev(newHeads, newSrs) === null ? '&mdash;' : lev(newHeads, newSrs).toFixed(1) + '&times;', 'Leverage', BURGUNDY,
+              (lev(nowHeads, nowSrs) === null || lev(newHeads, newSrs) === null) ? ''
+                : delta(lev(nowHeads, nowSrs), lev(newHeads, newSrs), v => v.toFixed(1) + '×', 'neutral'))
+        + kpi(nl(newHours), 'Annual chargeable hours', PINK, delta(nowHours, newHours, v => nl(v), 'good-up')) + '</div>';
+
+      const tbl = lines.length
+        ? '<div class="ana-tblwrap"><table class="ana-table"><thead><tr><th>Grade</th><th>Change</th><th>Rate</th>'
+          + '<th>Annual hours</th><th>Annual value</th></tr></thead><tbody>'
+          + lines.map(l => '<tr><td><b>' + esc(l.g) + '</b></td>'
+              + '<td class="' + (l.n > 0 ? 'ana-delta-up' : 'ana-delta-dn') + '"><b>' + (l.n > 0 ? '+' : '') + l.n + '</b></td>'
+              + '<td>' + (l.r ? '$' + Math.round(l.r) : '<span style="color:var(--pwc-grey-400)">not priced</span>') + '</td>'
+              + '<td>' + nl(Math.abs(l.hrs)) + (l.hrs < 0 ? ' released' : '') + '</td>'
+              + '<td><b>' + (l.v < 0 ? '&minus;' : '') + compact(Math.abs(l.v)) + '</b></td></tr>').join('')
+          + '</tbody></table></div>'
+        : '<div class="mdi-empty">Add or remove people above to model a change.</div>';
+
+      const changed = lines.length || rateAdj;
+      const summary = !changed
+        ? 'No change modelled yet. Use the steppers to add or release people, or move the rate slider.'
+        : (function(){
+            const d = newValue - nowValue, pct = nowValue ? d / nowValue * 100 : 0;
+            const bits = [];
+            if (addHeads) bits.push('<b>' + (addHeads > 0 ? '+' : '') + addHeads + '</b> '
+              + (Math.abs(addHeads) === 1 ? 'person' : 'people'));
+            if (rateAdj) bits.push('a <b>' + (rateAdj > 0 ? '+' : '') + rateAdj + '%</b> rate change');
+            return bits.join(' and ') + ' moves annualised billable value by <b>'
+              + (d >= 0 ? '+' : '&minus;') + compact(Math.abs(d)) + '</b> ('
+              + (pct >= 0 ? '+' : '&minus;') + Math.abs(Math.round(pct)) + '%), assuming new joiners run at '
+              + targetU + '% utilization on ' + Math.round(CAP_PM) + ' hours a month.';
+          })();
+
+      $('sc-out').innerHTML =
+          card('Scenario result', 'Against the current position, annualised.', kpis
+            + '<div class="ana-note">' + summary
+            + (unpriced.length ? ' <b>' + unpriced.map(esc).join(', ') + '</b> has no rate for '
+                + esc(terr) + ', so it adds hours but no value.' : '') + '</div>', true)
+        + card('The plan', 'Each line priced from the rate card at the assumptions set above.', tbl, true);
+      animateBars($('sc-out'), '.ana-seg');
+      countUp($('sc-out'), '.cr-kpi-val');
+    }
+
+    PAGE_EXPORTS.rates = function(){
+      const pool = poolR();
+      const out = [['Name', 'Grade', 'Role', 'Territory', 'Competency', 'Hourly Rate (USD)', 'Chargeable Hours', 'Indicative Value (USD)']];
+      pool.forEach(e => out.push([e.Name, groupForRole(e.Role), e.Role || '', e.Territory || e['Territory Filter'] || '',
+        e['Competency Group'] || '', rate(e) || '', Math.round(hoursOf(e)), Math.round(valueOf(e))]));
+      downloadCSV('Rate_Analysis', out);
+    };
+    renderRates();
+  })();
+
   // ===== Overview tab — scrollytelling summary ==========================
   // Reuses the shared foundation rather than recomputing: groupForRole,
   // isManagerRole, esc, the skills index on e._skills (already split on , and ;),
@@ -4369,28 +4885,41 @@
     const compsOfSkill = k => new Set([...holders[k]].map(id => {
       const e = ACT.find(x => String(x.WorkdayID) === id); return e ? cOf(e) : ''; }).filter(Boolean));
     const shared = keys.filter(k => compsOfSkill(k).size > 1).length;
-    // Skills carried per person, by competency — high means broad but thin.
-    const strain = cRows.map(([c]) => {
+    // Still needed by the Coverage takeaway in section 05.
+    const noSkill = ACT.filter(e => !(e._skills && e._skills.size)).length;
+    // 1. Is capability a shared core, or a wide specialist base? Measured as the
+    //    share of all skill records sitting in the five most widely held skills.
+    const totalRecords = keys.reduce((t, k) => t + holders[k].size, 0);
+    const topShare = totalRecords ? Math.round(top5.reduce((t, s) => t + s.n, 0) / totalRecords * 100) : 0;
+    // 3. Capability with no senior holder: a different risk from having few
+    //    holders, which the Depth section already covers.
+    const empById = Object.create(null);
+    ACT.forEach(e => { empById[String(e.WorkdayID)] = e; });
+    const juniorOnly = keys.filter(k => ![...holders[k]].some(id => {
+      const e = empById[id]; return e && isManagerRole(e.Role); }));
+    // 4. Where breadth outruns headcount: a small team carrying a large share of
+    //    the distinct skills is broad but thin.
+    const gap = cRows.map(([c]) => {
       const ids = new Set(ACT.filter(e => cOf(e) === c).map(e => String(e.WorkdayID)));
       const ks = keys.filter(k => [...holders[k]].some(id => ids.has(id)));
-      return { c, per: ids.size ? ks.length / ids.size : 0, skills: ks.length, n: ids.size };
-    }).filter(r => r.n).sort((a, b) => b.per - a.per)[0];
-    // How lopsided the skill base is: does one category carry most of it?
-    const catSize = Object.create(null);
-    keys.forEach(k => { const c = SKILL_CATEGORY[k]; if (c && c !== 'Uncategorised') catSize[c] = (catSize[c] || 0) + 1; });
-    const topCat = pairs(catSize)[0];
+      return { c, pPct: ids.size / ACT.length * 100, sPct: keys.length ? ks.length / keys.length * 100 : 0 };
+    }).filter(r => r.pPct).sort((a, b) => (b.sPct - b.pPct) - (a.sPct - a.pPct))[0];
 
     $('ov-cap-ins').innerHTML = bullets([
-      noSenior.length ? '<b>' + noSenior.length + '</b> ' + (noSenior.length === 1 ? 'competency has' : 'competencies have')
-        + ' no one at Manager grade or above: ' + noSenior.slice(0, 3).map(esc).join(', ')
-        + (noSenior.length > 3 ? ' and others' : '') + '.'
-        : 'Every competency has at least one person at Manager grade or above.',
+      top5.length ? 'Top five skills cover <b>' + topShare + '%</b> of all skill records &mdash; '
+        + (topShare >= 40 ? 'a common core most of the practice shares.'
+                          : 'specialist range, not a shared core.') : null,
       keys.length ? '<b>' + shared + '</b> of ' + keys.length + ' skills span more than one competency'
         + (shared ? ' &mdash; the bridges between teams.' : ', so each team&rsquo;s skills sit entirely on its own.') : null,
-      strain ? '<b>' + esc(strain.c) + '</b> is spread thinnest: ' + strain.skills + ' skills across '
-        + strain.n + ' ' + (strain.n === 1 ? 'person' : 'people') + '.' : null,
-      topCat ? '<b>' + esc(topCat[0]) + '</b> is the largest skill category, covering ' + topCat[1]
-        + ' of ' + keys.length + ' skills (' + Math.round(topCat[1] / keys.length * 100) + '%).' : null
+      keys.length ? (juniorOnly.length
+        ? '<b>' + juniorOnly.length + '</b> of ' + keys.length + ' skills are held only below Manager grade &mdash; '
+          + 'capability with no senior cover: ' + juniorOnly.slice(0, 3).map(k => esc(SKILL_DISPLAY[k] || k)).join(', ')
+          + (juniorOnly.length > 3 ? ' and others.' : '.')
+        : 'Every recorded skill has at least one holder at Manager grade or above.') : null,
+      (gap && gap.sPct > gap.pPct + 3)
+        ? '<b>' + esc(gap.c) + '</b> carries ' + Math.round(gap.sPct) + '% of the skill base with '
+          + Math.round(gap.pPct) + '% of the people &mdash; broad, but thin behind it.'
+        : (gap ? 'Skill breadth tracks headcount across the competencies &mdash; no team is carrying disproportionate range.' : null)
     ]);
 
     // If any competency bucket is a catch-all, say what is inside it. Otherwise
@@ -4483,7 +5012,63 @@
       ]);
     }
 
-    // ---- 04 Depth ---- (thin = few holders; a band, not a single individual)
+    // ---- 04 Value ---- priced through the Hourly Rates sheet, same basis as
+    // the Rate Analysis tab. Hidden entirely when there is no rate card.
+    (function(){
+      const RATES = __RATES_JSON__;
+      const valScene = $('ov-value') && $('ov-value').closest('.ov-scene');
+      const usable = Array.isArray(RATES) && RATES.length && HAS_U;
+      if (!usable){ if (valScene) valScene.style.display = 'none'; return; }
+      const nm = v => String(v || '').trim().toLowerCase();
+      const card = Object.create(null);
+      RATES.forEach(r => { const v = Number(r['Hourly Rate (USD)'] ?? r['Hourly Rate'] ?? r.Rate);
+        if (isFinite(v)) card[nm(r.Role) + '|' + nm(r.Territory)] = v; });
+      const rateFor = e => card[nm(e.Role) + '|' + nm(e.Territory || e['Territory Filter'])] ?? card[nm(e.Role) + '|standard'] ?? 0;
+      const chg = Object.create(null);
+      UTIL.forEach(u => { const h = Number(u['Chargeable Hours']);
+        if (isFinite(h)) chg[String(u.WorkdayID) + '|' + monthKey(u['Month Year'])] = h; });
+      const hoursFor = e => ALL_MONTHS.reduce((t, m) => t + (chg[String(e.WorkdayID) + '|' + m] || 0), 0);
+      const capFor = e => ALL_MONTHS.reduce((t, m) => {
+        const h = chg[String(e.WorkdayID) + '|' + m], u = UTIL_LOOKUP[String(e.WorkdayID) + '|' + m];
+        return (typeof h === 'number' && typeof u === 'number' && u > 0) ? t + h / (u / 100) : t; }, 0);
+      const short = v => v >= 1e6 ? '$' + (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? '$' + Math.round(v / 1e3) + 'k' : '$' + Math.round(v);
+
+      const totV = ACT.reduce((t, e) => t + hoursFor(e) * rateFor(e), 0);
+      const totH = ACT.reduce((t, e) => t + hoursFor(e), 0);
+      const totU = ACT.reduce((t, e) => t + Math.max(0, capFor(e) - hoursFor(e)) * rateFor(e), 0);
+      if (!totV){ valScene.style.display = 'none'; return; }
+
+      $('ov-val-lede').innerHTML = 'Chargeable hours priced through the rate card &mdash; indicative billable value, '
+        + 'not booked revenue. Covers ' + ALL_MONTHS.length + ' months.';
+      $('ov-value').innerHTML = stat(short(totV), 'Billable value')
+        + stat('$' + Math.round(totV / totH), 'Blended rate / hr')
+        + stat(short(totU), 'Unbilled at card rate')
+        + stat(short(totV / ACT.length), 'Value per person');
+
+      const byGrade = Object.create(null);
+      ACT.forEach(e => { const g = groupForRole(e.Role); byGrade[g] = (byGrade[g] || 0) + hoursFor(e) * rateFor(e); });
+      const gr = Object.keys(byGrade).filter(k => byGrade[k] > 0)
+        .sort((a, b) => ROLE_GROUPS.findIndex(x => x.title === a) - ROLE_GROUPS.findIndex(x => x.title === b));
+      const gmx = Math.max(1, ...gr.map(k => byGrade[k]));
+      $('ov-value-bars').innerHTML = gr.map((k, i) =>
+        barRow(k, byGrade[k] / gmx * 100, short(byGrade[k]), PALETTE[i % PALETTE.length])).join('');
+
+      const srs = ACT.filter(e => isManagerRole(e.Role));
+      const sv = srs.reduce((t, e) => t + hoursFor(e) * rateFor(e), 0);
+      const vlist = ACT.map(e => hoursFor(e) * rateFor(e)).filter(v => v > 0).sort((a, b) => b - a);
+      const tN = Math.max(1, Math.round(vlist.length * 0.2));
+      const tShare = vlist.slice(0, tN).reduce((a, b) => a + b, 0) / totV * 100;
+      $('ov-val-ins').innerHTML = bullets([
+        srs.length ? '<b>' + Math.round(sv / totV * 100) + '%</b> of billable value comes from the <b>'
+          + srs.length + '</b> people at Manager grade and above.' : null,
+        totU ? 'Unbilled capacity is worth <b>' + short(totU) + '</b> at card rate &mdash; <b>'
+          + Math.round(totU / (totV + totU) * 100) + '%</b> of what the team could have billed.' : null,
+        vlist.length > 4 ? 'The top <b>' + tN + '</b> earners generate <b>' + Math.round(tShare)
+          + '%</b> of the value.' : null
+      ]);
+    })();
+
+    // ---- 05 Depth ---- (thin = few holders; a band, not a single individual)
     const thin = keys.filter(k => holders[k].size <= THIN);
     const thinPct = keys.length ? Math.round(thin.length / keys.length * 100) : 0;
     const avgHold = keys.length ? keys.reduce((t, k) => t + holders[k].size, 0) / keys.length : 0;
@@ -4534,7 +5119,6 @@
       + 'capabilities where a reassignment, a holiday or a departure is felt immediately.';
 
     // ---- 05 Takeaways ----
-    const noSkill = ACT.filter(e => !(e._skills && e._skills.size)).length;
     $('ov-tks').innerHTML = [
       ['Capacity', spare !== null
         ? 'Roughly <b>' + spare.toFixed(1) + ' FTE</b> of capacity is unused'
@@ -4567,7 +5151,10 @@
       pulse:     ['Workforce Pulse',  'Monthly utilization, bench and burnout watch.',
                   () => uVals.length ? Math.round(uVals.reduce((a, b) => a + b, 0) / uVals.length) + '% average utilization' : 'Utilization by month'],
       analytics: ['Team Analytics',   'Trends, manager scorecards and workforce mix.',
-                  () => (srs.length ? ((ACT.length - srs.length) / srs.length).toFixed(1) + '× leverage · ' : '') + femPct + '% female']
+                  () => (srs.length ? ((ACT.length - srs.length) / srs.length).toFixed(1) + '× leverage · ' : '') + femPct + '% female'],
+      rates:     ['Rate Analysis',    'Chargeable hours priced through the rate card.',
+                  () => { const v = $('ov-value') && $('ov-value').querySelector('.n');
+                          return v ? v.textContent + ' indicative value' : 'Billable value by grade and team'; }]
     };
     const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
     // Icons are drawn inline as SVG paths rather than fetched or embedded as
@@ -4586,7 +5173,9 @@
       // pulse trace
       pulse:     ICO('<path d="M22 12h-4l-3 8L9 4l-3 8H2"/>'),
       // bar chart
-      analytics: ICO('<path d="M3 3v18h18"/><path d="M7.5 16v-5"/><path d="M12 16V8"/><path d="M16.5 16v-3"/>')
+      analytics: ICO('<path d="M3 3v18h18"/><path d="M7.5 16v-5"/><path d="M12 16V8"/><path d="M16.5 16v-3"/>'),
+      // currency
+      rates:     ICO('<path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>')
     };
     const tabBtns = [...document.querySelectorAll('nav.tabs button[data-tab]')];
     // Both pickers are built from the same list, so they can never disagree:
@@ -4649,6 +5238,22 @@
     // Any tab click leaves the landing, including the tab bar itself.
     tabBtns.forEach(b => b.addEventListener('click', () => document.body.classList.remove('landing')));
 
+    // A section can hide itself when its data is absent (Value has no rate card
+    // in the restricted build), which would otherwise leave the reader looking
+    // at 01, 02, 03, 05. Renumber whatever is actually on screen.
+    (function(){
+      let n = 0;
+      root.querySelectorAll('.ov-scene').forEach(sc => {
+        if (sc.style.display === 'none') return;
+        const eb = sc.querySelector('.ov-eyebrow');
+        if (!eb) return;
+        const m = eb.innerHTML.match(/^\s*\d+\s*(&mdash;|—)\s*(.+)$/);
+        if (!m) return;                                  // the cover has no number
+        n += 1;
+        eb.innerHTML = String(n).padStart(2, '0') + ' &mdash; ' + m[2];
+      });
+    })();
+
     // ---- Motion ----
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const risers = [...root.querySelectorAll('.ov-rise')];
@@ -4693,6 +5298,29 @@
     document.querySelectorAll('nav.tabs button[data-tab]').forEach(b =>
       b.addEventListener('click', () => setTimeout(frame, 30)));
     frame();
+  })();
+
+  // ----- Slider fill -----------------------------------------------------
+  // The tracks are styled explicitly so they can be thicker than the browser
+  // default, which means the orange "filled so far" portion has to be drawn
+  // here rather than left to accent-color.
+  (function(){
+    const SEL = '.sc-assume input[type=range], .cr-thr input[type=range]';
+    function paint(el){
+      const min = parseFloat(el.min) || 0, max = parseFloat(el.max);
+      const hi = isFinite(max) ? max : 100, v = parseFloat(el.value) || 0;
+      el.style.setProperty('--fill', (hi > min ? ((v - min) / (hi - min)) * 100 : 0).toFixed(2) + '%');
+    }
+    document.querySelectorAll(SEL).forEach(el => {
+      paint(el);
+      el.addEventListener('input', () => paint(el));
+    });
+    // Reset buttons set .value directly, which fires no input event.
+    ['sc-reset', 'cr-reset'].forEach(id => {
+      const b = document.getElementById(id);
+      if (b) b.addEventListener('click', () => setTimeout(() =>
+        document.querySelectorAll(SEL).forEach(paint), 0));
+    });
   })();
 
   // ----- Back-to-top / bottom scroll nav -----
