@@ -4475,7 +4475,7 @@
         + kpi(compact(totalV), 'Indicative billable value', ORANGE)
         + kpi(Math.round(totalH).toLocaleString('en-US'), 'Chargeable hours', TANGERINE)
         + kpi(totalH ? '$' + Math.round(totalV / totalH) : '&mdash;', 'Blended rate per hour', YELLOW)
-        + kpi(compact(totalU), 'Unbilled capacity at card rate', ROSE)
+        + kpi(compact(totalU), 'Capacity available at card rate', TANGERINE)
         + kpi(pool.length ? compact(totalV / pool.length) : '&mdash;', 'Value per person', BURGUNDY) + '</div>';
 
       // ---- auto-generated commentary -------------------------------------
@@ -4494,9 +4494,8 @@
             + '</b> people at Manager grade and above &mdash; ' + (sv / totalV > 0.75
               ? 'the pyramid is carrying its value at the top, which is expensive to scale.'
               : 'value is spread down the grades rather than concentrated at the top.') : null,
-        totalU ? 'Unbilled capacity is worth <b>' + compact(totalU) + '</b> at card rate, <b>'
-          + Math.round(totalU / (totalV + totalU) * 100) + '%</b> of what the team could have billed. '
-          + 'Not all of it is winnable, but it is the size of the prize.' : null,
+        totalU ? 'The team has room for a further <b>' + compact(totalU) + '</b> of work at card rate before it '
+          + 'is full &mdash; capacity to grow into. The same hours also carry leave, training and development.' : null,
         vals.length > 4 ? 'The top <b>' + topN + '</b> earners (' + Math.round(topN / vals.length * 100)
           + '% of the team) generate <b>' + Math.round(topShareV) + '%</b> of the value'
           + (topShareV > 50 ? ' &mdash; a concentration worth understanding before anyone moves on.' : '.') : null,
@@ -4829,10 +4828,7 @@
     const srs = ACT.filter(e => isManagerRole(e.Role));
     $('ov-scale-note').innerHTML = 'Leverage &mdash; ' + (ACT.length - srs.length) + ' staff below Manager for '
       + srs.length + ' at Manager and above'
-      + (srs.length ? ' (' + ((ACT.length - srs.length) / srs.length).toFixed(1) + '&times;)' : '')
-      + '. Faded bars are grades with no one in them.'
-      + (mdAssumed ? ' The Managing Director tier shows <b>' + MD_PLACEHOLDER
-          + '</b>, which is not in the source workbook &mdash; it updates automatically once an MD record is added.' : '');
+      + (srs.length ? ' (' + ((ACT.length - srs.length) / srs.length).toFixed(1) + '&times;)' : '') + '.';
     const srF = srs.filter(e => gOf(e) === 'f').length, srM = srs.filter(e => gOf(e) === 'm').length;
     const topLoc = pairs(locs)[0], topTerr = pairs(terrs)[0];
     $('ov-scale-ins').innerHTML = bullets([
@@ -4958,7 +4954,7 @@
       const trainH = UTIL.reduce((t, u) => { const v = Number(u['Training Hours']); return t + (isFinite(v) ? v : 0); }, 0);
       const chargeH = UTIL.reduce((t, u) => { const v = Number(u['Chargeable Hours']); return t + (isFinite(v) ? v : 0); }, 0);
       $('ov-cap-lede').innerHTML = 'Latest month with data is <strong>' + esc(fmtMonth(LATEST_MONTH))
-        + '</strong>, across ' + uVals.length + ' people. Managing Directors are excluded.';
+        + '</strong>, across ' + uVals.length + ' people.';
       $('ov-util').innerHTML = stat(Math.round(avgU) + '%', 'Average utilization')
         + stat(bench, 'On the bench (<40%)') + stat(hot, 'Stretched (>100%)')
         + stat(spare.toFixed(1), 'Spare capacity (FTE)');
@@ -5055,16 +5051,20 @@
 
       const srs = ACT.filter(e => isManagerRole(e.Role));
       const sv = srs.reduce((t, e) => t + hoursFor(e) * rateFor(e), 0);
-      const vlist = ACT.map(e => hoursFor(e) * rateFor(e)).filter(v => v > 0).sort((a, b) => b - a);
-      const tN = Math.max(1, Math.round(vlist.length * 0.2));
-      const tShare = vlist.slice(0, tN).reduce((a, b) => a + b, 0) / totV * 100;
+      const monthly = ALL_MONTHS.map((m, i) => ({ i,
+        v: ACT.reduce((t, e) => t + (chg[String(e.WorkdayID) + '|' + m] || 0) * rateFor(e), 0) }))
+        .filter(x => x.v > 0);
+      const avgMonth = monthly.length ? monthly.reduce((t, x) => t + x.v, 0) / monthly.length : 0;
+      const peak = monthly.slice().sort((a, b) => b.v - a.v)[0];
       $('ov-val-ins').innerHTML = bullets([
+        monthly.length ? 'Billable value averages <b>' + short(avgMonth) + '</b> a month, with a high of <b>'
+          + short(peak.v) + '</b> in <b>' + esc(fmtMonth(ALL_MONTHS[peak.i])) + '</b>.' : null,
         srs.length ? '<b>' + Math.round(sv / totV * 100) + '%</b> of billable value comes from the <b>'
           + srs.length + '</b> people at Manager grade and above.' : null,
-        totU ? 'Unbilled capacity is worth <b>' + short(totU) + '</b> at card rate &mdash; <b>'
-          + Math.round(totU / (totV + totU) * 100) + '%</b> of what the team could have billed.' : null,
-        vlist.length > 4 ? 'The top <b>' + tN + '</b> earners generate <b>' + Math.round(tShare)
-          + '%</b> of the value.' : null
+        // Framed as headroom to win work, not as hours people failed to bill.
+        // The same hours cover leave, training and development.
+        totU ? 'There is room for a further <b>' + short(totU)
+          + '</b> of work at card rate without hiring.' : null
       ]);
     })();
 
