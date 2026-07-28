@@ -885,6 +885,9 @@
   .insight-pill.new{background:var(--pwc-pink)}
   .insight-sub{font-size:11px;color:var(--pwc-grey-600)}
   .insight-list{display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto}
+  .insight-more{font-size:11px;color:var(--pwc-grey-600);padding:8px 2px 2px;
+                border-top:1px solid var(--pwc-grey-100);margin-top:4px}
+  .insight-more b{color:var(--pwc-black)}
   .insight-row{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:4px;cursor:pointer}
   .insight-row:hover{background:var(--pwc-grey-100)}
   .insight-row-photo{width:32px;height:32px;border-radius:50%;overflow:hidden;background:var(--pwc-grey-100);flex-shrink:0;display:flex;align-items:center;justify-content:center}
@@ -3492,22 +3495,34 @@
            + '</div>';
     }
 
+    // These lists are capped so a 900-person filter cannot render thousands of
+    // rows on every keystroke. The cap is stated whenever it bites, because the
+    // KPI card above links straight to the list and the two must not appear to
+    // disagree.
+    const LIST_CAP = 100;
+    const capNote = (shown, total) => shown < total
+      ? '<div class="insight-more">Showing the ' + shown + ' most relevant of <b>' + total
+        + '</b>. Export to Excel for the full list.</div>'
+      : '';
+
     // On the bench — lowest latest-month util
-    const bench = list
+    const benchAll = list
       .filter(e => typeof e._latestUtil === 'number' && e._latestUtil < 40)
-      .sort((a,b) => a._latestUtil - b._latestUtil)
-      .slice(0, 20);
+      .sort((a,b) => a._latestUtil - b._latestUtil);
+    const bench = benchAll.slice(0, LIST_CAP);
     document.getElementById('insight-bench').innerHTML = bench.length
       ? bench.map(e => rowHtml(e, Math.round(e._latestUtil) + '%', 'bench')).join('')
+        + capNote(bench.length, benchAll.length)
       : '<div class="insight-empty">No utilization data yet.</div>';
 
     // Watch list — sustained 3-month avg > 100, ranked by intensity
-    const watch = list
+    const watchAll = list
       .filter(e => e._sustained3 !== null && e._sustained3 > 100)
-      .sort((a,b) => b._sustained3 - a._sustained3)
-      .slice(0, 20);
+      .sort((a,b) => b._sustained3 - a._sustained3);
+    const watch = watchAll.slice(0, LIST_CAP);
     document.getElementById('insight-watch').innerHTML = watch.length
       ? watch.map(e => rowHtml(e, Math.round(e._sustained3) + '% avg', 'watch')).join('')
+        + capNote(watch.length, watchAll.length)
       : '<div class="insight-empty">No one sustained above 100% &mdash; nice!</div>';
 
     // New joiners — this calendar month and the one before it. Whole months
@@ -3518,7 +3533,7 @@
     // Upper bound as well as lower: a Join Date in the future is either a
     // pre-boarded starter or a typo, and neither has "joined" yet.
     const jEnd = new Date(jNow.getFullYear(), jNow.getMonth() + 1, 1);
-    const joiners = list
+    const joinersAll = list
       .filter(e => {
         const d = e['Join Date'];
         if (!d) return false;
@@ -3526,9 +3541,10 @@
         return !isNaN(dt) && dt >= cutoff && dt < jEnd;
       })
       .sort((a,b) => new Date(b['Join Date']) - new Date(a['Join Date']))
-      .slice(0, 20);
+    const joiners = joinersAll.slice(0, LIST_CAP);
     document.getElementById('insight-new').innerHTML = joiners.length
       ? joiners.map(e => rowHtml(e, String(e['Join Date']).split('T')[0], '')).join('')
+        + capNote(joiners.length, joinersAll.length)
       : '<div class="insight-empty">No one joined in the last 2 months.</div>';
 
     // Wire clicks per list so the modal arrows walk THAT list, not the directory.
