@@ -840,6 +840,7 @@
      sliders when there is not. */
   .pr-note{flex:1 1 260px;font-size:12px;color:var(--pwc-grey-600);margin:0;text-align:right}
   .pr-note:empty{display:none}
+  .md-note{text-align:left;margin:-2px 0 10px}
   .pr-note b{color:var(--pwc-black)}
   @media (max-width:1200px){.pr-note{text-align:left;flex:1 1 100%}}
   .pulse-controls > input,.pulse-controls > select{padding:9px 12px;border:1px solid var(--pwc-grey-300);border-radius:4px;font-family:inherit;font-size:13px;background:var(--white);height:42px;box-sizing:border-box}
@@ -1391,6 +1392,8 @@
       </div>
       <div class="pr-note" id="pulse-range-note"></div>
     </div>
+
+    <div class="pr-note md-note" id="pulse-md-note"></div>
 
     <div class="heatmap-wrap">
       <div class="heatmap" id="heatmap"></div>
@@ -3311,7 +3314,12 @@
     const fyAvg = e => { let sum = 0, n = 0; FY.months.forEach(m => { const v = FY.lookup[String(e.WorkdayID) + '|' + m]; if (v !== undefined){ sum += v; n++; } }); return n ? sum / n : null; };
 
     let list = EMPLOYEES.filter(e => {
-      if (groupForRole(e.Role) === 'Managing Directors') return false;   // MD utilization excluded from Pulse
+      // Managing Directors are kept out of Pulse by default. Selecting one by
+      // name in the RL Manager filter is an explicit request for that person,
+      // so they are let through — otherwise filtering to an MD who is also an
+      // RL manager returns their reports but silently drops the manager.
+      if (groupForRole(e.Role) === 'Managing Directors'
+          && !pMgr.selected.has(String(e.Name || '').trim())) return false;
       if (pMgr.selected.size && !(pMgr.selected.has(String(e['RL Manager'] || '').trim()) || pMgr.selected.has(String(e.Name || '').trim()))) return false;
       if (pRole.selected.size && !pRole.selected.has(String(e['Role'] || ''))) return false;
       if (pLoc.selected.size  && !pLoc.selected.has(String(e['Location'] || ''))) return false;
@@ -3340,8 +3348,19 @@
     // utilization band is applied *after* this on purpose: the cards count
     // people into bands of their own, so narrowing to 30-50% would empty
     // "Healthy" and "Stretched" and read as broken rather than filtered.
-    setPulseKpis(list);
-    renderInsights(list);
+    // ...but the cards and lists still measure the team without MDs, so the
+    // averages stay comparable with every other view.
+    const teamOnly = list.filter(e => groupForRole(e.Role) !== 'Managing Directors');
+    setPulseKpis(teamOnly);
+    renderInsights(teamOnly);
+    const mdShown = list.filter(e => groupForRole(e.Role) === 'Managing Directors');
+    const mdNote = document.getElementById('pulse-md-note');
+    if (mdNote) mdNote.innerHTML = mdShown.length
+      ? '<b>' + mdShown.map(e => esc(e.Name)).join(', ') + '</b> '
+        + (mdShown.length === 1 ? 'is a Managing Director' : 'are Managing Directors')
+        + ' &mdash; shown because you selected them, but left out of the cards above'
+        + ' so the averages stay comparable with the rest of the dashboard.'
+      : '';
 
     // Utilization band — heatmap rows only. Measured on whichever fiscal
     // window is selected, so switching to PY re-reads both the latest month
@@ -3375,7 +3394,7 @@
       return;
     }
 
-    let html = '<div class="hm-corner">Employee (' + list.length + ')</div>';
+    let html = '<div class="hm-corner">Employee (' + rows.length + ')</div>';
     html += '<div class="hm-month-header hm-fy-col" title="Average utilization across the selected fiscal year">FY Util</div>';
     html += '<div class="hm-spacer"></div>';
     FY.months.forEach(m => { html += '<div class="hm-month-header">' + esc(fmtMonth(m)) + '</div>'; });
@@ -3604,7 +3623,12 @@
     const FY = FY_DATA[pulseFY];
     const q = document.getElementById('pulse-search').value.toLowerCase().trim();
     const list = EMPLOYEES.filter(e => {
-      if (groupForRole(e.Role) === 'Managing Directors') return false;   // MD utilization excluded from Pulse
+      // Managing Directors are kept out of Pulse by default. Selecting one by
+      // name in the RL Manager filter is an explicit request for that person,
+      // so they are let through — otherwise filtering to an MD who is also an
+      // RL manager returns their reports but silently drops the manager.
+      if (groupForRole(e.Role) === 'Managing Directors'
+          && !pMgr.selected.has(String(e.Name || '').trim())) return false;
       if (pMgr.selected.size && !(pMgr.selected.has(String(e['RL Manager'] || '').trim()) || pMgr.selected.has(String(e.Name || '').trim()))) return false;
       if (pRole.selected.size && !pRole.selected.has(String(e['Role'] || ''))) return false;
       if (pLoc.selected.size  && !pLoc.selected.has(String(e['Location'] || ''))) return false;
