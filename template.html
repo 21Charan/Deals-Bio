@@ -481,6 +481,17 @@
     .ov-bg{transform:none!important}
   }
 
+  /* ---- Rate Analysis: provenance notice ----
+     Deliberately hard to miss. The figures are credible-looking and would
+     otherwise be taken at face value in a meeting. */
+  .rt-notice{display:flex;gap:12px;align-items:flex-start;background:#FFF6EC;
+             border:1px solid var(--pwc-tangerine);border-left:5px solid var(--pwc-tangerine);
+             border-radius:6px;padding:14px 18px;margin:0 0 20px;font-size:13px;line-height:1.6;
+             color:var(--pwc-grey-700);max-width:none}
+  .rt-notice svg{width:20px;height:20px;color:var(--pwc-tangerine);flex:0 0 auto;margin-top:1px}
+  .rt-notice b{color:var(--pwc-grey-900)}
+  .rt-notice em{font-style:italic}
+
   /* ---- Scenario planner ---- */
   .sc-wrap{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(240px,0.65fr);gap:26px;align-items:start}
   @media (max-width:1080px){ .sc-wrap{grid-template-columns:1fr} }
@@ -666,9 +677,9 @@
   .cr-thr-row{display:flex;gap:24px;align-items:flex-end;flex:1 1 auto}
   .cr-thr-row .cr-thr{flex:1 1 150px;min-width:130px}
   .cr-thr-gh{margin:0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--pwc-orange)}
-  #cr-window-toggle{align-self:center;margin-left:24px;flex-direction:column}
+  #cr-window-toggle,#cr-scarce-window{align-self:center;margin-left:24px;flex-direction:column}
   #cr-window-toggle button + button{border-left:none;border-top:1px solid var(--pwc-grey-300)}
-  @media (max-width:1080px){.cr-thr-group,#cr-grp-deploy,#cr-grp-committed,#cr-grp-upskill{flex:1 1 100%;border-right:none;border-bottom:1px solid var(--pwc-grey-200);padding:12px 0}.cr-thr-group:first-of-type{padding-top:0}#cr-window-toggle{margin-left:0;padding-top:12px}}
+  @media (max-width:1080px){.cr-thr-group,#cr-grp-deploy,#cr-grp-committed,#cr-grp-upskill{flex:1 1 100%;border-right:none;border-bottom:1px solid var(--pwc-grey-200);padding:12px 0}.cr-thr-group:first-of-type{padding-top:0}#cr-window-toggle,#cr-scarce-window{margin-left:0;padding-top:12px}}
   /* Capability Risk — ranked risk list */
   .cr-risklist{display:flex;flex-direction:column;gap:8px;max-height:660px;overflow-y:auto;padding-right:2px}
   .cr-risk-row{display:grid;grid-template-columns:14px minmax(140px,1.3fr) 1fr 1fr 132px;align-items:center;gap:14px;background:var(--white);border:1px solid var(--pwc-grey-100);border-radius:7px;padding:10px 14px;cursor:pointer;transition:box-shadow .12s,border-color .12s}
@@ -809,6 +820,28 @@
 
   /* ---- Pulse (capacity heatmap) ---- */
   .pulse-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  /* Utilization band. Borrows .cr-thresholds/.cr-thr so the slider styling and
+     the stacked toggle match the Capability Risk page exactly. */
+  /* Its own row under the filter bar. Keeps .cr-thresholds' card so it matches
+     the Capability Risk sliders, and lays out on one line — label beside slider
+     rather than above — so the card is a single tidy strip. */
+  .pulse-range{gap:10px 18px;align-items:center;padding:12px 18px;margin:0 0 12px}
+  .pulse-range .cr-thr-group{flex-direction:row;align-items:center;gap:16px;
+                             border-right:none;padding:0;flex:0 0 auto}
+  .pulse-range .cr-thr-gh{flex:0 0 auto;margin:0}
+  .pulse-range .cr-thr-row{align-items:center;gap:20px;flex:0 0 auto}
+  .pulse-range .cr-thr{flex:0 0 auto;min-width:0;flex-direction:row;align-items:center;gap:10px}
+  .pulse-range .cr-thr-top{flex:0 0 auto;gap:6px;white-space:nowrap;justify-content:flex-start}
+  .pulse-range .cr-thr input[type=range]{width:150px;margin:0}
+  /* Horizontal, so the card reads as one strip rather than a stack. */
+  #pulse-range-basis{flex-direction:row;align-self:center;margin:0;flex:0 0 auto}
+  #pulse-range-basis button{padding:6px 12px;font-size:11px;white-space:nowrap}
+  /* The caption rides on the same line when there is room, and drops under the
+     sliders when there is not. */
+  .pr-note{flex:1 1 260px;font-size:12px;color:var(--pwc-grey-600);margin:0;text-align:right}
+  .pr-note:empty{display:none}
+  .pr-note b{color:var(--pwc-black)}
+  @media (max-width:1200px){.pr-note{text-align:left;flex:1 1 100%}}
   .pulse-controls > input,.pulse-controls > select{padding:9px 12px;border:1px solid var(--pwc-grey-300);border-radius:4px;font-family:inherit;font-size:13px;background:var(--white);height:42px;box-sizing:border-box}
   .pulse-controls > input{flex:1 1 150px;min-width:110px;max-width:260px}
   #pulse-sort{width:160px;flex:0 0 auto}
@@ -1221,9 +1254,9 @@
           <div class="cr-thr-top"><span class="cr-thr-lbl">Stretched above</span><span class="cr-thr-val"><b id="cr-hot-val">100</b>% utilization</span></div>
           <input type="range" id="cr-hot-slider" min="60" max="130" step="5" value="100">
         </div>
-        <div class="cr-thr-focus atlas-view-toggle" id="cr-risk-focus">
-          <button data-focus="all" class="active">All skills</button>
-          <button data-focus="critical">Needs attention</button>
+        <div class="cr-thr-focus atlas-view-toggle" id="cr-scarce-window" title="Which utilization window the Load figure is measured over">
+          <button data-win="latest" class="active">Latest month</button>
+          <button data-win="avg3">3-month avg</button>
         </div>
       </div>
       <div class="cr-kpis" id="cr-scarce-kpis"></div>
@@ -1335,6 +1368,30 @@
       <button class="reset-btn" id="pulse-reset" title="Clear filters">Reset</button>
     </div>
 
+    <!-- Utilization band: narrows the heatmap rows only. The KPI cards and the
+         insight lists deliberately keep reporting the whole filtered team, so
+         the bands they count against stay meaningful while the band is applied. -->
+    <div class="cr-thresholds pulse-range" id="pulse-range">
+      <div class="cr-thr-group">
+        <div class="cr-thr-gh">Utilization band</div>
+        <div class="cr-thr-row">
+          <div class="cr-thr">
+            <div class="cr-thr-top"><span class="cr-thr-lbl">From</span><span class="cr-thr-val"><b id="pl-rmin">0</b>%</span></div>
+            <input type="range" id="pl-min-slider" min="0" max="150" step="5" value="0" aria-label="Lowest utilization to show">
+          </div>
+          <div class="cr-thr">
+            <div class="cr-thr-top"><span class="cr-thr-lbl">To</span><span class="cr-thr-val"><b id="pl-rmax">150</b>%<span id="pl-rplus">+</span></span></div>
+            <input type="range" id="pl-max-slider" min="0" max="150" step="5" value="150" aria-label="Highest utilization to show">
+          </div>
+          <div class="atlas-view-toggle" id="pulse-range-basis" title="Which utilization figure the band is measured on">
+            <button data-basis="latest" class="active">Latest month</button>
+            <button data-basis="avg" id="pl-basis-avg">FY average</button>
+          </div>
+        </div>
+      </div>
+      <div class="pr-note" id="pulse-range-note"></div>
+    </div>
+
     <div class="heatmap-wrap">
       <div class="heatmap" id="heatmap"></div>
       <div class="pulse-pager" id="pulse-pager"></div>
@@ -1358,7 +1415,7 @@
       <div class="insight-card">
         <div class="insight-head">
           <span class="insight-pill new">New Joiners</span>
-          <span class="insight-sub">Joined in the last 12 months</span>
+          <span class="insight-sub">Joined this month or last month</span>
         </div>
         <div id="insight-new" class="insight-list"></div>
       </div>
@@ -1394,8 +1451,14 @@
   <section class="tab-panel" id="tab-rates">
     <h1>Rate Analysis</h1>
     <p class="subtitle">Chargeable hours priced through the <strong>Hourly Rates</strong> sheet &mdash; rate is
-      matched on grade and territory. This is <strong>indicative billable value</strong>, not booked revenue:
-      it assumes every chargeable hour is billed at card rate, with no discount, write-off or fixed-fee effect.</p>
+      matched on grade and territory.</p>
+    <div class="rt-notice">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+      <div>
+        <b>Sample rates.</b> The Hourly Rates sheet holds placeholders, not PwC&rsquo;s rate card.
+        The analysis is real; the amounts are not.
+      </div>
+    </div>
     <div class="controls smap-controls" id="rt-filters">
       <div class="multiselect ms-compact" id="rt-role-ms"></div>
       <div class="multiselect ms-compact" id="rt-loc-ms"></div>
@@ -3229,6 +3292,11 @@
   const PULSE_PAGE_SIZE = 60;
   let pulsePage = 0;
 
+  // Utilization band. PL_BAND_MAX doubles as "and above" — the top of the
+  // slider is an open end, so a person at 135% is still inside a 100-150 band.
+  const PL_BAND_MAX = 150;
+  let plMin = 0, plMax = PL_BAND_MAX, plBasis = 'latest';
+
   function fmtMonth(ym){
     // "2026-01" -> "Jan '26"
     const [y, m] = ym.split('-');
@@ -3268,15 +3336,34 @@
     else if (srt === 'latest-asc')  list.sort((a,b) => cmpVal(a, b, '_latestUtil'));
     else                            list.sort((a,b) => String(a.Name).localeCompare(String(b.Name)));
 
-    // KPI cards + insight boxes reflect the current filter selection.
+    // KPI cards + insight boxes reflect the current filter selection. The
+    // utilization band is applied *after* this on purpose: the cards count
+    // people into bands of their own, so narrowing to 30-50% would empty
+    // "Healthy" and "Stretched" and read as broken rather than filtered.
     setPulseKpis(list);
     renderInsights(list);
 
+    // Utilization band — heatmap rows only. Measured on whichever fiscal
+    // window is selected, so switching to PY re-reads both the latest month
+    // and the average from the May-Apr sheet.
+    const bandLast = FY.months.length ? FY.months[FY.months.length - 1] : null;
+    const bandVal = e => {
+      if (plBasis === 'avg') return fyAvg(e);
+      const v = bandLast ? FY.lookup[String(e.WorkdayID) + '|' + bandLast] : undefined;
+      return v === undefined ? null : v;
+    };
+    const bandOn = plMin > 0 || plMax < PL_BAND_MAX;
+    const bandHi = plMax >= PL_BAND_MAX ? Infinity : plMax;
+    const rows = bandOn
+      ? list.filter(e => { const v = bandVal(e); return typeof v === 'number' && v >= plMin && v <= bandHi; })
+      : list;
+    paintBandNote(list.length, rows.length, bandOn, bandLast);
+
     // Pagination
-    const totalPages = Math.max(1, Math.ceil(list.length / PULSE_PAGE_SIZE));
+    const totalPages = Math.max(1, Math.ceil(rows.length / PULSE_PAGE_SIZE));
     if (pulsePage >= totalPages) pulsePage = totalPages - 1;
     const start = pulsePage * PULSE_PAGE_SIZE;
-    const page = list.slice(start, start + PULSE_PAGE_SIZE);
+    const page = rows.slice(start, start + PULSE_PAGE_SIZE);
 
     // Build grid template: name column (220px) + N month columns
     const heatmap = document.getElementById('heatmap');
@@ -3330,7 +3417,7 @@
     const pager = document.getElementById('pulse-pager');
     pager.innerHTML = ''
       + '<div>Showing <strong>' + (page.length ? (start + 1) : 0) + '&ndash;'
-      + (start + page.length) + '</strong> of <strong>' + list.length + '</strong></div>'
+      + (start + page.length) + '</strong> of <strong>' + rows.length + '</strong></div>'
       + '<div style="display:flex;gap:8px;align-items:center;">'
       +   '<button id="pulse-prev"' + (pulsePage === 0 ? ' disabled' : '') + '>&larr; Prev</button>'
       +   '<span>Page ' + (pulsePage + 1) + ' / ' + totalPages + '</span>'
@@ -3383,21 +3470,26 @@
       ? watch.map(e => rowHtml(e, Math.round(e._sustained3) + '% avg', 'watch')).join('')
       : '<div class="insight-empty">No one sustained above 100% &mdash; nice!</div>';
 
-    // New joiners — last 12 months by Join Date
-    const cutoff = new Date();
-    cutoff.setFullYear(cutoff.getFullYear() - 1);
+    // New joiners — this calendar month and the one before it. Whole months
+    // rather than a rolling 60 days, so someone who started on the 2nd does not
+    // drop off the list on the 3rd of the month after next.
+    const jNow = new Date();
+    const cutoff = new Date(jNow.getFullYear(), jNow.getMonth() - 1, 1);
+    // Upper bound as well as lower: a Join Date in the future is either a
+    // pre-boarded starter or a typo, and neither has "joined" yet.
+    const jEnd = new Date(jNow.getFullYear(), jNow.getMonth() + 1, 1);
     const joiners = list
       .filter(e => {
         const d = e['Join Date'];
         if (!d) return false;
         const dt = new Date(d);
-        return !isNaN(dt) && dt >= cutoff;
+        return !isNaN(dt) && dt >= cutoff && dt < jEnd;
       })
       .sort((a,b) => new Date(b['Join Date']) - new Date(a['Join Date']))
       .slice(0, 20);
     document.getElementById('insight-new').innerHTML = joiners.length
       ? joiners.map(e => rowHtml(e, String(e['Join Date']).split('T')[0], '')).join('')
-      : '<div class="insight-empty">No recent joiners.</div>';
+      : '<div class="insight-empty">No one joined in the last 2 months.</div>';
 
     // Wire clicks per list so the modal arrows walk THAT list, not the directory.
     function wireList(containerId, arr){
@@ -3414,10 +3506,64 @@
   // Wire filter inputs (reset page on change)
   ['pulse-search','pulse-sort'].forEach(id =>
     document.getElementById(id).addEventListener('input', () => { pulsePage = 0; renderPulse(); }));
+  // ----- Utilization band -------------------------------------------------
+  // Two plain sliders rather than a dual-thumb control: no library, keyboard
+  // accessible, and each end reads out its own number.
+  const plMinEl  = document.getElementById('pl-min-slider');
+  const plMaxEl  = document.getElementById('pl-max-slider');
+  const plBandEl = document.getElementById('pulse-range');
+
+  function paintBandNote(total, shown, on, lastMonth){
+    document.getElementById('pl-rmin').textContent = plMin;
+    document.getElementById('pl-rmax').textContent = plMax;
+    document.getElementById('pl-rplus').hidden = plMax < PL_BAND_MAX;
+    // The average is over whichever fiscal window is showing, so say which.
+    const avgBtn = document.getElementById('pl-basis-avg');
+    if (avgBtn) avgBtn.textContent = (pulseFY === 'am' ? 'PY' : 'FY') + ' average';
+    const note = document.getElementById('pulse-range-note');
+    if (!note) return;
+    if (!on){ note.innerHTML = ''; return; }
+    const basis = plBasis === 'avg'
+      ? (pulseFY === 'am' ? 'PY May&ndash;Apr average' : 'FY Jul&ndash;Jun average')
+      : ('latest month' + (lastMonth ? ' (' + esc(fmtMonth(lastMonth)) + ')' : ''));
+    note.innerHTML = 'Band <b>' + plMin + '&ndash;' + plMax + (plMax >= PL_BAND_MAX ? '%+' : '%')
+      + '</b> on ' + basis + ' &mdash; showing <b>' + shown + '</b> of ' + total
+      + ' filtered ' + (total === 1 ? 'person' : 'people')
+      + '. KPI cards and the lists below still cover all ' + total + '.';
+  }
+
+  if (plMinEl && plMaxEl){
+    const bandChange = () => { pulsePage = 0; renderPulse(); };
+    plMinEl.addEventListener('input', () => {
+      plMin = parseInt(plMinEl.value, 10);
+      if (plMin > plMax){ plMax = plMin; plMaxEl.value = plMax; }   // ends cannot cross
+      bandChange();
+    });
+    plMaxEl.addEventListener('input', () => {
+      plMax = parseInt(plMaxEl.value, 10);
+      if (plMax < plMin){ plMin = plMax; plMinEl.value = plMin; }
+      bandChange();
+    });
+    document.querySelectorAll('#pulse-range-basis button').forEach(btn =>
+      btn.addEventListener('click', () => {
+        if (btn.dataset.basis === plBasis) return;
+        plBasis = btn.dataset.basis;
+        document.querySelectorAll('#pulse-range-basis button').forEach(b => b.classList.toggle('active', b === btn));
+        bandChange();
+      }));
+  }
+  // No utilization in this build means nothing to band on.
+  if (plBandEl && !FY_DATA.jj.months.length && !FY_DATA.am.months.length) plBandEl.hidden = true;
+
   document.getElementById('pulse-reset').addEventListener('click', () => {
     document.getElementById('pulse-search').value = '';
     [pMgr, pRole, pLoc, pComp, pTerr, pCat].forEach(ms => { ms.selected.clear(); ms.refresh(); });
     document.getElementById('pulse-sort').value = 'avg-desc';
+    plMin = 0; plMax = PL_BAND_MAX; plBasis = 'latest';
+    if (plMinEl) plMinEl.value = plMin;
+    if (plMaxEl) plMaxEl.value = plMax;
+    document.querySelectorAll('#pulse-range-basis button').forEach(b =>
+      b.classList.toggle('active', b.dataset.basis === 'latest'));
     pulsePage = 0; renderPulse();
     broadcastAll();          // shared filters are cleared everywhere, so repaint every tab
   });
@@ -3491,7 +3637,8 @@
     const HAS_UTIL = (typeof ALL_MONTHS !== 'undefined') && ALL_MONTHS.length > 0 && !SHARE_MODE;
     const isSenior = r => isManagerRole(r);
     let view = 'scarce';
-    let radarWin = 'latest';   // capacity window: latest month or 3-month avg
+    let radarWin  = 'latest';  // capacity window on the Capacity Radar
+    let scarceWin = 'latest';  // and the equivalent on Scarce vs Stretched
 
     function fillSel(id, vals){ const el = $(id); if (!el) return; vals.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; el.appendChild(o); }); el.style.display = vals.length ? '' : 'none'; }
     const crTerr = buildMS('cr-terr-ms', 'All territories',      orderTerritory(uniqueValues('Territory Filter')),           render, 'terr');
@@ -3568,20 +3715,25 @@
         $('cr-scarce-kpis').innerHTML = ''; $('cr-meta').innerHTML = '';
         return;
       }
-      const focusBtn = $('cr-risk-focus') && $('cr-risk-focus').querySelector('button.active');
-      const focus = focusBtn ? focusBtn.dataset.focus : 'all';
-
-      const pts = stats.filter(s => s.utils.length).map(s => {
-        const demand = avg(s.utils), supply = s.holders.length;
-        return { s, supply, demand, qd: quad(supply, demand, th) };
-      });
+      // Load is measured over the chosen window. skillStats() collects the
+      // latest month, so for the 3-month view we recompute from the holders.
+      const sUtil = e => {
+        const u = scarceWin === 'avg3' ? (typeof e._sustained3 === 'number' ? e._sustained3 : e._latestUtil) : e._latestUtil;
+        return typeof u === 'number' ? u : undefined;
+      };
+      const winLabel = scarceWin === 'avg3' ? '3-month average' : 'latest month';
+      const pts = stats.map(s => {
+        const us = s.holders.map(sUtil).filter(u => u !== undefined);
+        return { s, us, supply: s.holders.length, demand: us.length ? avg(us) : null };
+      }).filter(q => q.demand !== null)
+        .map(q => ({ ...q, qd: quad(q.supply, q.demand, th) }));
       const TIER = { ss: 0, demand: 1, niche: 2, ok: 3 };
       pts.sort((a, b) => TIER[a.qd.key] - TIER[b.qd.key] || b.demand - a.demand || a.supply - b.supply
         || SKILL_DISPLAY[a.s.key].localeCompare(SKILL_DISPLAY[b.s.key]));
 
       const counts = { ss: 0, demand: 0, niche: 0, ok: 0 };
       pts.forEach(q => counts[q.qd.key]++);
-      const shown = (focus === 'critical') ? pts.filter(q => q.qd.key !== 'ok') : pts;
+      const shown = pts;                      // the KPI cards do the filtering now
       const maxSupply = Math.max(1, ...pts.map(q => q.supply));
 
       function row(q){
@@ -3611,7 +3763,7 @@
 
       const benchN = p.filter(e => typeof e._latestUtil === 'number' && e._latestUtil < 40).length;
       $('cr-scarce-kpis').innerHTML = kpi('Scarce & stretched', counts.ss, '#E0301E', 'ss') + kpi('In demand', counts.demand, '#EB8C00', 'demand') + kpi('Niche / watch', counts.niche, '#FFB600', 'niche') + kpi('Healthy depth', counts.ok, '#A6A6A6', 'ok');
-      cap.innerHTML = 'Skills ranked by capability risk among the <b>' + p.length + '</b> people in scope. Use the sliders to set what counts as <b>scarce</b> and <b>stretched</b> for this slice &mdash; the bands below recalculate live. <b>Depth</b> = how many people hold the skill; <b>Load</b> = how busy they are.'
+      cap.innerHTML = 'Skills ranked by capability risk among the <b>' + p.length + '</b> people in scope. Use the sliders to set what counts as <b>scarce</b> and <b>stretched</b> for this slice &mdash; the bands below recalculate live. <b>Depth</b> = how many people hold the skill; <b>Load</b> = how busy they are, measured over the ' + winLabel + '.'
         + '<div class="cr-criteria">'
         +   '<span class="cr-q"><i style="background:#E0301E"></i>Scarce &amp; stretched</span>'
         +   '<span class="cr-q"><i style="background:#EB8C00"></i>In demand</span>'
@@ -3849,9 +4001,11 @@
       radarWin = b.dataset.win; saveThr();
       if (view === 'radar') renderRadar();
     }));
-    const focusBox = $('cr-risk-focus');
-    if (focusBox) focusBox.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
-      focusBox.querySelectorAll('button').forEach(x => x.classList.remove('active')); b.classList.add('active');
+    const scarceWinBox = $('cr-scarce-window');
+    if (scarceWinBox) scarceWinBox.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      if (b.dataset.win === scarceWin) return;
+      scarceWinBox.querySelectorAll('button').forEach(x => x.classList.remove('active')); b.classList.add('active');
+      scarceWin = b.dataset.win; saveThr();
       if (view === 'scarce') renderScarce();
     }));
 
@@ -4883,39 +5037,31 @@
     const shared = keys.filter(k => compsOfSkill(k).size > 1).length;
     // Still needed by the Coverage takeaway in section 05.
     const noSkill = ACT.filter(e => !(e._skills && e._skills.size)).length;
-    // 1. Is capability a shared core, or a wide specialist base? Measured as the
-    //    share of all skill records sitting in the five most widely held skills.
-    const totalRecords = keys.reduce((t, k) => t + holders[k].size, 0);
-    const topShare = totalRecords ? Math.round(top5.reduce((t, s) => t + s.n, 0) / totalRecords * 100) : 0;
     // 3. Capability with no senior holder: a different risk from having few
     //    holders, which the Depth section already covers.
     const empById = Object.create(null);
     ACT.forEach(e => { empById[String(e.WorkdayID)] = e; });
     const juniorOnly = keys.filter(k => ![...holders[k]].some(id => {
       const e = empById[id]; return e && isManagerRole(e.Role); }));
-    // 4. Where breadth outruns headcount: a small team carrying a large share of
-    //    the distinct skills is broad but thin.
-    const gap = cRows.map(([c]) => {
+    // Plain counts an MD can go and check, rather than shares of a denominator
+    // that has to be explained first.
+    const spread = cRows.map(([c]) => {
       const ids = new Set(ACT.filter(e => cOf(e) === c).map(e => String(e.WorkdayID)));
       const ks = keys.filter(k => [...holders[k]].some(id => ids.has(id)));
-      return { c, pPct: ids.size / ACT.length * 100, sPct: keys.length ? ks.length / keys.length * 100 : 0 };
-    }).filter(r => r.pPct).sort((a, b) => (b.sPct - b.pPct) - (a.sPct - a.pPct))[0];
-
+      return { c, skills: ks.length, people: ids.size, per: ids.size ? ks.length / ids.size : 0 };
+    }).filter(r => r.people).sort((a, b) => b.per - a.per)[0];
     $('ov-cap-ins').innerHTML = bullets([
-      top5.length ? 'Top five skills cover <b>' + topShare + '%</b> of all skill records &mdash; '
-        + (topShare >= 40 ? 'a common core most of the practice shares.'
-                          : 'specialist range, not a shared core.') : null,
-      keys.length ? '<b>' + shared + '</b> of ' + keys.length + ' skills span more than one competency'
-        + (shared ? ' &mdash; the bridges between teams.' : ', so each team&rsquo;s skills sit entirely on its own.') : null,
+      keys.length ? '<b>' + shared + '</b> of ' + keys.length + ' skills are used by more than one competency'
+        + (shared ? ' &mdash; those are the people you can move between teams.'
+                  : ', so no skill is shared across teams.') : null,
       keys.length ? (juniorOnly.length
-        ? '<b>' + juniorOnly.length + '</b> of ' + keys.length + ' skills are held only below Manager grade &mdash; '
-          + 'capability with no senior cover: ' + juniorOnly.slice(0, 3).map(k => esc(SKILL_DISPLAY[k] || k)).join(', ')
+        ? '<b>' + juniorOnly.length + '</b> skills have no holder at Manager grade or above: '
+          + juniorOnly.slice(0, 3).map(k => esc(SKILL_DISPLAY[k] || k)).join(', ')
           + (juniorOnly.length > 3 ? ' and others.' : '.')
-        : 'Every recorded skill has at least one holder at Manager grade or above.') : null,
-      (gap && gap.sPct > gap.pPct + 3)
-        ? '<b>' + esc(gap.c) + '</b> carries ' + Math.round(gap.sPct) + '% of the skill base with '
-          + Math.round(gap.pPct) + '% of the people &mdash; broad, but thin behind it.'
-        : (gap ? 'Skill breadth tracks headcount across the competencies &mdash; no team is carrying disproportionate range.' : null)
+        : 'Every skill has at least one holder at Manager grade or above.') : null,
+      spread ? '<b>' + esc(spread.c) + '</b> covers <b>' + spread.skills + '</b> skills with only <b>'
+        + spread.people + '</b> ' + (spread.people === 1 ? 'person' : 'people')
+        + ' &mdash; the widest range per head.' : null
     ]);
 
     // If any competency bucket is a catch-all, say what is inside it. Otherwise
@@ -4993,18 +5139,19 @@
       } else { $('ov-trend-wrap').style.display = 'none'; }
 
       const first = pts.length ? pts[0].v : null, last = pts.length ? pts[pts.length - 1].v : null;
-      const prev = pts.length > 1 ? pts[pts.length - 2].v : null;
-      const d = (prev !== null && last !== null) ? last - prev : null;
+      const peakU = pts.slice().sort((a, b) => b.v - a.v)[0];   // busiest month in the period
       $('ov-util-ins').innerHTML = bullets([
-        d !== null ? 'Utilization ' + (Math.abs(d) < 0.5 ? 'held steady' : (d > 0 ? 'rose <b>' + Math.round(d)
-          + ' points</b>' : 'fell <b>' + Math.abs(Math.round(d)) + ' points</b>')) + ' against the previous month.' : null,
-        (first !== null && pts.length > 2) ? 'Across the period it moved from <b>' + Math.round(first)
-          + '%</b> to <b>' + Math.round(last) + '%</b>.' : null,
-        '<b>' + healthy + '</b> of ' + uVals.length + ' people sit in the healthy 80-100% band, while '
-          + bench + ' ' + (bench === 1 ? 'is' : 'are') + ' under 40% and ' + hot + ' above 100%.',
+        // One line for the whole period rather than two overlapping ones.
+        (first !== null && pts.length > 2) ? 'Utilization has moved from <b>' + Math.round(first) + '%</b> in '
+          + esc(fmtMonth(ALL_MONTHS[pts[0].i])) + ' to <b>' + Math.round(last) + '%</b> in '
+          + esc(fmtMonth(LATEST_MONTH)) + '.' : null,
+        peakU ? 'The busiest month was <b>' + esc(fmtMonth(ALL_MONTHS[peakU.i])) + '</b> at <b>'
+          + Math.round(peakU.v) + '%</b>.' : null,
+        '<b>' + healthy + '</b> of ' + uVals.length + ' people are in the healthy 80&ndash;100% band, '
+          + bench + ' below 40% and ' + hot + ' above 100%.',
         burn ? '<b>' + burn + '</b> ' + (burn === 1 ? 'person has' : 'people have')
-          + ' averaged above 100% for three straight months.'
-          : 'No one has averaged above 100% for three consecutive months.'
+          + ' averaged above 100% for three months running.'
+          : 'No one has averaged above 100% for three months running.'
       ]);
     }
 
@@ -5034,8 +5181,10 @@
       const totU = ACT.reduce((t, e) => t + Math.max(0, capFor(e) - hoursFor(e)) * rateFor(e), 0);
       if (!totV){ valScene.style.display = 'none'; return; }
 
-      $('ov-val-lede').innerHTML = 'Chargeable hours priced through the rate card &mdash; indicative billable value, '
-        + 'not booked revenue. Covers ' + ALL_MONTHS.length + ' months.';
+      // The landing shows these figures before anyone reaches the Rate Analysis
+      // tab, so the provenance has to travel with them.
+      $('ov-val-lede').innerHTML = 'Chargeable hours priced through the rate card, over ' + ALL_MONTHS.length
+        + ' months. <b>Sample rates</b> &mdash; indicative value, not booked revenue.';
       $('ov-value').innerHTML = stat(short(totV), 'Billable value')
         + stat('$' + Math.round(totV / totH), 'Blended rate / hr')
         + stat(short(totU), 'Unbilled at card rate')
@@ -5306,6 +5455,7 @@
   // here rather than left to accent-color.
   (function(){
     const SEL = '.sc-assume input[type=range], .cr-thr input[type=range]';
+    const BAND = '#pulse-range input[type=range]';
     function paint(el){
       const min = parseFloat(el.min) || 0, max = parseFloat(el.max);
       const hi = isFinite(max) ? max : 100, v = parseFloat(el.value) || 0;
@@ -5315,8 +5465,12 @@
       paint(el);
       el.addEventListener('input', () => paint(el));
     });
+    // The two band thumbs clamp each other, so moving one can silently change
+    // the other's value — repaint both on either input.
+    document.querySelectorAll(BAND).forEach(el =>
+      el.addEventListener('input', () => document.querySelectorAll(BAND).forEach(paint)));
     // Reset buttons set .value directly, which fires no input event.
-    ['sc-reset', 'cr-reset'].forEach(id => {
+    ['sc-reset', 'cr-reset', 'pulse-reset'].forEach(id => {
       const b = document.getElementById(id);
       if (b) b.addEventListener('click', () => setTimeout(() =>
         document.querySelectorAll(SEL).forEach(paint), 0));
