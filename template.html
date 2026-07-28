@@ -4979,11 +4979,17 @@
     const tenOf = e => { const d = new Date(String(e['Join Date'] || '')); return isNaN(d) ? null : (NOW - d) / 3.15576e10; };
     const gOf = e => { const g = String(e.Gender || '').trim().toLowerCase(); return g === 'male' ? 'm' : (g === 'female' ? 'f' : 'x'); };
     const males = ACT.filter(e => gOf(e) === 'm').length, females = ACT.filter(e => gOf(e) === 'f').length;
+    // Shown as shares. Only the male share is rounded and the female share is
+    // taken as the remainder, so the two always read as 100 rather than 99 or
+    // 101 on an odd headcount.
+    const mfTot = males + females;
+    const mPct = mfTot ? Math.round(males / mfTot * 100) : 0;
+    const mfPct = mfTot ? mPct + '% : ' + (100 - mPct) + '%' : '\u2014';
     const tens = ACT.map(tenOf).filter(v => v !== null);
     const avgTen = tens.length ? tens.reduce((a, b) => a + b, 0) / tens.length : 0;
     const join12 = tens.filter(v => v < 1).length;
     $('ov-scale2').innerHTML =
-        stat(males + ' : ' + females, 'Male : female') + stat(avgTen.toFixed(1), 'Avg years at PwC')
+        stat(mfPct, 'Male : female') + stat(avgTen.toFixed(1), 'Avg years at PwC')
       + stat(join12, 'Joined in last 12 months') + stat(Object.keys(terrs).length, 'Territories served');
 
     // The practice has a Managing Director who is not carried in the workbook.
