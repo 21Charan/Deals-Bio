@@ -1867,13 +1867,15 @@ renderFinderResults();
     const m = p.filter(e => String(e.Gender || '').trim().toLowerCase() === 'male').length;
     const f = p.filter(e => String(e.Gender || '').trim().toLowerCase() === 'female').length;
     const srs = p.filter(e => isManagerRole(e.Role));
-    const tens = p.map(tenureOf).filter(v => v !== null);
+    // Total career experience, not time at PwC. tenureOf() still drives the
+    // "By tenure" breakdown below, where time at the firm is what is meant.
+    const exps = p.map(e => parseFloat(e[EXP_TOTAL])).filter(v => !isNaN(v));
     const stat = (v, l) => '<div class="stat"><div class="v">' + v + '</div><div class="l">' + esc(l) + '</div></div>';
     $('tm-kpis').innerHTML =
         stat(p.length, sel ? 'In slice' : 'People')
       + stat((m + f) ? Math.round(f / (m + f) * 100) + '%' : '—', 'Female')
       + stat(srs.length ? ((p.length - srs.length) / srs.length).toFixed(1) + '×' : '—', 'Leverage')
-      + stat(tens.length ? avg(tens).toFixed(1) : '—', 'Avg yrs');
+      + stat(exps.length ? avg(exps).toFixed(1) : '—', 'Avg experience');
     $('tm-kpis2').innerHTML = HAS_UTIL
       ? stat(us.length ? Math.round(avg(us)) + '%' : '—', 'Avg util')
         + stat(us.filter(v => v < 40).length, 'Bench')
