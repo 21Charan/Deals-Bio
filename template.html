@@ -4836,7 +4836,7 @@
         + Math.round(topLoc[1] / ACT.length * 100) + '% of the practice.' : null,
       topTerr ? 'Most people are aligned to <b>' + esc(topTerr[0]) + '</b> (' + topTerr[1] + ' of ' + ACT.length + ').' : null,
       (males + females) ? 'Gender mix is <b>' + males + ' : ' + females + '</b> male to female'
-        + ((srF + srM) ? ', and <b>' + Math.round(srF / (srF + srM) * 100) + '%</b> female at Manager and above.' : '.') : null,
+        + ((srF + srM) ? ', and <b>' + srM + ' : ' + srF + '</b> at Manager and above.' : '.') : null,
       // Two KPIs above read in years — total experience and time at PwC — and
       // they can look identical. Say what the gap between them means instead of
       // repeating either figure.
@@ -5145,13 +5145,13 @@
       directory: ['Directory',        'Search, filter and open any bio.',
                   () => nfmt(ACT.length) + ' people · ' + Object.keys(locs).length + ' locations'],
       skills:    ['Skill Atlas',      'Who knows what, and who to staff on a pitch.',
-                  () => keys.length + ' skills · ' + cats.size + ' categories'],
+                  () => keys.length + ' skills · ' + Object.keys(comps).length + ' competencies'],
       caprisk:   ['Capability Risk',  'Coverage, concentration and where to cross-train.',
                   () => thin.length + ' of ' + keys.length + ' skills thinly covered'],
       pulse:     ['Workforce Pulse',  'Monthly utilization, bench and burnout watch.',
                   () => uVals.length ? Math.round(uVals.reduce((a, b) => a + b, 0) / uVals.length) + '% average utilization' : 'Utilization by month'],
       analytics: ['Team Analytics',   'Trends, manager scorecards and workforce mix.',
-                  () => (srs.length ? ((ACT.length - srs.length) / srs.length).toFixed(1) + '× leverage · ' : '') + femPct + '% female'],
+                  () => (srs.length ? ((ACT.length - srs.length) / srs.length).toFixed(1) + '× leverage · ' : '') + males + ':' + females + ' M:F'],
       rates:     ['Rate Analysis',    'Chargeable hours priced through the rate card.',
                   () => { const v = $('ov-value') && $('ov-value').querySelector('.n');
                           return v ? v.textContent + ' indicative value' : 'Billable value by grade and team'; }]
