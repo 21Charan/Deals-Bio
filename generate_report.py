@@ -170,8 +170,9 @@ def load_workbook_data(path):
         "Employee Utilization_Jul_Jun": "util_jj",   # FY Jul-Jun view (Pulse toggle)
         "Employee Utilization_May_April": "util_am", # Performance Year May-Apr view (Pulse toggle)
         "Employee Utilization_Apr_Mar": "util_am",   # legacy tab name, kept as fallback
+        "Hourly Rates": "rates",                     # Role x Territory rate card
     }
-    data = {"details": [], "skills": [], "utilization": [], "util_jj": [], "util_am": []}
+    data = {"details": [], "skills": [], "utilization": [], "util_jj": [], "util_am": [], "rates": []}
     for ws in wb.worksheets:
         key = keymap.get(ws.title.strip())
         if key is None and not data["details"]:
@@ -377,6 +378,7 @@ def main():
             .replace("__UTIL_JSON__",      json.dumps(util, default=str))
             .replace("__UTIL_JJ_JSON__",   json.dumps(util_jj, default=str))
             .replace("__UTIL_AM_JSON__",   json.dumps(util_am, default=str))
+            .replace("__RATES_JSON__",     json.dumps(data["rates"], default=str))
             .replace("__TOTAL__",          str(len(enriched)))
             .replace("__AVG_EXP__",        str(avg_exp))
             .replace("__NUM_OUS__",        str(len(ous)))
@@ -399,7 +401,7 @@ def main():
         builds.append((False, OUTPUT_DIR / "Employee_Dashboard_Mobile.html",
                        "Mobile / full (Directory + Skill Finder)", mobile_template))
 
-    print(f"[ok] Employees: {len(enriched)} | Skill rows: {len(data['skills'])} | Util rows: {len(data['utilization'])}")
+    print(f"[ok] Employees: {len(enriched)} | Skill rows: {len(data['skills'])} | Util rows: {len(data['utilization'])} | Rate rows: {len(data['rates'])}")
     ids_with_skills = {str(r.get("WorkdayID")) for r in data["skills"] if r.get("WorkdayID") not in (None, "")}
     no_skill_emps = [e for e in enriched if str(e.get("WorkdayID")) not in ids_with_skills]
     if no_skill_emps:
