@@ -3285,6 +3285,27 @@
   // RL Manager filter: selecting a manager keeps their direct reports AND the
   // manager's own row (all RL managers are also employees in the roster).
   const pMgr  = buildMS('pulse-mgr-ms',  'All RL managers',      uniqueValues('RL Manager'),                pChange);
+  // Matching a manager to their own row cannot be an exact string compare: the
+  // RL Manager column and the Name column are maintained separately and often
+  // differ in case or spacing ("ANUPRIYA BOSE" vs "Anupriya Bose"), which drops
+  // the manager from their own view while their reports still show. Compare
+  // normalised, and also follow RL Manager Email -> emailid, which survives a
+  // genuine spelling difference and disambiguates two people sharing a name.
+  const MN = v => String(v || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  function mgrMatcher(){
+    const sel = new Set([...pMgr.selected].map(MN));
+    if (!sel.size) return { active: false, ok: () => true, isMgr: () => false };
+    const mails = new Set();
+    EMPLOYEES.forEach(x => {
+      if (sel.has(MN(x['RL Manager']))){
+        const m = MN(x['RL Manager Email']);
+        if (m) mails.add(m);
+      }
+    });
+    const isMgr = e => sel.has(MN(e.Name)) || (e.emailid && mails.has(MN(e.emailid)));
+    return { active: true, isMgr, ok: e => sel.has(MN(e['RL Manager'])) || isMgr(e) };
+  }
+
   const pRole = buildMS('pulse-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), pChange, 'role');
   const pLoc  = buildMS('pulse-loc-ms',  'All locations',        uniqueValues('Location'),                  pChange, 'loc');
   const pComp = buildMS('pulse-comp-ms', 'All competencies',     orderCompetency(uniqueValues('Competency Filter')), pChange, 'comp');
@@ -3311,6 +3332,7 @@
     const q   = document.getElementById('pulse-search').value.toLowerCase().trim();
     const srt = document.getElementById('pulse-sort').value;
     const FY  = FY_DATA[pulseFY];
+    const mgr = mgrMatcher();
     const fyAvg = e => { let sum = 0, n = 0; FY.months.forEach(m => { const v = FY.lookup[String(e.WorkdayID) + '|' + m]; if (v !== undefined){ sum += v; n++; } }); return n ? sum / n : null; };
 
     let list = EMPLOYEES.filter(e => {
@@ -3318,9 +3340,8 @@
       // name in the RL Manager filter is an explicit request for that person,
       // so they are let through — otherwise filtering to an MD who is also an
       // RL manager returns their reports but silently drops the manager.
-      if (groupForRole(e.Role) === 'Managing Directors'
-          && !pMgr.selected.has(String(e.Name || '').trim())) return false;
-      if (pMgr.selected.size && !(pMgr.selected.has(String(e['RL Manager'] || '').trim()) || pMgr.selected.has(String(e.Name || '').trim()))) return false;
+      if (groupForRole(e.Role) === 'Managing Directors' && !mgr.isMgr(e)) return false;
+      if (!mgr.ok(e)) return false;
       if (pRole.selected.size && !pRole.selected.has(String(e['Role'] || ''))) return false;
       if (pLoc.selected.size  && !pLoc.selected.has(String(e['Location'] || ''))) return false;
       if (pComp.selected.size && !pComp.selected.has(String(e['Competency Filter'] || ''))) return false;
@@ -3621,15 +3642,15 @@
   // Pulse export: heatmap for the selected fiscal year, filtered, with FY average.
   PAGE_EXPORTS.pulse = function(){
     const FY = FY_DATA[pulseFY];
+    const mgr = mgrMatcher();
     const q = document.getElementById('pulse-search').value.toLowerCase().trim();
     const list = EMPLOYEES.filter(e => {
       // Managing Directors are kept out of Pulse by default. Selecting one by
       // name in the RL Manager filter is an explicit request for that person,
       // so they are let through — otherwise filtering to an MD who is also an
       // RL manager returns their reports but silently drops the manager.
-      if (groupForRole(e.Role) === 'Managing Directors'
-          && !pMgr.selected.has(String(e.Name || '').trim())) return false;
-      if (pMgr.selected.size && !(pMgr.selected.has(String(e['RL Manager'] || '').trim()) || pMgr.selected.has(String(e.Name || '').trim()))) return false;
+      if (groupForRole(e.Role) === 'Managing Directors' && !mgr.isMgr(e)) return false;
+      if (!mgr.ok(e)) return false;
       if (pRole.selected.size && !pRole.selected.has(String(e['Role'] || ''))) return false;
       if (pLoc.selected.size  && !pLoc.selected.has(String(e['Location'] || ''))) return false;
       if (pComp.selected.size && !pComp.selected.has(String(e['Competency Filter'] || ''))) return false;
