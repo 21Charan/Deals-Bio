@@ -4979,12 +4979,11 @@
     const tenOf = e => { const d = new Date(String(e['Join Date'] || '')); return isNaN(d) ? null : (NOW - d) / 3.15576e10; };
     const gOf = e => { const g = String(e.Gender || '').trim().toLowerCase(); return g === 'male' ? 'm' : (g === 'female' ? 'f' : 'x'); };
     const males = ACT.filter(e => gOf(e) === 'm').length, females = ACT.filter(e => gOf(e) === 'f').length;
-    const femPct = (males + females) ? Math.round(females / (males + females) * 100) : 0;
     const tens = ACT.map(tenOf).filter(v => v !== null);
     const avgTen = tens.length ? tens.reduce((a, b) => a + b, 0) / tens.length : 0;
     const join12 = tens.filter(v => v < 1).length;
     $('ov-scale2').innerHTML =
-        stat(femPct + '%', 'Female representation') + stat(avgTen.toFixed(1), 'Avg years at PwC')
+        stat(males + ' : ' + females, 'Male : female') + stat(avgTen.toFixed(1), 'Avg years at PwC')
       + stat(join12, 'Joined in last 12 months') + stat(Object.keys(terrs).length, 'Territories served');
 
     // The practice has a Managing Director who is not carried in the workbook.
