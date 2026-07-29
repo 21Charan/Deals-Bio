@@ -1542,6 +1542,19 @@
   const LEAVERS   = __LEAVERS_JSON__;
   const HAS_LEAVERS = Array.isArray(LEAVERS) && LEAVERS.length > 0;
 
+  // Normalise any Month-Year value -> "YYYY-MM" (handles 'Jul-2025', 'July 2025', ISO dates, '2025-07').
+  const _MN = { jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12' };
+  function monthKey(raw){
+    if (raw == null) return '';
+    const s = String(raw).trim();
+    let m = s.match(/^(\d{4})-(\d{2})/);                 if (m) return m[1] + '-' + m[2];
+    m = s.match(/([A-Za-z]{3,})[\s\-\/]+(\d{4})/);       if (m && _MN[m[1].slice(0,3).toLowerCase()]) return m[2] + '-' + _MN[m[1].slice(0,3).toLowerCase()];
+    m = s.match(/^(\d{1,2})[\-\/](\d{4})$/);            if (m) return m[2] + '-' + String(m[1]).padStart(2,'0');
+    return s.slice(0,7);
+  }
+  const _MABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function monthLabelLong(key){ const m = String(key).match(/^(\d{4})-(\d{2})/); return m ? _MABBR[+m[2]-1] + '-' + m[1] : String(key); }
+
   // ----- Hours behind each person-month -----------------------------------
   // Averaging individual percentages gives a 0.6 FTE, or someone who worked
   // half of March, exactly the same say as a full-time full month. Dividing
@@ -1568,7 +1581,6 @@
   }
   const HOURS      = buildHours(UTIL);
   const HOURS_FYD  = { jj: buildHours(UTIL_FY.jj), am: buildHours(UTIL_FY.am) };
-  const HAS_HOURS  = Object.keys(HOURS).some(k => HOURS[k].std > 0);
 
   // Utilization across a set of "WorkdayID|YYYY-MM" keys. Hours-weighted when
   // standard hours are available for that set, mean-of-percentages otherwise.
@@ -1583,28 +1595,8 @@
     if (std > 0) return ch / std * 100;
     return n ? sum / n : null;
   }
-  // Totals for the same set — the figures the landing page reports directly.
-  function hoursOver(keys, hours){
-    let ch = 0, std = 0, tr = 0, n = 0;
-    for (const k of keys){
-      const h = hours && hours[k];
-      if (!h) continue;
-      ch += h.ch; std += h.std; tr += h.tr; n++;
-    }
-    return { ch, std, tr, n };
-  }
-  // Normalise any Month-Year value -> "YYYY-MM" (handles 'Jul-2025', 'July 2025', ISO dates, '2025-07').
-  const _MN = { jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12' };
-  function monthKey(raw){
-    if (raw == null) return '';
-    const s = String(raw).trim();
-    let m = s.match(/^(\d{4})-(\d{2})/);                 if (m) return m[1] + '-' + m[2];
-    m = s.match(/([A-Za-z]{3,})[\s\-\/]+(\d{4})/);       if (m && _MN[m[1].slice(0,3).toLowerCase()]) return m[2] + '-' + _MN[m[1].slice(0,3).toLowerCase()];
-    m = s.match(/^(\d{1,2})[\-\/](\d{4})$/);            if (m) return m[2] + '-' + String(m[1]).padStart(2,'0');
-    return s.slice(0,7);
-  }
-  const _MABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  function monthLabelLong(key){ const m = String(key).match(/^(\d{4})-(\d{2})/); return m ? _MABBR[+m[2]-1] + '-' + m[1] : String(key); }
+
+
   const EXP_TOTAL = "__EXP_TOTAL__";
   const EXP_PWC   = "__EXP_PWC__";
   // Share mode (team build): utilization data is stripped at build time and
@@ -4692,7 +4684,6 @@
       const v = Number(r['Hourly Rate (USD)'] ?? r['Hourly Rate'] ?? r.Rate);
       if (isFinite(v)) rateOf[norm(r.Role) + '|' + norm(r.Territory)] = v;
     });
-    const STANDARD = 'standard';
     function rate(e){
       return lookupRate(rateOf, e.Role, e.Territory || e['Territory Filter']);
     }
@@ -4719,19 +4710,6 @@
     };
     const valueOf = e => ALL_MONTHS.reduce((t, m) =>
       t + (CH[String(e.WorkdayID) + '|' + m] || 0) * rateAt(e, m), 0);
-    // Capacity is implied by the data rather than assumed: chargeable hours
-    // divided by that month's utilization gives the hours the month could hold.
-    // Months with no utilization contribute nothing, so nothing is invented.
-    function capacityOf(e){
-      return ALL_MONTHS.reduce((t, m) => {
-        // Standard Hours is the real answer where the sheet has it; otherwise
-        // fall back to inferring capacity from hours and utilization.
-        const k = String(e.WorkdayID) + '|' + m, hr = HOURS[k];
-        if (hr && hr.std > 0) return t + hr.std;
-        const h = CH[k], u = UTIL_LOOKUP[k];
-        return (typeof h === 'number' && typeof u === 'number' && u > 0) ? t + h / (u / 100) : t;
-      }, 0);
-    }
     // Clamped per month, not across the year: spare hours in January cannot be
     // recovered by a busy March, so netting them off would understate the slack.
     // Same rule and the same point-in-time rate as the landing page, so the two
@@ -5403,8 +5381,17 @@
         const sd = Number(u['Standard Hours']);
         if (!isFinite(h)) return null;
         const rate = rateOf(role, terr);
+        // Headroom needs a capacity figure. Standard Hours is it where the
+        // sheet has one; otherwise infer it from hours and utilization, the
+        // same fallback the Rate Analysis tab uses, so an older workbook
+        // reports headroom rather than a misleading zero.
+        let cap = isFinite(sd) && sd > 0 ? sd : 0;
+        if (!cap){
+          const uu = UTIL_LOOKUP[id + '|' + m];
+          if (typeof uu === 'number' && uu > 0) cap = h / (uu / 100);
+        }
         return { id, m, role, h, rate, v: h * rate,
-                 spare: isFinite(sd) ? Math.max(0, sd - h) * rate : 0 };
+                 spare: cap ? Math.max(0, cap - h) * rate : 0 };
       }).filter(Boolean);
       const short = v => v >= 1e6 ? '$' + (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? '$' + Math.round(v / 1e3) + 'k' : '$' + Math.round(v);
 
