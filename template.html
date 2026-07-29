@@ -1347,6 +1347,8 @@
       <div class="stat-card t3"><div class="value" id="pl-healthy">-</div><div class="label">Healthy (80&ndash;100%)</div></div>
       <div class="stat-card t4"><div class="value" id="pl-stretched">-</div><div class="label">Stretched (&gt;100%)</div></div>
       <div class="stat-card t5" data-jump="insight-watch" title="Jump to the Burnout Watchlist"><div class="value" id="pl-burnout">-</div><div class="label">Burnout Watch (3-mo &gt;100%)</div></div>
+      <div class="stat-card" title="Chargeable hours booked in the latest month by the filtered team"><div class="value" id="pl-charge">-</div><div class="label">This-Month Chargeable Hrs</div></div>
+      <div class="stat-card t3" title="Standard (available) hours for the same people and month - the denominator of the utilization figure"><div class="value" id="pl-std">-</div><div class="label">This-Month Standard Hrs</div></div>
     </section>
 
     <div class="pulse-controls">
@@ -2422,10 +2424,10 @@
       const threshold = '<line class="util-threshold" x1="' + padL + '" y1="' + threshY + '" x2="' + (W - padR) + '" y2="' + threshY + '"></line>';
       // Dots + value labels
       const dots = pts.map(p =>
-        '<circle class="util-dot' + (p.v > 100 ? ' over' : '') + '" cx="' + p.x + '" cy="' + p.y + '" r="5"><title>' + esc(p.label) + ': ' + p.v + '%</title></circle>'
+        '<circle class="util-dot' + (p.v > 100 ? ' over' : '') + '" cx="' + p.x + '" cy="' + p.y + '" r="5"><title>' + esc(p.label) + ': ' + Math.round(p.v) + '%</title></circle>'
       ).join('');
       const dotLabels = pts.map(p =>
-        '<text class="util-dot-label" x="' + p.x + '" y="' + (p.y - 12) + '">' + p.v + '%</text>'
+        '<text class="util-dot-label" x="' + p.x + '" y="' + (p.y - 12) + '">' + Math.round(p.v) + '%</text>'
       ).join('');
       const monthLabels = pts.map(p =>
         '<text class="util-month-label" x="' + p.x + '" y="' + (H - 14) + '">' + esc(monthLabelLong(p.label)) + '</text>'
@@ -3343,6 +3345,13 @@
     // Hours-weighted, so part-timers and part-months carry their real weight.
     const avgW = utilOver(list.map(e => String(e.WorkdayID) + '|' + LATEST_MONTH), HOURS, UTIL_LOOKUP);
     set('pl-avg', avgW === null ? '-' : Math.round(avgW) + '%');
+    // The two numbers the average is made of, so it can be checked rather than
+    // taken on trust: chargeable / standard = the percentage above.
+    let hCh = 0, hStd = 0;
+    list.forEach(e => { const h = HOURS[String(e.WorkdayID) + '|' + LATEST_MONTH]; if (h){ hCh += h.ch; hStd += h.std; } });
+    const hfmt = n => Math.round(n).toLocaleString('en-US');
+    set('pl-charge', (hStd || hCh) ? hfmt(hCh) : '-');
+    set('pl-std',    hStd ? hfmt(hStd) : '-');
     set('pl-bench',     list.filter(e => e._latestUtil !== undefined && e._latestUtil < 40).length);
     set('pl-healthy',   list.filter(e => e._latestUtil !== undefined && e._latestUtil >= 80 && e._latestUtil <= 100).length);
     set('pl-stretched', list.filter(e => e._latestUtil !== undefined && e._latestUtil > 100).length);
@@ -3796,7 +3805,10 @@
     list.forEach(e => {
       let sum = 0, n = 0;
       const cells = FY.months.map(m => { const v = FY.lookup[String(e.WorkdayID) + '|' + m]; if (v !== undefined){ sum += v; n++; return Math.round(v); } return ''; });
-      const fyA = n ? Math.round(sum / n) : '';
+      // Hours-weighted, exactly as the FY Util column on screen. Averaging the
+      // monthly percentages here would make the export disagree with the page.
+      const fyW = utilOver(FY.months.map(m => String(e.WorkdayID) + '|' + m), HOURS_FYD[pulseFY], FY.lookup);
+      const fyA = fyW === null ? '' : Math.round(fyW);
       rows.push([e.Name, e.Role, (e['Competency Group'] || e['Competency'] || ''), (e.Location || ''), fyA].concat(cells));
     });
     downloadCSV('Pulse_Utilization', rows);
