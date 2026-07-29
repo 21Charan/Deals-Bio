@@ -83,6 +83,21 @@ def rows_of(ws):
     return headers, out
 
 
+def num(v):
+    """'79.46%' -> 79.46, '1,234.5' -> 1234.5. Matches what the generator does."""
+    if v is None or v == "" or isinstance(v, bool):
+        return None
+    if isinstance(v, (int, float)):
+        return v
+    s = str(v).strip().replace(",", "")
+    if s.endswith("%"):
+        s = s[:-1].strip()
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
 def norm_id(v):
     """How the dashboard compares IDs: as a string. 101351300.0 and 101351300
     are different strings, which is a common and invisible join failure."""
@@ -172,8 +187,24 @@ def main():
             extra = sorted({norm_id(r[c_id]) for r in good_m} - roster)
             print(f"    {len(extra)} IDs are not on the roster - these read as leavers: {extra[:5]}")
 
+        if c_sd:
+            # Average utilization is total chargeable / total standard, so rows
+            # missing standard hours are left out of the ratio entirely. A
+            # partially-filled column quietly narrows what the average covers.
+            have = [r for r in matched if num(r[c_sd]) not in (None, 0)]
+            print(f"  Standard Hours present on {len(have)}/{len(matched)} joined rows")
+            if matched and len(have) < len(matched):
+                print("    !! Average utilization is computed only over the rows that have")
+                print("       standard hours. The rest contribute nothing to the ratio.")
+            if have and c_ch:
+                ch = sum(num(r[c_ch]) or 0 for r in have)
+                sd = sum(num(r[c_sd]) or 0 for r in have)
+                if sd:
+                    print(f"  => average utilization = {ch:,.1f} / {sd:,.1f} = {ch / sd * 100:.1f}%")
+
         if c_ut:
-            vals = [r[c_ut] for r in matched if isinstance(r[c_ut], (int, float))]
+            vals = [num(r[c_ut]) for r in matched]
+            vals = [v for v in vals if isinstance(v, (int, float))]
             if vals:
                 lo, hi = min(vals), max(vals)
                 print(f"  Utilisation% range: {lo} .. {hi}")
