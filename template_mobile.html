@@ -574,7 +574,11 @@ const UTIL_LOOKUP = Object.create(null);
 // to 0 would count those people as fully on the bench. Matches the desktop build.
 function utilVal(v){
   if (v === null || v === undefined || String(v).trim() === '') return undefined;
-  const n = Number(v);
+  if (typeof v === 'number') return isFinite(v) ? v : undefined;
+  // Spreadsheets often hand these over as text: '79.46%', '1,234.5', ' 168 '.
+  // Number() returns NaN for all of them, which reads as 'not reported' and
+  // makes the figure vanish rather than look wrong.
+  const n = Number(String(v).trim().replace(/,/g, '').replace(/%$/, ''));
   return isFinite(n) ? n : undefined;
 }
 UTIL.forEach(u => {

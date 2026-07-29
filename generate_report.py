@@ -287,6 +287,33 @@ def _month_sort_key(my):
         return (0, 0)
 
 
+def num_val(v):
+    """Coerce a spreadsheet value to a number.
+
+    Real extracts often store these columns as text: '79.46%', '1,234.5',
+    ' 168 '. JavaScript's Number() returns NaN for all of them, so the row is
+    read as 'nothing reported' and the figure silently disappears. Parsing here
+    means every consumer downstream gets a plain number.
+
+    A percent sign is stripped, not rescaled: '79.46%' is 79.46, because that is
+    what the column means. A genuine Excel percentage *cell* arrives as 0.7946
+    and is left alone — rescaling that would be a guess, so it is reported
+    instead."""
+    if v is None or v == "":
+        return None
+    if isinstance(v, bool):
+        return None
+    if isinstance(v, (int, float)):
+        return v
+    s = str(v).strip().replace(",", "")
+    if s.endswith("%"):
+        s = s[:-1].strip()
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
 def canon_id(v):
     """Canonical Workday ID.
 
@@ -350,11 +377,11 @@ def normalise_full(rows, label=""):
             "Name":             _pick(r, "EMP Name", "Name", "Employee Name"),
             "Employee ID":      _pick(r, "EMP ID", "Employee ID", "EmpID"),
             "Month Year":       month,
-            "Chargeable Hours": _pick(r, "Chargeable Hours", "ChargeableHours", "Charged Hours"),
-            "Training Hours":   _pick(r, "Training Hours", "TrainingHours"),
-            "Utilization":      _pick(r, "Utilisation%", "Utilization%", "Utilisation", "Utilization"),
+            "Chargeable Hours": num_val(_pick(r, "Chargeable Hours", "ChargeableHours", "Charged Hours")),
+            "Training Hours":   num_val(_pick(r, "Training Hours", "TrainingHours")),
+            "Utilization":      num_val(_pick(r, "Utilisation%", "Utilization%", "Utilisation", "Utilization")),
             # new, and the reason the Full sheets are worth switching to
-            "Standard Hours":   _pick(r, "Standard Hours", "StandardHours", "Std Hours"),
+            "Standard Hours":   num_val(_pick(r, "Standard Hours", "StandardHours", "Std Hours")),
             "Role":             _pick(r, "EMP Designation", "Designation", "Role", "Grade"),
             "Competency Group": _pick(r, "Competency Group"),
             "Competency":       _pick(r, "Competency"),
