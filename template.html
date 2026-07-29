@@ -846,6 +846,9 @@
   .pr-note{flex:1 1 260px;font-size:12px;color:var(--pwc-grey-600);margin:0;text-align:right}
   .pr-note:empty{display:none}
   .md-note{text-align:left;margin:-2px 0 10px}
+  /* Bridges the KPI figures back to the raw sheet totals, so anything on
+     screen can be tied to the workbook without guessing what was left out. */
+  .pl-bridge{text-align:left;margin:-10px 0 16px}
   .pr-note b{color:var(--pwc-black)}
   @media (max-width:1200px){.pr-note{text-align:left;flex:1 1 100%}}
   .pulse-controls > input,.pulse-controls > select{padding:9px 12px;border:1px solid var(--pwc-grey-300);border-radius:4px;font-family:inherit;font-size:13px;background:var(--white);height:42px;box-sizing:border-box}
@@ -1345,7 +1348,7 @@
   <!-- ===== PORTABLE MODULE START: Pulse (HTML). Needs SHARED foundation — see INTEGRATION_GUIDE.md ===== -->
   <section class="tab-panel" id="tab-pulse">
     <h1>Workforce Pulse</h1>
-    <p class="subtitle">Monthly utilization per person &mdash; warmer cells are busier. <strong>On bench</strong> &lt;40% &middot; <strong>Healthy</strong> 80&ndash;100% &middot; <strong>Stretched</strong> &gt;100% &middot; <strong>Burnout watch</strong> = 3-month avg &gt;100%. Filter the team, then click any cell to open the bio. Managing Directors are excluded.</p>
+    <p class="subtitle">Monthly utilization per person &mdash; warmer cells are busier. <strong>On bench</strong> &lt;40% &middot; <strong>Healthy</strong> 80&ndash;100% &middot; <strong>Stretched</strong> &gt;100% &middot; <strong>Burnout watch</strong> = 3-month avg &gt;100%. Filter the team, then click any cell to open the bio.</p>
 
     <!-- Two rows: rates first, then the hours those rates are made of. Every
          figure follows the FY / PY toggle below, so the whole strip is always
@@ -1364,6 +1367,8 @@
       <div class="stat-card t3" title="Hours booked to training and development"><div class="value" id="pl-train">-</div><div class="label" id="pl-train-lbl">Training Hours</div></div>
       <div class="stat-card t4" title="Each group's own chargeable hours over its own standard hours. A gap reflects the mix of grades, working patterns and leave within each group as much as anything else, so it is a prompt to look, not a conclusion. People with no gender recorded, including leavers, are in neither figure."><div class="value" id="pl-mf">-</div><div class="label">Utilization &middot; M : F</div></div>
     </section>
+
+    <div class="pr-note pl-bridge" id="pulse-bridge"></div>
 
     <div class="pulse-controls">
       <input type="text" id="pulse-search" placeholder="Search name..." title="Search by name, role, or location">
@@ -1988,6 +1993,12 @@
     }
     return 0;
   }
+  // Managing Directors are kept out of every utilization figure, chart and
+  // export. Their chargeable pattern is not comparable with delivery staff, so
+  // including them would put an MD in the bench and burnout counts. Their hours
+  // still count towards billable value on the Rate Analysis tab, which measures
+  // revenue rather than utilization.
+  function isUtilExcluded(role){ return groupForRole(role) === 'Managing Directors'; }
   function groupForRole(role){
     const r = String(role || '').trim();
     for (const g of ROLE_GROUPS){ if (g.match(r)) return g.title; }
@@ -2393,7 +2404,8 @@
 
     // Utilization — smooth area+line chart (SVG, Catmull-Rom-style bezier).
     // Months with no reported utilization are dropped rather than plotted as 0.
-    const utilRows = (UTIL_BY_EMP[String(workdayId)] || [])
+    // No utilization chart for a Managing Director, on screen or in a print.
+    const utilRows = (emp && isUtilExcluded(emp.Role) ? [] : (UTIL_BY_EMP[String(workdayId)] || []))
       .filter(r => utilVal(r.Utilization) !== undefined)
       .sort((a, b) => monthKey(a['Month Year']).localeCompare(monthKey(b['Month Year'])));
     let utilHtml;
@@ -3409,6 +3421,37 @@
     set('pl-mf', (mU === null && fU === null) ? '-' : pct(mU) + ' : ' + pct(fU));
 
     setTerritoryNote();
+
+    // Reconciliation. Pulse deliberately leaves people out — Managing Directors
+    // always, leavers unless asked for — so without saying by how much, no
+    // figure here can be checked against the workbook.
+    const br = document.getElementById('pulse-bridge');
+    if (br){
+      const shown = new Set(list.map(e => String(e.WorkdayID)));
+      let outCh = 0, mdN = 0, lvN = 0, allCh = 0;
+      const inRoster = new Set(EMPLOYEES.map(e => String(e.WorkdayID)));
+      const counted = new Set();
+      Object.keys(HRS).forEach(k => {
+        const id = k.slice(0, k.indexOf('|'));
+        if (!MS.includes(k.slice(k.indexOf('|') + 1))) return;
+        allCh += HRS[k].ch;
+        if (shown.has(id)) return;
+        outCh += HRS[k].ch;
+        if (!counted.has(id)){
+          counted.add(id);
+          if (inRoster.has(id)) mdN++; else lvN++;
+        }
+      });
+      const bits = [];
+      if (mdN) bits.push('<b>' + mdN + '</b> Managing Director' + (mdN === 1 ? '' : 's'));
+      if (lvN) bits.push('<b>' + lvN + '</b> who ' + (lvN === 1 ? 'has' : 'have') + ' since left');
+      br.innerHTML = outCh > 0.5
+        ? 'Not counted above: ' + bits.join(' and ') + ' &mdash; <b>' + Math.round(outCh).toLocaleString('en-US')
+          + '</b> chargeable hrs. With them the ' + win + ' total is <b>'
+          + Math.round(allCh).toLocaleString('en-US') + '</b> hrs.'
+          + (lvN ? ' Use <b>All contributors</b> to include leavers.' : '')
+        : 'Covers everyone with hours in ' + win + '.';
+    }
   }
 
   // Territory is an attribute of the *person*, not of the hours they booked.
@@ -3502,11 +3545,7 @@
     const fyAvg = e => utilOver(FY.months.map(m => String(e.WorkdayID) + '|' + m), fyH, FY.lookup);
 
     let list = pulseBase().filter(e => {
-      // Managing Directors are kept out of Pulse by default. Selecting one by
-      // name in the RL Manager filter is an explicit request for that person,
-      // so they are let through — otherwise filtering to an MD who is also an
-      // RL manager returns their reports but silently drops the manager.
-      if (groupForRole(e.Role) === 'Managing Directors' && !mgr.isMgr(e)) return false;
+      if (isUtilExcluded(e.Role)) return false;   // no MD utilization anywhere
       if (!mgr.ok(e)) return false;
       if (pRole.selected.size && !pRole.selected.has(String(e['Role'] || ''))) return false;
       if (pLoc.selected.size  && !pLoc.selected.has(String(e['Location'] || ''))) return false;
@@ -3540,19 +3579,12 @@
     // utilization band is applied *after* this on purpose: the cards count
     // people into bands of their own, so narrowing to 30-50% would empty
     // "Healthy" and "Stretched" and read as broken rather than filtered.
-    // ...but the cards and lists still measure the team without MDs, so the
-    // averages stay comparable with every other view.
-    const teamOnly = list.filter(e => groupForRole(e.Role) !== 'Managing Directors');
-    setPulseKpis(teamOnly);
-    renderInsights(teamOnly);
-    const mdShown = list.filter(e => groupForRole(e.Role) === 'Managing Directors');
+    // The cards, the lists and the rows all cover the same people, so the KPI
+    // strip can be reconciled against the heatmap and against the workbook.
+    setPulseKpis(list);
+    renderInsights(list);
     const mdNote = document.getElementById('pulse-md-note');
-    if (mdNote) mdNote.innerHTML = mdShown.length
-      ? '<b>' + mdShown.map(e => esc(e.Name)).join(', ') + '</b> '
-        + (mdShown.length === 1 ? 'is a Managing Director' : 'are Managing Directors')
-        + ' &mdash; shown because you selected them, but left out of the cards above'
-        + ' so the averages stay comparable with the rest of the dashboard.'
-      : '';
+    if (mdNote) mdNote.innerHTML = '';
 
     // Utilization band — heatmap rows only. Measured on whichever fiscal
     // window is selected, so switching to PY re-reads both the latest month
@@ -3853,11 +3885,7 @@
     const mgr = mgrMatcher();
     const q = document.getElementById('pulse-search').value.toLowerCase().trim();
     const list = pulseBase().filter(e => {
-      // Managing Directors are kept out of Pulse by default. Selecting one by
-      // name in the RL Manager filter is an explicit request for that person,
-      // so they are let through — otherwise filtering to an MD who is also an
-      // RL manager returns their reports but silently drops the manager.
-      if (groupForRole(e.Role) === 'Managing Directors' && !mgr.isMgr(e)) return false;
+      if (isUtilExcluded(e.Role)) return false;   // no MD utilization anywhere
       if (!mgr.ok(e)) return false;
       if (pRole.selected.size && !pRole.selected.has(String(e['Role'] || ''))) return false;
       if (pLoc.selected.size  && !pLoc.selected.has(String(e['Location'] || ''))) return false;
@@ -4402,8 +4430,8 @@
       '<div class="ana-card' + (full ? ' full' : '') + '"><h3 class="ana-h">' + title + '</h3><p class="ana-sub">' + sub + '</p>' + body + '</div>';
     const GLEGEND = '<div class="ana-legend"><span><span class="sw" style="background:' + TANGERINE + '"></span>Male</span>'
       + '<span><span class="sw" style="background:' + BURGUNDY + '"></span>Female</span></div>';
-    // Managing Directors are excluded from every utilization computation on this tab.
-    const noMD = pool => pool.filter(e => groupForRole(e.Role) !== 'Managing Directors');
+    // Utilization on this tab covers every grade the workbook reports.
+    const noMD = pool => pool.filter(e => !isUtilExcluded(e.Role));
     // `dim` makes a chart's rows clickable cross-filters within Workforce Mix.
     // The attributes are inert everywhere else, so other views are unaffected.
     function mixAttrs(dim, val){
@@ -4477,7 +4505,7 @@
         const g = (_mgrTeams && _mgrTeams[tr.dataset.mg]) || [];
         const last = HAS_U && ALL_MONTHS.length ? ALL_MONTHS[ALL_MONTHS.length - 1] : null;
         const chips = g.slice().sort(bySeniority).map(e => {
-          const u = last && groupForRole(e.Role) !== 'Managing Directors' ? uAt(e, last) : undefined;
+          const u = (last && !isUtilExcluded(e.Role)) ? uAt(e, last) : undefined;
           return '<span class="ana-chip ana-emp" data-wid="' + esc(String(e.WorkdayID)) + '"><b>' + esc(e.Name) + '</b>'
             + '<span style="color:var(--pwc-grey-600)">' + esc(e.Role || '') + (typeof u === 'number' ? ' &middot; ' + Math.round(u) + '%' : '') + '</span></span>';
         }).join('');
@@ -4553,7 +4581,7 @@
         '<b>' + benchN + '</b> ' + (benchN === 1 ? 'person is' : 'people are') + ' on the bench (&lt;40%) and <b>' + hotN + '</b> running above 100% ' + inMonth(last) + '.',
         burnN ? '<b>' + burnN + '</b> on burnout watch &mdash; averaging above 100% for three straight months.' : 'No one on burnout watch (3-month average above 100%).'
       ]);
-      return card('Utilization Trend', 'Monthly average utilization for this slice (thick orange) with each grade behind it. Shaded band = healthy 80&ndash;100%; dashed line = 100%. Managing Directors are excluded from all utilization figures.', trendSVG(upool, months), true)
+      return card('Utilization Trend', 'Monthly average utilization for this slice (thick orange) with each grade behind it. Shaded band = healthy 80&ndash;100%; dashed line = 100%.', trendSVG(upool, months), true)
         + card(monthsBehind(last) <= 0 ? 'This Month in Numbers' : 'Latest Month &mdash; ' + esc(fmtMonth(last)),
             'Auto-computed for ' + esc(fmtMonth(last)) + '.', ins + staleNote(last))
         + card('Biggest Movers', 'Utilization from ' + (prev ? esc(fmtMonth(prev)) : '&mdash;') + ' to ' + esc(fmtMonth(last)) + ' &mdash; who got busier, and who freed up.',
@@ -4624,7 +4652,7 @@
               + unassigned.slice(0, 5).map(e => esc(e.Name)).join(', ')
               + (unassigned.length > 5 ? ' + ' + (unassigned.length - 5) + ' more' : '') + '.</div>'
             : '');
-      return card('Manager Scorecard', 'Each RL manager&rsquo;s team within the current slice' + (last ? ', measured on ' + esc(fmtMonth(last)) : '') + '. Bench &lt;40% &middot; Stretched &gt;100% &middot; Burnout = 3-month average &gt;100%. <b>Click a row to see the team</b>; click a name for the bio. Managing Directors are excluded from the utilization columns.', tbl, true);
+      return card('Manager Scorecard', 'Each RL manager&rsquo;s team within the current slice' + (last ? ', measured on ' + esc(fmtMonth(last)) : '') + '. Bench &lt;40% &middot; Stretched &gt;100% &middot; Burnout = 3-month average &gt;100%. <b>Click a row to see the team</b>; click a name for the bio.', tbl, true);
     }
 
     // ---- View 3: Workforce Mix — auto-highlights + gender & tenure cuts ----
@@ -4762,13 +4790,11 @@
       const rows = [['Name', 'Grade', 'Role', 'Gender', 'Location', 'Competency', 'Territory', 'RL Manager', 'Experience (yrs)', 'Tenure (yrs)', 'Latest Util %']];
       pool.forEach(e => {
         const t = tenureYrs(e);
-        // Match the on-screen views: Managing Directors are excluded from every
-        // utilization figure, so their util cell must be blank here too.
-        const isMD = groupForRole(e.Role) === 'Managing Directors';
+        // Matches the on-screen views: every grade is included.
         rows.push([e.Name, groupForRole(e.Role), e.Role || '', e.Gender || '', e.Location || '', e['Competency Group'] || '', e.Territory || '', e['RL Manager'] || '',
                    isNaN(parseFloat(e[EXP_TOTAL])) ? '' : parseFloat(e[EXP_TOTAL]),
                    t === null ? '' : t.toFixed(1),
-                   (HAS_U && !isMD && typeof e._latestUtil === 'number') ? Math.round(e._latestUtil) : '']);
+                   (HAS_U && !isUtilExcluded(e.Role) && typeof e._latestUtil === 'number') ? Math.round(e._latestUtil) : '']);
       });
       downloadCSV('Team_Analytics', rows);
     };
@@ -5385,14 +5411,14 @@
 
     // ---- 03 Capacity ---- (MDs excluded, as on every other tab)
     const HAS_U = !SHARE_MODE && typeof ALL_MONTHS !== 'undefined' && ALL_MONTHS.length && LATEST_MONTH;
-    const uPool = ACT.filter(e => groupForRole(e.Role) !== 'Managing Directors');
+    const uPool = ACT.filter(e => !isUtilExcluded(e.Role));
     const uAt = (e, m) => UTIL_LOOKUP[String(e.WorkdayID) + '|' + m];
     // Everyone who worked in the period, not only who is still here. The
     // latest-month counts are unchanged by this — a leaver has no hours in the
     // latest month — but the yearly trend now shows what the practice actually
     // delivered rather than what today's roster delivered.
     const uPoolFull = HAS_LEAVERS
-      ? uPool.concat(LEAVERS.filter(l => groupForRole(l.Role) !== 'Managing Directors'))
+      ? uPool.concat(LEAVERS.filter(l => !isUtilExcluded(l.Role)))
       : uPool;
     const uVals = HAS_U ? uPool.map(e => uAt(e, LATEST_MONTH)).filter(v => typeof v === 'number') : [];
     let spare = null, bench = 0, avgU = null;   // avgU is read again by the destination cards below
@@ -5420,8 +5446,15 @@
         return typeof v === 'number' ? t + Math.max(0, 100 - v) / 100 : t;
       }, 0);
       const burn = uPool.filter(e => typeof e._sustained3 === 'number' && e._sustained3 > 100).length;
-      const trainH = UTIL.reduce((t, u) => { const v = Number(u['Training Hours']); return t + (isFinite(v) ? v : 0); }, 0);
-      const chargeH = UTIL.reduce((t, u) => { const v = Number(u['Chargeable Hours']); return t + (isFinite(v) ? v : 0); }, 0);
+      // Same population as the utilization figure beside them, so the section
+      // cannot show a rate for one group and hours for another.
+      const uIds = new Set(uPoolFull.map(e => String(e.WorkdayID)));
+      const hSum = k => UTIL.reduce((t, u) => {
+        if (!uIds.has(String(u.WorkdayID))) return t;
+        const v = Number(u[k]); return t + (isFinite(v) ? v : 0);
+      }, 0);
+      const trainH = hSum('Training Hours');
+      const chargeH = hSum('Chargeable Hours');
       const gone = HAS_LEAVERS ? LEAVERS.length : 0;
       $('ov-cap-lede').innerHTML = 'Latest month with data is <strong>' + esc(fmtMonth(LATEST_MONTH))
         + '</strong>, across ' + uVals.length + ' people. Hours and the trend cover everyone who worked in the period'
