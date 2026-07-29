@@ -1581,6 +1581,14 @@
     return h;
   }
   const HOURS      = buildHours(UTIL);
+  // Spare capacity is quoted in FTE, which needs a definition of one full-time
+  // month. Taken from the data (upper quartile of standard hours) rather than
+  // assumed, so a practice on 160h months and one on 184h months both read
+  // correctly, and part-timers do not each count as a whole FTE.
+  const FULL_MONTH_STD = (function(){
+    const v = Object.keys(HOURS).map(k => HOURS[k].std).filter(x => x > 0).sort((a, b) => a - b);
+    return v.length ? v[Math.min(v.length - 1, Math.floor(v.length * 0.75))] : 0;
+  })();
   const HOURS_FYD  = { jj: buildHours(UTIL_FY.jj), am: buildHours(UTIL_FY.am) };
 
   // Utilization across a set of "WorkdayID|YYYY-MM" keys. Hours-weighted when
@@ -3804,6 +3812,13 @@
     const HAS_UTIL = (typeof ALL_MONTHS !== 'undefined') && ALL_MONTHS.length > 0 && !SHARE_MODE;
     const isSenior = r => isManagerRole(r);
     let view = 'scarce';
+    // Average utilization across a group, weighted by hours rather than by
+    // headcount. A 0.6 FTE or a half-month should not pull a skill's load
+    // around as hard as a full-time full month does.
+    const winMonths = w => (w === 'avg3' ? LAST_3_MONTHS : [LATEST_MONTH]);
+    const groupUtil = (people, w) => utilOver(
+      people.flatMap(e => winMonths(w).map(m => String(e.WorkdayID) + '|' + m)),
+      HOURS, UTIL_LOOKUP);
     let radarWin  = 'latest';  // capacity window on the Capacity Radar
     let scarceWin = 'latest';  // and the equivalent on Scarce vs Stretched
 
@@ -3891,7 +3906,7 @@
       const winLabel = scarceWin === 'avg3' ? '3-month average' : 'latest month';
       const pts = stats.map(s => {
         const us = s.holders.map(sUtil).filter(u => u !== undefined);
-        return { s, us, supply: s.holders.length, demand: us.length ? avg(us) : null };
+        return { s, us, supply: s.holders.length, demand: us.length ? groupUtil(s.holders, scarceWin) : null };
       }).filter(q => q.demand !== null)
         .map(q => ({ ...q, qd: quad(q.supply, q.demand, th) }));
       const TIER = { ss: 0, demand: 1, niche: 2, ok: 3 };
@@ -3923,7 +3938,7 @@
       board.querySelectorAll('.cr-risk-row').forEach(b => b.addEventListener('click', () => {
         board.querySelectorAll('.cr-risk-row.sel').forEach(x => x.classList.remove('sel'));
         b.classList.add('sel');
-        const st = stats.find(x => x.key === b.dataset.k), dm = avg(st.utils), qd = quad(st.holders.length, dm, th), d = $('cr-scarce-detail');
+        const st = stats.find(x => x.key === b.dataset.k), dm = groupUtil(st.holders, scarceWin), qd = quad(st.holders.length, dm, th), d = $('cr-scarce-detail');
         d.innerHTML = '<h3>' + esc(SKILL_DISPLAY[st.key]) + '</h3><div class="sd-sub">' + esc(catLabel(st.key)) + ' · ' + st.holders.length + ' ' + (st.holders.length === 1 ? 'person' : 'people') + ' · avg ' + Math.round(dm) + '% util</div><div class="smap-tagrow"><span class="cr-badge" style="background:' + qd.col + '">' + esc(qd.label) + '</span></div>' + peopleRows(st.holders, true);
         wirePeople(d);
       }));
@@ -4010,8 +4025,20 @@
       } else {
         const rows = stats.map(s => {
           const us = s.holders.map(uWin).filter(u => u !== undefined);
-          const spare = s.holders.reduce((t, e) => { const u = uWin(e); return (u !== undefined && u < frag) ? t + Math.max(0, 100 - u) / 100 : t; }, 0);
-          return { s, us, spare, avg: us.length ? us.reduce((x, y) => x + y, 0) / us.length : null };
+          // Spare FTE from hours where the sheet has them: a 0.6 FTE at 50%
+          // has 0.3 FTE free, not 0.5.
+          const spare = s.holders.reduce((t, e) => {
+            const u = uWin(e);
+            if (u === undefined || u >= frag) return t;
+            const hs = winMonths(radarWin).map(m => HOURS[String(e.WorkdayID) + '|' + m]).filter(h => h && h.std > 0);
+            if (hs.length){
+              const std = hs.reduce((x, h) => x + h.std, 0), ch = hs.reduce((x, h) => x + h.ch, 0);
+              const full = hs.length * (FULL_MONTH_STD || std / hs.length);
+              return t + (full > 0 ? Math.max(0, std - ch) / full : 0);
+            }
+            return t + Math.max(0, 100 - u) / 100;
+          }, 0);
+          return { s, us, spare, avg: us.length ? groupUtil(s.holders, radarWin) : null };
         }).filter(r => r.avg !== null);
         // All qualifying skills are shown (no top-8 cap); long lists scroll.
         const free  = rows.filter(r => r.spare >= Math.max(0.05, fteBar)).sort((a, b) => b.spare - a.spare);
@@ -4195,7 +4222,7 @@
       const rows = [['Skill', 'Category', 'People', 'Avg Utilization %', 'Risk']];
       stats.forEach(s => {
         const has = s.utils && s.utils.length;
-        const d = has ? avg(s.utils) : null;
+        const d = has ? groupUtil(s.holders, 'latest') : null;
         const label = has ? quad(s.holders.length, d, th).label : 'No utilization data';
         rows.push([SKILL_DISPLAY[s.key] || s.key, SKILL_CATEGORY[s.key] || '', s.holders.length, has ? Math.round(d) : '', label]);
       });
@@ -5296,7 +5323,15 @@
       bench = uVals.filter(v => v < 40).length;
       const hot = uVals.filter(v => v > 100).length;
       const healthy = uVals.filter(v => v >= 80 && v <= 100).length;
-      spare = uVals.reduce((t, v) => t + Math.max(0, 100 - v) / 100, 0);
+      // From hours where the sheet supplies them, so a 0.6 FTE at 50% counts as
+      // 0.3 FTE free rather than 0.5. Falls back to the percentage method when
+      // there are no standard hours.
+      spare = uPool.reduce((t, e) => {
+        const h = HOURS[String(e.WorkdayID) + '|' + LATEST_MONTH];
+        if (h && h.std > 0 && FULL_MONTH_STD > 0) return t + Math.max(0, h.std - h.ch) / FULL_MONTH_STD;
+        const v = uAt(e, LATEST_MONTH);
+        return typeof v === 'number' ? t + Math.max(0, 100 - v) / 100 : t;
+      }, 0);
       const burn = uPool.filter(e => typeof e._sustained3 === 'number' && e._sustained3 > 100).length;
       const trainH = UTIL.reduce((t, u) => { const v = Number(u['Training Hours']); return t + (isFinite(v) ? v : 0); }, 0);
       const chargeH = UTIL.reduce((t, u) => { const v = Number(u['Chargeable Hours']); return t + (isFinite(v) ? v : 0); }, 0);
@@ -5526,7 +5561,7 @@
       caprisk:   ['Capability Risk',  'Coverage, concentration and where to cross-train.',
                   () => thin.length + ' of ' + keys.length + ' skills thinly covered'],
       pulse:     ['Workforce Pulse',  'Monthly utilization, bench and burnout watch.',
-                  () => uVals.length ? Math.round(uVals.reduce((a, b) => a + b, 0) / uVals.length) + '% average utilization' : 'Utilization by month'],
+                  () => (typeof avgU === 'number') ? Math.round(avgU) + '% average utilization' : 'Utilization by month'],
       analytics: ['Team Analytics',   'Trends, manager scorecards and workforce mix.',
                   () => (srs.length ? ((ACT.length - srs.length) / srs.length).toFixed(1) + '× leverage · ' : '') + males + ':' + females + ' M:F'],
       rates:     ['Rate Analysis',    'Chargeable hours priced through the rate card.',
