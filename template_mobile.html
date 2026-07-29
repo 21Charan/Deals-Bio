@@ -581,9 +581,44 @@ function utilVal(v){
   const n = Number(String(v).trim().replace(/,/g, '').replace(/%$/, ''));
   return isFinite(n) ? n : undefined;
 }
+// Hours behind each person-month. Averaging percentages gives a part-timer or
+// a half-month the same say as a full-time full month; total chargeable over
+// total standard does not. Same rule as the desktop build so the two agree.
+const HOURS = Object.create(null);
+function _mnum(v){
+  if (v === null || v === undefined || String(v).trim() === '') return undefined;
+  if (typeof v === 'number') return isFinite(v) ? v : undefined;
+  const n = Number(String(v).trim().replace(/,/g, '').replace(/%$/, ''));
+  return isFinite(n) ? n : undefined;
+}
+UTIL.forEach(u => {
+  const std = _mnum(u['Standard Hours']), ch = _mnum(u['Chargeable Hours']), tr = _mnum(u['Training Hours']);
+  if (std === undefined && ch === undefined && tr === undefined) return;
+  // A person-month can arrive as several rows (split by BU or project);
+  // accumulate rather than assign, or every row but the last is lost.
+  const k = normId(u.WorkdayID) + '|' + monthKey(u['Month Year']);
+  const cur = HOURS[k] || (HOURS[k] = { ch: 0, std: 0, tr: 0, n: 0 });
+  cur.ch += ch || 0; cur.std += std || 0; cur.tr += tr || 0; cur.n++;
+});
+// Hours-weighted where standard hours exist, mean of percentages otherwise.
+function utilOver(keys){
+  let ch = 0, std = 0, sum = 0, n = 0;
+  for (const k of keys){
+    const h = HOURS[k];
+    if (h && h.std > 0){ ch += h.ch; std += h.std; }
+    const v = UTIL_LOOKUP[k];
+    if (typeof v === 'number'){ sum += v; n++; }
+  }
+  if (std > 0) return ch / std * 100;
+  return n ? sum / n : null;
+}
 UTIL.forEach(u => {
   const v = utilVal(u.Utilization);
   if (v !== undefined) UTIL_LOOKUP[normId(u.WorkdayID) + '|' + monthKey(u['Month Year'])] = v;
+});
+Object.keys(HOURS).forEach(k => {
+  const h = HOURS[k];
+  if (h.n > 1 && h.std > 0) UTIL_LOOKUP[k] = h.ch / h.std * 100;   // recompute a split month
 });
 const HAS_UTIL = ALL_MONTHS.length > 0 && !SHARE_MODE;
 EMPLOYEES.forEach(e => { e._latestUtil = UTIL_LOOKUP[normId(e.WorkdayID) + '|' + LATEST_MONTH]; });
@@ -1004,9 +1039,14 @@ document.getElementById('bio-next').addEventListener('click', () => stepBio(1));
   }, { passive: true });
 })();
 
+// Managing Directors are kept out of every utilization figure and chart, as on
+// the desktop build.
+function isUtilExcluded(role){ return groupForRole(role) === 'Managing Directors'; }
+
 function utilChartHtml(id){
   // Months with no reported utilization are dropped rather than plotted as 0.
-  const rows = (UTIL_BY_EMP[normId(id)] || [])
+  const _e = EMPLOYEES.find(x => normId(x.WorkdayID) === normId(id));
+  const rows = ((_e && isUtilExcluded(_e.Role)) ? [] : (UTIL_BY_EMP[normId(id)] || []))
     .filter(r => utilVal(r.Utilization) !== undefined)
     .sort((a, b) => monthKey(a['Month Year']).localeCompare(monthKey(b['Month Year'])));
   if (!rows.length) return '<p class="muted">No utilization data.</p>';
@@ -1823,7 +1863,11 @@ renderFinderResults();
   let meas = 'count', sel = null;                 // sel = { dim, val }
   const pool = () => sel ? ACT.filter(e => String(DIM(sel.dim).of(e)) === sel.val) : ACT;
   // MDs are excluded from utilization everywhere else, so do the same here.
-  const noMD = list => list.filter(e => groupForRole(e.Role) !== 'Managing Directors');
+  // "2026-05" -> "May '26". Used by the KPI labels and the trend chart, so it
+  // lives at module scope rather than inside the chart block.
+  const lbl = k => { const mm = String(k).match(/^(\d{4})-(\d{2})/);
+    return mm ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mm[2]-1] + " '" + mm[1].slice(2) : k; };
+  const noMD = list => list.filter(e => !isUtilExcluded(e.Role));
   const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
 
   // One breakdown card. `base` excludes this dimension's own selection so the
@@ -1868,6 +1912,11 @@ renderFinderResults();
   function render(){
     const p = pool(), up = noMD(p);
     const us = HAS_UTIL ? up.map(e => e._latestUtil).filter(v => typeof v === 'number') : [];
+    // Across the whole period, matching the trend chart directly beneath it.
+    // Bench / Healthy / Stretched stay point-in-time and are labelled with the
+    // month, so one card cannot be read as the other's basis.
+    const uW = HAS_UTIL ? utilOver(up.flatMap(e => ALL_MONTHS.map(mo => normId(e.WorkdayID) + '|' + mo))) : null;
+    const lastLbl = LATEST_MONTH ? lbl(LATEST_MONTH) : '';
     const m = p.filter(e => String(e.Gender || '').trim().toLowerCase() === 'male').length;
     const f = p.filter(e => String(e.Gender || '').trim().toLowerCase() === 'female').length;
     const srs = p.filter(e => isManagerRole(e.Role));
@@ -1877,14 +1926,14 @@ renderFinderResults();
     const stat = (v, l) => '<div class="stat"><div class="v">' + v + '</div><div class="l">' + esc(l) + '</div></div>';
     $('tm-kpis').innerHTML =
         stat(p.length, sel ? 'In slice' : 'People')
-      + stat((m + f) ? Math.round(f / (m + f) * 100) + '%' : '—', 'Female')
+      + stat((m + f) ? m + ' : ' + f : '—', 'Male : female')
       + stat(srs.length ? ((p.length - srs.length) / srs.length).toFixed(1) + '×' : '—', 'Leverage')
       + stat(exps.length ? avg(exps).toFixed(1) : '—', 'Avg experience');
     $('tm-kpis2').innerHTML = HAS_UTIL
-      ? stat(us.length ? Math.round(avg(us)) + '%' : '—', 'Avg util')
-        + stat(us.filter(v => v < 40).length, 'Bench')
-        + stat(us.filter(v => v >= 80 && v <= 100).length, 'Healthy')
-        + stat(us.filter(v => v > 100).length, 'Stretched')
+      ? stat(uW === null ? '—' : Math.round(uW) + '%', 'Avg util · ' + (ALL_MONTHS.length ? lbl(ALL_MONTHS[0]) + '–' + lastLbl : 'period'))
+        + stat(us.filter(v => v < 40).length, 'Bench · ' + lastLbl)
+        + stat(us.filter(v => v >= 80 && v <= 100).length, 'Healthy · ' + lastLbl)
+        + stat(us.filter(v => v > 100).length, 'Stretched · ' + lastLbl)
       : '';
 
     $('tm-chips').innerHTML = sel
@@ -1898,10 +1947,9 @@ renderFinderResults();
     if (!HAS_UTIL || ALL_MONTHS.length < 2){ tc.style.display = 'none'; }
     else {
       tc.style.display = '';
-      const series = ALL_MONTHS.map(mo => {
-        const vs = up.map(e => UTIL_LOOKUP[normId(e.WorkdayID) + '|' + mo]).filter(v => typeof v === 'number');
-        return vs.length ? avg(vs) : null;
-      });
+      // Hours-weighted, like every other utilization figure.
+      const series = ALL_MONTHS.map(mo =>
+        utilOver(up.map(e => normId(e.WorkdayID) + '|' + mo)));
       const pts = series.map((v, i) => ({ v, i })).filter(x => x.v !== null);
       if (pts.length < 2){ tc.style.display = 'none'; }
       else {
@@ -1916,8 +1964,6 @@ renderFinderResults();
         g += '<polyline points="' + pts.map(x => X(x.i) + ',' + Y(x.v)).join(' ')
            + '" fill="none" stroke="#D04A02" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>';
         pts.forEach(x => { g += '<circle cx="' + X(x.i) + '" cy="' + Y(x.v) + '" r="2.4" fill="#D04A02"/>'; });
-        const lbl = k => { const mm = String(k).match(/^(\d{4})-(\d{2})/);
-          return mm ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mm[2]-1] + " '" + mm[1].slice(2) : k; };
         g += '<text x="' + L + '" y="' + (H - 5) + '" text-anchor="start" fill="#9A9A9A" font-size="9">' + esc(lbl(ALL_MONTHS[0])) + '</text>'
            + '<text x="' + (W - R) + '" y="' + (H - 5) + '" text-anchor="end" fill="#9A9A9A" font-size="9">' + esc(lbl(ALL_MONTHS[ALL_MONTHS.length - 1])) + '</text>';
         $('tm-trend').innerHTML = g + '</svg>';
