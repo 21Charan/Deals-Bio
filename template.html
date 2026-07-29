@@ -1596,10 +1596,31 @@
       const ch  = _num(u['Chargeable Hours']);
       const tr  = _num(u['Training Hours']);
       if (std === undefined && ch === undefined && tr === undefined) return;
-      h[String(u.WorkdayID) + '|' + monthKey(u['Month Year'])] =
-        { ch: ch || 0, std: std || 0, tr: tr || 0 };
+      // A person-month can legitimately arrive as several rows — split by BU,
+      // OU or project. Assigning would keep only the last one and silently drop
+      // the rest of their hours, so accumulate instead. n records how many rows
+      // made up the month, which the utilization lookup below needs.
+      const k = String(u.WorkdayID) + '|' + monthKey(u['Month Year']);
+      const cur = h[k] || (h[k] = { ch: 0, std: 0, tr: 0, n: 0 });
+      cur.ch += ch || 0; cur.std += std || 0; cur.tr += tr || 0; cur.n++;
     });
     return h;
+  }
+  // Reported utilization per person-month. Where a month arrived as several
+  // rows, no single reported percentage describes the whole month, so it is
+  // recomputed from the summed hours. Single-row months — the normal case —
+  // keep exactly the value the sheet reports.
+  function buildUtilLookup(rows, hours){
+    const out = Object.create(null);
+    (rows || []).forEach(u => {
+      const v = utilVal(u.Utilization);
+      if (v !== undefined) out[String(u.WorkdayID) + '|' + monthKey(u['Month Year'])] = v;
+    });
+    Object.keys(hours).forEach(k => {
+      const h = hours[k];
+      if (h.n > 1 && h.std > 0) out[k] = h.ch / h.std * 100;
+    });
+    return out;
   }
   const HOURS      = buildHours(UTIL);
   // Spare capacity is quoted in FTE, which needs a definition of one full-time
@@ -3303,21 +3324,13 @@
     return isFinite(n) ? n : undefined;
   }
   // Map of "WorkdayID|YYYY-MM" -> utilization value (absent when not reported)
-  const UTIL_LOOKUP = Object.create(null);
-  UTIL.forEach(u => {
-    const v = utilVal(u.Utilization);
-    if (v !== undefined) UTIL_LOOKUP[String(u.WorkdayID) + '|' + monthKey(u['Month Year'])] = v;
-  });
+  const UTIL_LOOKUP = buildUtilLookup(UTIL, HOURS);
   const LATEST_MONTH = ALL_MONTHS[ALL_MONTHS.length - 1] || '';
 
   // ----- Fiscal-year datasets for the Pulse toggle (FY Jul-Jun vs Performance Year May-Apr) -----
   function buildFYData(rows){
     const months = [...new Set((rows || []).map(u => monthKey(u['Month Year'])))].sort();
-    const lookup = Object.create(null);
-    (rows || []).forEach(u => {
-      const v = utilVal(u.Utilization);
-      if (v !== undefined) lookup[String(u.WorkdayID) + '|' + monthKey(u['Month Year'])] = v;
-    });
+    const lookup = buildUtilLookup(rows, buildHours(rows));
     return { months, lookup };
   }
   // A fiscal-year sheet covering fewer than two months is a stub, not a dataset.
@@ -4830,7 +4843,9 @@
     const CH = Object.create(null);
     UTIL.forEach(u => {
       const h = Number(u['Chargeable Hours']);
-      if (isFinite(h)) CH[String(u.WorkdayID) + '|' + monthKey(u['Month Year'])] = h;
+      // Accumulate, for the same reason buildHours does.
+      const k = String(u.WorkdayID) + '|' + monthKey(u['Month Year']);
+      if (isFinite(h)) CH[k] = (CH[k] || 0) + h;
     });
     const hoursOf = e => ALL_MONTHS.reduce((t, m) => t + (CH[String(e.WorkdayID) + '|' + m] || 0), 0);
     // Each month is valued at the grade and territory held in that month, which

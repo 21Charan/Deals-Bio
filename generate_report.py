@@ -390,6 +390,18 @@ def normalise_full(rows, label=""):
             "Territory":        _pick(r, "Territory"),
             "Territory Filter": _pick(r, "Territory Filter"),
         })
+    # A person-month arriving as several rows is legitimate — a split by BU, OU
+    # or project — and the dashboard sums them. Worth reporting either way, so
+    # the totals are never a surprise.
+    seen = {}
+    for r in out:
+        k = (str(r["WorkdayID"]), r["Month Year"])
+        seen[k] = seen.get(k, 0) + 1
+    dup = {k: v for k, v in seen.items() if v > 1}
+    if dup:
+        worst = max(dup.values())
+        print(f"[info] '{label}': {len(out)} rows cover {len(seen)} person-months; "
+              f"{len(dup)} of them arrive as multiple rows (up to {worst}). Hours are summed.")
     if rows and not out:
         print(f"[warn] '{label}' has {len(rows)} rows but none were usable "
               f"(no month: {dropped_month}, no Workday ID: {dropped_id}).")

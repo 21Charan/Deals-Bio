@@ -187,6 +187,22 @@ def main():
             extra = sorted({norm_id(r[c_id]) for r in good_m} - roster)
             print(f"    {len(extra)} IDs are not on the roster - these read as leavers: {extra[:5]}")
 
+        # Duplicate person-months: the dashboard sums them, but if they are not
+        # meant to be there they will double-count.
+        seen = {}
+        for r in matched:
+            k = (norm_id(r[c_id]), month_key(r[c_mo]))
+            seen[k] = seen.get(k, 0) + 1
+        dup = {k: v for k, v in seen.items() if v > 1}
+        print(f"  Person-months: {len(seen)} distinct from {len(matched)} rows")
+        if dup:
+            print(f"    !! {len(dup)} person-months appear on more than one row "
+                  f"(up to {max(dup.values())}).")
+            print("       The dashboard sums them. If that is a split by BU or project this is")
+            print("       correct; if the rows are accidental repeats, hours will be doubled.")
+            for k, v in list(dup.items())[:3]:
+                print(f"       e.g. {k[0]} / {k[1]} appears {v} times")
+
         if c_sd:
             # Average utilization is total chargeable / total standard, so rows
             # missing standard hours are left out of the ratio entirely. A
