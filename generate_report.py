@@ -198,12 +198,30 @@ def load_workbook_data(path):
     # The Full sheets supersede the older ones where present. They are normalised
     # to the same key names the dashboard already reads, plus the extra columns,
     # so nothing downstream has to know which sheet it came from.
-    if data["full_jj"]:
-        data["util_jj"] = normalise_full(data["full_jj"])
-    if data["full_am"]:
-        data["util_am"] = normalise_full(data["full_am"])
-    if data["full_jj"]:
-        data["utilization"] = data["util_jj"]
+    full_jj = normalise_full(data["full_jj"], "Utilization Full_Jul_Jun") if data["full_jj"] else []
+    full_am = normalise_full(data["full_am"], "Utilization Full_May_April") if data["full_am"] else []
+    # Only supersede when the Full sheet actually parsed. A sheet that is present
+    # but unreadable must not replace working data with nothing — that empties
+    # every utilization view and silently removes the Rate Analysis tab.
+    if full_jj:
+        data["util_jj"] = full_jj
+        data["utilization"] = full_jj
+    if full_am:
+        data["util_am"] = full_am
+
+    # ---- tell the operator what was and was not picked up -------------------
+    seen = sorted({ws.title.strip() for ws in wb.worksheets})
+    matched = sorted({t for t in seen if t in keymap})
+    print(f"[info] Sheets read: {', '.join(matched) if matched else '(none matched by name)'}")
+    ignored = [t for t in seen if t not in keymap]
+    if ignored:
+        print(f"[info] Sheets ignored (name not recognised): {', '.join(ignored)}")
+    if not data["rates"]:
+        print("[warn] No 'Hourly Rates' sheet found - the RATE ANALYSIS TAB WILL NOT APPEAR.")
+        print("[warn]   Add a sheet named exactly 'Hourly Rates' with columns:")
+        print("[warn]   Role | Territory | Hourly Rate (USD).  Use Territory = 'Standard' for the default rate.")
+    if not data["utilization"]:
+        print("[warn] No usable utilization rows - Pulse, Team Analytics and Rate Analysis will be empty.")
     return data
 
 
@@ -259,7 +277,25 @@ def _month_sort_key(my):
         return (0, 0)
 
 
-def normalise_full(rows):
+def _pick(row, *names):
+    """Fetch a column by any of several spellings, ignoring case, spaces and
+    punctuation. Real extracts vary — 'Workday ID' / 'WorkdayID' / 'WORKDAY_ID'
+    are the same column, and a silent miss here empties the whole sheet."""
+    if not hasattr(_pick, "_cache"):
+        _pick._cache = {}
+    key = id(row)
+    idx = _pick._cache.get(key)
+    if idx is None:
+        idx = {re.sub(r"[^a-z0-9]", "", str(k).lower()): k for k in row}
+        _pick._cache = {key: idx}          # single-entry cache; rows share headers
+    for n in names:
+        k = idx.get(re.sub(r"[^a-z0-9]", "", n.lower()))
+        if k is not None and row.get(k) not in (None, ""):
+            return row[k]
+    return None
+
+
+def normalise_full(rows, label=""):
     """Map a 'Utilization Full_*' sheet onto the key names the dashboard reads.
 
     EoM is an end-of-month date; everything downstream expects 'Mon-YYYY', so it
@@ -267,35 +303,43 @@ def normalise_full(rows):
     Rows without a resolvable month or Workday ID are dropped, since they cannot
     be joined to anything."""
     out = []
+    dropped_month = dropped_id = 0
     for r in rows:
-        eom = r.get("EoM")
+        eom = _pick(r, "EoM", "EOM", "Month Year", "MonthYear", "Month")
         if hasattr(eom, "year"):
             month = f"{_MON[eom.month - 1]}-{eom.year}"
         else:                                    # already a string, or unusable
             month = str(eom or "").strip()
             if not month:
+                dropped_month += 1
                 continue
-        wid = r.get("Workday ID", r.get("WorkdayID"))
+        wid = _pick(r, "Workday ID", "WorkdayID", "Workday Id")
         if wid in (None, ""):
+            dropped_id += 1
             continue
         out.append({
             "WorkdayID":        wid,
-            "Name":             r.get("EMP Name"),
-            "Employee ID":      r.get("EMP ID"),
+            "Name":             _pick(r, "EMP Name", "Name", "Employee Name"),
+            "Employee ID":      _pick(r, "EMP ID", "Employee ID", "EmpID"),
             "Month Year":       month,
-            "Chargeable Hours": r.get("Chargeable Hours"),
-            "Training Hours":   r.get("Training Hours"),
-            "Utilization":      r.get("Utilisation%", r.get("Utilization")),
+            "Chargeable Hours": _pick(r, "Chargeable Hours", "ChargeableHours", "Charged Hours"),
+            "Training Hours":   _pick(r, "Training Hours", "TrainingHours"),
+            "Utilization":      _pick(r, "Utilisation%", "Utilization%", "Utilisation", "Utilization"),
             # new, and the reason the Full sheets are worth switching to
-            "Standard Hours":   r.get("Standard Hours"),
-            "Role":             r.get("EMP Designation"),
-            "Competency Group": r.get("Competency Group"),
-            "Competency":       r.get("Competency"),
-            "Competency Filter":r.get("Competency Filter"),
-            "Territory Group":  r.get("Territory Group"),
-            "Territory":        r.get("Territory"),
-            "Territory Filter": r.get("Territory Filter"),
+            "Standard Hours":   _pick(r, "Standard Hours", "StandardHours", "Std Hours"),
+            "Role":             _pick(r, "EMP Designation", "Designation", "Role", "Grade"),
+            "Competency Group": _pick(r, "Competency Group"),
+            "Competency":       _pick(r, "Competency"),
+            "Competency Filter":_pick(r, "Competency Filter"),
+            "Territory Group":  _pick(r, "Territory Group"),
+            "Territory":        _pick(r, "Territory"),
+            "Territory Filter": _pick(r, "Territory Filter"),
         })
+    if rows and not out:
+        print(f"[warn] '{label}' has {len(rows)} rows but none were usable "
+              f"(no month: {dropped_month}, no Workday ID: {dropped_id}).")
+        print(f"[warn]   columns found: {list(rows[0].keys())}")
+        print("[warn]   expected at least 'Workday ID' and 'EoM'. This sheet is being ignored.")
     return out
 
 
