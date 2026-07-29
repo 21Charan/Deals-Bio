@@ -203,6 +203,16 @@ def load_workbook_data(path):
     # Only supersede when the Full sheet actually parsed. A sheet that is present
     # but unreadable must not replace working data with nothing — that empties
     # every utilization view and silently removes the Rate Analysis tab.
+    # Canonicalise the join key on both sides before anything downstream sees it.
+    for e in data["details"]:
+        for k in ("WorkdayID", "Workday ID"):
+            if k in e:
+                e[k] = canon_id(e[k])
+    for key in ("utilization", "util_jj", "util_am"):
+        for r in data[key]:
+            if "WorkdayID" in r:
+                r["WorkdayID"] = canon_id(r["WorkdayID"])
+
     if full_jj:
         data["util_jj"] = full_jj
         data["utilization"] = full_jj
@@ -277,6 +287,24 @@ def _month_sort_key(my):
         return (0, 0)
 
 
+def canon_id(v):
+    """Canonical Workday ID.
+
+    The dashboard joins people to hours with a plain string compare, so
+    ' 101351303', '101351303' and '101351303.0' are three different people to
+    it — and the symptom is simply that all utilization disappears. Excel
+    produces all three readily. Normalising here fixes every downstream join at
+    once."""
+    if v is None:
+        return ""
+    if isinstance(v, float) and v.is_integer():
+        return str(int(v))
+    s = str(v).strip()
+    if re.fullmatch(r"\d+\.0+", s):
+        s = s.split(".")[0]
+    return s
+
+
 def _pick(row, *names):
     """Fetch a column by any of several spellings, ignoring case, spaces and
     punctuation. Real extracts vary — 'Workday ID' / 'WorkdayID' / 'WORKDAY_ID'
@@ -318,7 +346,7 @@ def normalise_full(rows, label=""):
             dropped_id += 1
             continue
         out.append({
-            "WorkdayID":        wid,
+            "WorkdayID":        canon_id(wid),
             "Name":             _pick(r, "EMP Name", "Name", "Employee Name"),
             "Employee ID":      _pick(r, "EMP ID", "Employee ID", "EmpID"),
             "Month Year":       month,
