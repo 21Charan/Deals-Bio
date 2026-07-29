@@ -861,6 +861,7 @@
   .heatmap .hm-name-row{display:contents}
   .heatmap .hm-name{background:var(--pwc-grey-50);padding:3px 8px;display:flex;align-items:center;gap:7px;border-radius:3px;cursor:pointer;min-width:0}
   .heatmap .hm-name:hover{background:var(--pwc-grey-100)}
+  .heatmap .hm-gap{display:inline-block;margin-left:6px;font-size:10px;font-style:italic;color:var(--pwc-grey-600);white-space:nowrap}
   .heatmap .hm-name-photo{width:20px;height:20px;border-radius:50%;overflow:hidden;background:var(--pwc-grey-200,#e5e5e5);flex-shrink:0;display:flex;align-items:center;justify-content:center}
   .heatmap .hm-name-photo img{width:100%;height:100%;object-fit:cover}
   .heatmap .hm-name-photo.fallback{background:var(--pwc-orange);color:var(--white);font-size:10px;font-weight:600}
@@ -1348,7 +1349,6 @@
       <div class="stat-card t4"><div class="value" id="pl-stretched">-</div><div class="label">Stretched (&gt;100%)</div></div>
       <div class="stat-card t5" data-jump="insight-watch" title="Jump to the Burnout Watchlist"><div class="value" id="pl-burnout">-</div><div class="label">Burnout Watch (3-mo &gt;100%)</div></div>
       <div class="stat-card" title="Chargeable hours booked in the latest month by the filtered team"><div class="value" id="pl-charge">-</div><div class="label">This-Month Chargeable Hrs</div></div>
-      <div class="stat-card t3" title="Standard (available) hours for the same people and month - the denominator of the utilization figure"><div class="value" id="pl-std">-</div><div class="label">This-Month Standard Hrs</div></div>
     </section>
 
     <div class="pulse-controls">
@@ -3351,7 +3351,6 @@
     list.forEach(e => { const h = HOURS[String(e.WorkdayID) + '|' + LATEST_MONTH]; if (h){ hCh += h.ch; hStd += h.std; } });
     const hfmt = n => Math.round(n).toLocaleString('en-US');
     set('pl-charge', (hStd || hCh) ? hfmt(hCh) : '-');
-    set('pl-std',    hStd ? hfmt(hStd) : '-');
     set('pl-bench',     list.filter(e => e._latestUtil !== undefined && e._latestUtil < 40).length);
     set('pl-healthy',   list.filter(e => e._latestUtil !== undefined && e._latestUtil >= 80 && e._latestUtil <= 100).length);
     set('pl-stretched', list.filter(e => e._latestUtil !== undefined && e._latestUtil > 100).length);
@@ -3466,17 +3465,22 @@
         .some(k => String(e[k] ?? '').toLowerCase().includes(q));
     });
 
-    const cmpVal = (a, b, key) => {
+    // People with nothing reported sort to the bottom in every direction. The
+    // old version flipped the arguments to reverse the sort, which flipped the
+    // null handling too and floated blank rows to the very top of a descending
+    // list — the emptiest rows in the most prominent position.
+    const cmpVal = (a, b, key, desc) => {
       const av = a[key], bv = b[key];
-      if (av == null && bv == null) return 0;
-      if (av == null) return 1;
-      if (bv == null) return -1;
-      return av - bv;
+      const an = av == null, bn = bv == null;
+      if (an && bn) return String(a.Name).localeCompare(String(b.Name));
+      if (an) return 1;
+      if (bn) return -1;
+      return desc ? bv - av : av - bv;
     };
-    if      (srt === 'avg-desc')    list.sort((a,b) => cmpVal(b, a, '_avgUtil'));
-    else if (srt === 'avg-asc')     list.sort((a,b) => cmpVal(a, b, '_avgUtil'));
-    else if (srt === 'latest-desc') list.sort((a,b) => cmpVal(b, a, '_latestUtil'));
-    else if (srt === 'latest-asc')  list.sort((a,b) => cmpVal(a, b, '_latestUtil'));
+    if      (srt === 'avg-desc')    list.sort((a,b) => cmpVal(a, b, '_avgUtil', true));
+    else if (srt === 'avg-asc')     list.sort((a,b) => cmpVal(a, b, '_avgUtil', false));
+    else if (srt === 'latest-desc') list.sort((a,b) => cmpVal(a, b, '_latestUtil', true));
+    else if (srt === 'latest-asc')  list.sort((a,b) => cmpVal(a, b, '_latestUtil', false));
     else                            list.sort((a,b) => String(a.Name).localeCompare(String(b.Name)));
 
     // KPI cards + insight boxes reflect the current filter selection. The
@@ -3538,11 +3542,23 @@
       const ph = e._photo
         ? '<div class="hm-name-photo"><img loading="lazy" src="' + e._photo + '" alt="' + esc(e.Name) + '"></div>'
         : '<div class="hm-name-photo fallback">' + esc(e._initials) + '</div>';
+      // A row with no hours anywhere in the window reads as a data gap unless we
+      // say what it is. A recent Join Date explains it; otherwise be honest
+      // that nothing was reported rather than implying zero utilization.
+      let gap = '';
+      if (!FY.months.some(m => FY.lookup[String(e.WorkdayID) + '|' + m] !== undefined)){
+        const jd = new Date(String(e['Join Date'] || ''));
+        const firstM = FY.months[0] || '';
+        const jk = isNaN(jd) ? '' : jd.getFullYear() + '-' + String(jd.getMonth() + 1).padStart(2, '0');
+        gap = (jk && jk >= firstM)
+          ? '<span class="hm-gap">Joined ' + esc(fmtMonth(jk)) + '</span>'
+          : '<span class="hm-gap">No hours reported</span>';
+      }
       html += '<div class="hm-name" data-id="' + esc(e.WorkdayID) + '">'
             +   ph
             +   '<div style="min-width:0;flex:1;">'
             +     '<div class="hm-name-text" title="' + esc(e.Name) + '">' + esc(e.Name) + '</div>'
-            +     '<span class="hm-role-badge" title="' + esc(e.Role || '') + '">' + esc(e.Role || '') + '</span>'
+            +     '<span class="hm-role-badge" title="' + esc(e.Role || '') + '">' + esc(e.Role || '') + '</span>' + gap
             +   '</div></div>';
       const fv = fyAvg(e);
       if (fv === null){ html += '<div class="hm-cell hm-fy-col empty" title="No data"></div>'; }
@@ -5326,12 +5342,18 @@
       ? uPool.concat(LEAVERS.filter(l => groupForRole(l.Role) !== 'Managing Directors'))
       : uPool;
     const uVals = HAS_U ? uPool.map(e => uAt(e, LATEST_MONTH)).filter(v => typeof v === 'number') : [];
-    let spare = null, bench = 0;
+    let spare = null, bench = 0, avgU = null;   // avgU is read again by the destination cards below
     if (!uVals.length){
       $('ov-cap-lede').textContent = 'Utilization data is not included in this build, so this section is not shown.';
       ['ov-util','ov-util2','ov-trend-wrap','ov-util-ins'].forEach(id => { const n = $(id); if (n) n.style.display = 'none'; });
     } else {
-      const avgU = utilOver(uPool.map(e => String(e.WorkdayID) + '|' + LATEST_MONTH), HOURS, UTIL_LOOKUP);
+      // Across the whole period and everyone who worked in it, matching the
+      // chargeable/training hours beside it and the trend below. The band
+      // counts stay latest-month, because "on the bench" is a point-in-time
+      // question, and their labels say so.
+      avgU = utilOver(
+        uPoolFull.flatMap(e => ALL_MONTHS.map(m => String(e.WorkdayID) + '|' + m)),
+        HOURS, UTIL_LOOKUP);
       bench = uVals.filter(v => v < 40).length;
       const hot = uVals.filter(v => v > 100).length;
       const healthy = uVals.filter(v => v >= 80 && v <= 100).length;
@@ -5351,12 +5373,14 @@
       $('ov-cap-lede').innerHTML = 'Latest month with data is <strong>' + esc(fmtMonth(LATEST_MONTH))
         + '</strong>, across ' + uVals.length + ' people. Hours and the trend cover everyone who worked in the period'
         + (gone ? ', including <strong>' + gone + '</strong> who ' + (gone === 1 ? 'has' : 'have') + ' since left.' : '.');
-      $('ov-util').innerHTML = stat(Math.round(avgU) + '%', 'Average utilization')
-        + stat(bench, 'On the bench (<40%)') + stat(hot, 'Stretched (>100%)')
-        + stat(spare.toFixed(1), 'Spare capacity (FTE)');
-      $('ov-util2').innerHTML = stat(healthy, 'In the healthy band (80-100%)')
+      // stat() escapes the label, so these are plain text, not HTML entities.
+      const lm = fmtMonth(LATEST_MONTH);
+      $('ov-util').innerHTML = stat(Math.round(avgU) + '%', 'Average utilization (FY)')
+        + stat(bench, 'On the bench (<40%) \u00b7 ' + lm) + stat(hot, 'Stretched (>100%) \u00b7 ' + lm)
+        + stat(spare.toFixed(1), 'Spare capacity (FTE) \u00b7 ' + lm);
+      $('ov-util2').innerHTML = stat(healthy, 'Healthy band (80-100%) \u00b7 ' + lm)
         + stat(burn, 'Burnout watch (3-mo >100%)')
-        + stat(nfmt(chargeH), 'Chargeable hours booked') + stat(nfmt(trainH), 'Training hours logged');
+        + stat(nfmt(chargeH), 'Chargeable hours booked (FY)') + stat(nfmt(trainH), 'Training hours logged (FY)');
 
       const series = ALL_MONTHS.map(m =>
         utilOver(uPoolFull.map(e => String(e.WorkdayID) + '|' + m), HOURS, UTIL_LOOKUP));
