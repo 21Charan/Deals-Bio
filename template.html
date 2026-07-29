@@ -40,11 +40,16 @@
   .tab-panel{display:none}
   .tab-panel.active{display:block}
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+  /* Second KPI row: the hours behind the rates above. Tied to the row above
+     by removing the gap between them and easing the visual weight. */
+  .stats-sub{margin-top:-12px}
+  .stats-sub .stat-card .value{font-size:26px}
   .stat-card{background:var(--white);border-top:4px solid var(--pwc-orange);border-radius:4px;padding:18px 22px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
   .stat-card.t2{border-top-color:var(--pwc-tangerine)}
   .stat-card.t3{border-top-color:var(--pwc-yellow)}
   .stat-card.t4{border-top-color:var(--pwc-rose)}
   .stat-card.t5{border-top-color:var(--pwc-pink)}
+  .stat-card.t6{border-top-color:var(--pwc-burgundy)}
   .stat-card .value{font-size:28px;font-weight:700}
   .stat-card .label{font-size:12px;color:var(--pwc-grey-600);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
   /* Data-lineage caveat shown inside a KPI card (e.g. territory attribution). */
@@ -1342,13 +1347,22 @@
     <h1>Workforce Pulse</h1>
     <p class="subtitle">Monthly utilization per person &mdash; warmer cells are busier. <strong>On bench</strong> &lt;40% &middot; <strong>Healthy</strong> 80&ndash;100% &middot; <strong>Stretched</strong> &gt;100% &middot; <strong>Burnout watch</strong> = 3-month avg &gt;100%. Filter the team, then click any cell to open the bio. Managing Directors are excluded.</p>
 
+    <!-- Two rows: rates first, then the hours those rates are made of. Every
+         figure follows the FY / PY toggle below, so the whole strip is always
+         reporting one window. -->
     <section class="stats" id="pulse-kpis">
-      <div class="stat-card"><div class="value" id="pl-avg">-</div><div class="label">This-Month Avg Util</div><div class="stat-note" id="pl-avg-note" hidden></div></div>
-      <div class="stat-card t2" data-jump="insight-bench" title="Jump to the On the Bench list"><div class="value" id="pl-bench">-</div><div class="label">On the Bench (&lt;40%)</div></div>
-      <div class="stat-card t3"><div class="value" id="pl-healthy">-</div><div class="label">Healthy (80&ndash;100%)</div></div>
-      <div class="stat-card t4"><div class="value" id="pl-stretched">-</div><div class="label">Stretched (&gt;100%)</div></div>
-      <div class="stat-card t5" data-jump="insight-watch" title="Jump to the Burnout Watchlist"><div class="value" id="pl-burnout">-</div><div class="label">Burnout Watch (3-mo &gt;100%)</div></div>
-      <div class="stat-card" title="Chargeable hours booked in the latest month by the filtered team"><div class="value" id="pl-charge">-</div><div class="label">This-Month Chargeable Hrs</div></div>
+      <div class="stat-card"><div class="value" id="pl-fyavg">-</div><div class="label" id="pl-fyavg-lbl">Avg Utilization</div><div class="stat-note" id="pl-avg-note" hidden></div></div>
+      <div class="stat-card t2"><div class="value" id="pl-avg">-</div><div class="label" id="pl-avg-lbl">Latest Month Avg</div></div>
+      <div class="stat-card t3" data-jump="insight-bench" title="Jump to the On the Bench list"><div class="value" id="pl-bench">-</div><div class="label">On the Bench (&lt;40%)</div></div>
+      <div class="stat-card t4"><div class="value" id="pl-healthy">-</div><div class="label">Healthy (80&ndash;100%)</div></div>
+      <div class="stat-card t5"><div class="value" id="pl-stretched">-</div><div class="label">Stretched (&gt;100%)</div></div>
+      <div class="stat-card t6" data-jump="insight-watch" title="Jump to the Burnout Watchlist"><div class="value" id="pl-burnout">-</div><div class="label">Burnout Watch (3-mo &gt;100%)</div></div>
+    </section>
+    <section class="stats stats-sub" id="pulse-kpis2">
+      <div class="stat-card" title="Available hours across the selected year - the denominator of the utilization figure"><div class="value" id="pl-std">-</div><div class="label" id="pl-std-lbl">Standard Hours</div></div>
+      <div class="stat-card t2" title="Hours booked to client work"><div class="value" id="pl-charge">-</div><div class="label" id="pl-charge-lbl">Chargeable Hours</div></div>
+      <div class="stat-card t3" title="Hours booked to training and development"><div class="value" id="pl-train">-</div><div class="label" id="pl-train-lbl">Training Hours</div></div>
+      <div class="stat-card t4" title="Each group's own chargeable hours over its own standard hours. A gap reflects the mix of grades, working patterns and leave within each group as much as anything else, so it is a prompt to look, not a conclusion. People with no gender recorded, including leavers, are in neither figure."><div class="value" id="pl-mf">-</div><div class="label">Utilization &middot; M : F</div></div>
     </section>
 
     <div class="pulse-controls">
@@ -3341,20 +3355,59 @@
   function setPulseKpis(list){
     list = list || EMPLOYEES;
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-    const monthVals = list.map(e => e._latestUtil).filter(v => typeof v === 'number');
-    // Hours-weighted, so part-timers and part-months carry their real weight.
-    const avgW = utilOver(list.map(e => String(e.WorkdayID) + '|' + LATEST_MONTH), HOURS, UTIL_LOOKUP);
-    set('pl-avg', avgW === null ? '-' : Math.round(avgW) + '%');
-    // The two numbers the average is made of, so it can be checked rather than
-    // taken on trust: chargeable / standard = the percentage above.
-    let hCh = 0, hStd = 0;
-    list.forEach(e => { const h = HOURS[String(e.WorkdayID) + '|' + LATEST_MONTH]; if (h){ hCh += h.ch; hStd += h.std; } });
+    // Everything on this strip is reported over whichever fiscal year is
+    // selected, so switching FY / PY moves every figure together. Reading the
+    // window here rather than from the globals is what makes that true.
+    const FY   = FY_DATA[pulseFY];
+    const HRS  = HOURS_FYD[pulseFY];
+    const MS   = FY.months;
+    const last = MS.length ? MS[MS.length - 1] : '';
+    const win  = pulseFY === 'am' ? 'PY May-Apr' : 'FY Jul-Jun';
+    const keys = (people, months) => people.flatMap(e => months.map(m => String(e.WorkdayID) + '|' + m));
+    const pct  = v => v === null ? '-' : Math.round(v) + '%';
     const hfmt = n => Math.round(n).toLocaleString('en-US');
-    set('pl-charge', (hStd || hCh) ? hfmt(hCh) : '-');
-    set('pl-bench',     list.filter(e => e._latestUtil !== undefined && e._latestUtil < 40).length);
-    set('pl-healthy',   list.filter(e => e._latestUtil !== undefined && e._latestUtil >= 80 && e._latestUtil <= 100).length);
-    set('pl-stretched', list.filter(e => e._latestUtil !== undefined && e._latestUtil > 100).length);
-    set('pl-burnout',   list.filter(e => e._sustained3 !== null && e._sustained3 > 100).length);
+
+    // --- row 1: rates -----------------------------------------------------
+    set('pl-fyavg', pct(utilOver(keys(list, MS), HRS, FY.lookup)));
+    set('pl-fyavg-lbl', 'Avg Utilization \u00b7 ' + win);
+    set('pl-avg',   pct(last ? utilOver(keys(list, [last]), HRS, FY.lookup) : null));
+    set('pl-avg-lbl', 'Latest Month Avg' + (last ? ' \u00b7 ' + fmtMonth(last) : ''));
+
+    // Band counts read the same window, so they cannot drift from the average
+    // above them when the toggle changes.
+    const at = (e, m) => FY.lookup[String(e.WorkdayID) + '|' + m];
+    const lv = list.map(e => at(e, last)).filter(v => typeof v === 'number');
+    set('pl-bench',     lv.filter(v => v < 40).length);
+    set('pl-healthy',   lv.filter(v => v >= 80 && v <= 100).length);
+    set('pl-stretched', lv.filter(v => v > 100).length);
+    // Sustained load over the last three months of this window, needing at
+    // least two reported so one month is never presented as a three-month view.
+    const L3 = MS.slice(-3);
+    set('pl-burnout', list.filter(e => {
+      const vs = L3.map(m => at(e, m)).filter(v => typeof v === 'number');
+      if (vs.length < Math.min(2, L3.length)) return false;
+      return vs.reduce((a, b) => a + b, 0) / vs.length > 100;
+    }).length);
+
+    // --- row 2: the hours those rates are made of -------------------------
+    let ch = 0, std = 0, tr = 0;
+    keys(list, MS).forEach(k => { const h = HRS[k]; if (h){ ch += h.ch; std += h.std; tr += h.tr; } });
+    set('pl-std',    std ? hfmt(std) : '-');
+    set('pl-charge', (ch || std) ? hfmt(ch) : '-');
+    set('pl-train',  (tr || std) ? hfmt(tr) : '-');
+    ['pl-std-lbl', 'pl-charge-lbl', 'pl-train-lbl'].forEach((id, i) =>
+      set(id, ['Standard Hours', 'Chargeable Hours', 'Training Hours'][i] + ' \u00b7 ' + win));
+
+    // --- utilization by gender -------------------------------------------
+    // Each group's own chargeable over its own standard hours, so an uneven
+    // split between the groups cannot distort the comparison. People with no
+    // gender recorded — which includes leavers, whose record carries none —
+    // are in neither figure.
+    const g = v => String(v || '').trim().toLowerCase();
+    const mU = utilOver(keys(list.filter(e => g(e.Gender) === 'male'), MS), HRS, FY.lookup);
+    const fU = utilOver(keys(list.filter(e => g(e.Gender) === 'female'), MS), HRS, FY.lookup);
+    set('pl-mf', (mU === null && fU === null) ? '-' : pct(mU) + ' : ' + pct(fU));
+
     setTerritoryNote();
   }
 
