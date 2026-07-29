@@ -170,9 +170,16 @@ def load_workbook_data(path):
         "Employee Utilization_Jul_Jun": "util_jj",   # FY Jul-Jun view (Pulse toggle)
         "Employee Utilization_May_April": "util_am", # Performance Year May-Apr view (Pulse toggle)
         "Employee Utilization_Apr_Mar": "util_am",   # legacy tab name, kept as fallback
+        # Full sheets: every person who worked in the period, not just those still
+        # on the roster. Carries Standard Hours and the grade/competency/territory
+        # held in that month, so history is attributed to where someone actually was.
+        "Utilization Full_Jul_Jun":   "full_jj",
+        "Utilization Full_May_April": "full_am",
+        "Utilization Full_Apr_Mar":   "full_am",     # legacy tab name, kept as fallback
         "Hourly Rates": "rates",                     # Role x Territory rate card
     }
-    data = {"details": [], "skills": [], "utilization": [], "util_jj": [], "util_am": [], "rates": []}
+    data = {"details": [], "skills": [], "utilization": [], "util_jj": [], "util_am": [],
+            "full_jj": [], "full_am": [], "rates": []}
     for ws in wb.worksheets:
         key = keymap.get(ws.title.strip())
         if key is None and not data["details"]:
@@ -188,7 +195,108 @@ def load_workbook_data(path):
         data["util_jj"] = data["utilization"]
     if not data["util_am"]:
         data["util_am"] = data["utilization"]
+    # The Full sheets supersede the older ones where present. They are normalised
+    # to the same key names the dashboard already reads, plus the extra columns,
+    # so nothing downstream has to know which sheet it came from.
+    if data["full_jj"]:
+        data["util_jj"] = normalise_full(data["full_jj"])
+    if data["full_am"]:
+        data["util_am"] = normalise_full(data["full_am"])
+    if data["full_jj"]:
+        data["utilization"] = data["util_jj"]
     return data
+
+
+_MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+
+
+def build_leavers(details, *util_sets):
+    """Employee-shaped records for people who worked in a period but are no longer
+    on the roster.
+
+    There is no status column to read, so 'left' is defined structurally: present
+    in a utilization sheet, absent from Employee Details. That cannot drift out of
+    step the way a flag can. Attributes are taken from their most recent month, so
+    a leaver is described as they were when they left."""
+    roster = {str(e.get("WorkdayID", "")).strip() for e in details}
+    latest = {}
+    for rows in util_sets:
+        for r in rows:
+            wid = str(r.get("WorkdayID", "")).strip()
+            if not wid or wid in roster:
+                continue
+            key = _month_sort_key(r.get("Month Year"))
+            if wid not in latest or key > latest[wid][0]:
+                latest[wid] = (key, r)
+    out = []
+    for wid, (_, r) in sorted(latest.items()):
+        out.append({
+            "WorkdayID":         r.get("WorkdayID"),
+            "Name":              r.get("Name"),
+            "Employee ID":       r.get("Employee ID"),
+            "Role":              r.get("Role"),
+            "Competency Group":  r.get("Competency Group"),
+            "Competency":        r.get("Competency"),
+            "Competency Filter": r.get("Competency Filter"),
+            "Territory Group":   r.get("Territory Group"),
+            "Territory":         r.get("Territory"),
+            "Territory Filter":  r.get("Territory Filter"),
+            "Status":            "Left",
+            "_leaver":           True,
+            # the avatar fallback the dashboard draws when there is no photo
+            "_initials":         "".join(w[0] for w in str(r.get("Name") or "").split()[:2]).upper(),
+        })
+    return out
+
+
+def _month_sort_key(my):
+    """'Mar-2026' -> (2026, 3). Unparseable months sort first so they never win
+    the 'most recent row' comparison."""
+    try:
+        mo, yr = str(my).split("-")
+        return (int(yr), _MON.index(mo[:3].title()) + 1)
+    except Exception:
+        return (0, 0)
+
+
+def normalise_full(rows):
+    """Map a 'Utilization Full_*' sheet onto the key names the dashboard reads.
+
+    EoM is an end-of-month date; everything downstream expects 'Mon-YYYY', so it
+    is converted here rather than teaching the template a second date format.
+    Rows without a resolvable month or Workday ID are dropped, since they cannot
+    be joined to anything."""
+    out = []
+    for r in rows:
+        eom = r.get("EoM")
+        if hasattr(eom, "year"):
+            month = f"{_MON[eom.month - 1]}-{eom.year}"
+        else:                                    # already a string, or unusable
+            month = str(eom or "").strip()
+            if not month:
+                continue
+        wid = r.get("Workday ID", r.get("WorkdayID"))
+        if wid in (None, ""):
+            continue
+        out.append({
+            "WorkdayID":        wid,
+            "Name":             r.get("EMP Name"),
+            "Employee ID":      r.get("EMP ID"),
+            "Month Year":       month,
+            "Chargeable Hours": r.get("Chargeable Hours"),
+            "Training Hours":   r.get("Training Hours"),
+            "Utilization":      r.get("Utilisation%", r.get("Utilization")),
+            # new, and the reason the Full sheets are worth switching to
+            "Standard Hours":   r.get("Standard Hours"),
+            "Role":             r.get("EMP Designation"),
+            "Competency Group": r.get("Competency Group"),
+            "Competency":       r.get("Competency"),
+            "Competency Filter":r.get("Competency Filter"),
+            "Territory Group":  r.get("Territory Group"),
+            "Territory":        r.get("Territory"),
+            "Territory Filter": r.get("Territory Filter"),
+        })
+    return out
 
 
 def _encode_one(path):
@@ -369,8 +477,10 @@ def main():
         util = data["utilization"]
         util_jj = data["util_jj"]
         util_am = data["util_am"]
+        leavers = build_leavers(data["details"], util_jj, util_am)
         if share:
             util = util_jj = util_am = []                  # no utilization anywhere
+            leavers = []                                   # and so nobody to add
             emp = [{k: v for k, v in e.items() if k != "Address"} for e in enriched]  # redact full address
         return ((tpl if tpl is not None else template)
             .replace("__EMPLOYEES_JSON__", json.dumps(emp, default=str))
@@ -379,6 +489,7 @@ def main():
             .replace("__UTIL_JJ_JSON__",   json.dumps(util_jj, default=str))
             .replace("__UTIL_AM_JSON__",   json.dumps(util_am, default=str))
             .replace("__RATES_JSON__",     json.dumps(data["rates"], default=str))
+            .replace("__LEAVERS_JSON__",   json.dumps(leavers, default=str))
             .replace("__TOTAL__",          str(len(enriched)))
             .replace("__AVG_EXP__",        str(avg_exp))
             .replace("__NUM_OUS__",        str(len(ous)))

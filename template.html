@@ -1364,6 +1364,10 @@
         <option value="latest-asc">Sort: latest month &#8593;</option>
         <option value="name">Sort: Name</option>
       </select>
+      <div class="atlas-view-toggle" id="pulse-pop-toggle" title="Whether to include people who worked in this period but have since left">
+        <button data-pop="active" class="active">Active only</button>
+        <button data-pop="all">All contributors</button>
+      </div>
       <div class="atlas-view-toggle" id="pulse-fy-toggle" title="Switch fiscal-year window">
         <button data-fy="jj" class="active">FY Jul&ndash;Jun</button>
         <button data-fy="am" title="Performance Year May to April">PY May&ndash;Apr</button>
@@ -1531,6 +1535,64 @@
   const SKILLS    = __SKILLS_JSON__;
   const UTIL      = __UTIL_JSON__;
   const UTIL_FY   = { jj: __UTIL_JJ_JSON__, am: __UTIL_AM_JSON__ };
+  // People who worked inside a period but are no longer on the roster. Held
+  // apart from EMPLOYEES on purpose: the default views stay unchanged, and
+  // leavers are merged in only where the question is "what did we do" rather
+  // than "who can we deploy".
+  const LEAVERS   = __LEAVERS_JSON__;
+  const HAS_LEAVERS = Array.isArray(LEAVERS) && LEAVERS.length > 0;
+
+  // ----- Hours behind each person-month -----------------------------------
+  // Averaging individual percentages gives a 0.6 FTE, or someone who worked
+  // half of March, exactly the same say as a full-time full month. Dividing
+  // total chargeable by total standard does not. These tables let any team
+  // figure be weighted by effort; where a sheet carries no Standard Hours the
+  // helpers fall back to the old mean-of-percentages so older workbooks and
+  // the restricted build keep working.
+  function _num(v){
+    if (v === null || v === undefined || String(v).trim() === '') return undefined;
+    const n = Number(v);
+    return isFinite(n) ? n : undefined;
+  }
+  function buildHours(rows){
+    const h = Object.create(null);
+    (rows || []).forEach(u => {
+      const std = _num(u['Standard Hours']);
+      const ch  = _num(u['Chargeable Hours']);
+      const tr  = _num(u['Training Hours']);
+      if (std === undefined && ch === undefined && tr === undefined) return;
+      h[String(u.WorkdayID) + '|' + monthKey(u['Month Year'])] =
+        { ch: ch || 0, std: std || 0, tr: tr || 0 };
+    });
+    return h;
+  }
+  const HOURS      = buildHours(UTIL);
+  const HOURS_FYD  = { jj: buildHours(UTIL_FY.jj), am: buildHours(UTIL_FY.am) };
+  const HAS_HOURS  = Object.keys(HOURS).some(k => HOURS[k].std > 0);
+
+  // Utilization across a set of "WorkdayID|YYYY-MM" keys. Hours-weighted when
+  // standard hours are available for that set, mean-of-percentages otherwise.
+  function utilOver(keys, hours, lookup){
+    let ch = 0, std = 0, sum = 0, n = 0;
+    for (const k of keys){
+      const h = hours && hours[k];
+      if (h && h.std > 0){ ch += h.ch; std += h.std; }
+      const v = lookup && lookup[k];
+      if (typeof v === 'number'){ sum += v; n++; }
+    }
+    if (std > 0) return ch / std * 100;
+    return n ? sum / n : null;
+  }
+  // Totals for the same set — the figures the landing page reports directly.
+  function hoursOver(keys, hours){
+    let ch = 0, std = 0, tr = 0, n = 0;
+    for (const k of keys){
+      const h = hours && hours[k];
+      if (!h) continue;
+      ch += h.ch; std += h.std; tr += h.tr; n++;
+    }
+    return { ch, std, tr, n };
+  }
   // Normalise any Month-Year value -> "YYYY-MM" (handles 'Jul-2025', 'July 2025', ISO dates, '2025-07').
   const _MN = { jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12' };
   function monthKey(raw){
@@ -1726,6 +1788,7 @@
   const SKILL_DISPLAY = Object.create(null);   // lower -> first-seen display name
   const SKILL_CATEGORY = Object.create(null);  // lower -> Skill Category
   EMPLOYEES.forEach(e => { e._skills = new Set(); });
+  LEAVERS.forEach(e => { e._skills = new Set(); });   // no skills sheet for people who have left
 
   SKILLS.forEach(row => {
     const empId = String(row.WorkdayID);
@@ -1881,6 +1944,33 @@
     { title: 'Associates',         match: r => /^associate(\s*\d+)?$|^a\d*$|^a\b/i.test(r) },
     { title: 'Other',              match: r => true }
   ];
+  // Rate cards are written with descriptive grade names ("Senior Manager")
+  // while the roster carries codes ("SM"), so a plain lower-cased compare
+  // matches only the grades whose code happens to equal its name — Director.
+  // Try the raw value first, so a card keyed by code still works, then the
+  // grade's canonical name, then the sub-grade variant.
+  const GRADE_CARD_ROLE = {
+    'Managing Directors': 'Managing Director', 'Directors': 'Director',
+    'Senior Managers': 'Senior Manager',       'Managers': 'Manager',
+    'Senior Associates': 'Senior Associate',   'Associates': 'Associate'
+  };
+  function cardRoleNames(role){
+    const raw = String(role || '').trim();
+    const out = [raw];
+    if (/^a2$/i.test(raw) || /associate\s*2/i.test(raw)) out.push('Associate 2');
+    const g = GRADE_CARD_ROLE[groupForRole(raw)];
+    if (g && g !== raw) out.push(g);
+    return out;
+  }
+  // Look a rate up across every name the grade might be written as.
+  function lookupRate(table, role, terr){
+    const n = v => String(v || '').trim().toLowerCase();
+    for (const name of cardRoleNames(role)){
+      const hit = table[n(name) + '|' + n(terr)] ?? table[n(name) + '|standard'];
+      if (hit !== undefined) return hit;
+    }
+    return 0;
+  }
   function groupForRole(role){
     const r = String(role || '').trim();
     for (const g of ROLE_GROUPS){ if (g.match(r)) return g.title; }
@@ -3208,16 +3298,21 @@
   };
   const FY_AVAILABLE = { jj: fyUsable(UTIL_FY.jj) || !!UTIL.length, am: fyUsable(UTIL_FY.am) };
   let pulseFY = 'jj';
+  // Which population the heatmap covers. Defaults to the active roster, so the
+  // page looks exactly as it did until someone asks for the fuller picture.
+  let pulsePop = 'active';
+  const pulseBase = () => (pulsePop === 'all' && HAS_LEAVERS) ? EMPLOYEES.concat(LEAVERS) : EMPLOYEES;
 
   // Pre-compute per-employee: avg util, latest util, sustained risk flag
   // The last three calendar months in the data — not each person's own last
   // three records. Someone whose reporting stopped six months ago would
   // otherwise be judged on stale months and could show as burnout watch today.
   const LAST_3_MONTHS = ALL_MONTHS.slice(-3);
-  EMPLOYEES.forEach(e => {
+  EMPLOYEES.concat(LEAVERS).forEach(e => {
     const id = String(e.WorkdayID);
-    const all = (UTIL_BY_EMP[id] || []).map(r => utilVal(r.Utilization)).filter(v => v !== undefined);
-    e._avgUtil = all.length ? all.reduce((s,v) => s+v, 0) / all.length : null;
+    // Their own months, weighted by hours: a half-month should not pull a
+    // yearly average around as hard as a full one.
+    e._avgUtil = utilOver(ALL_MONTHS.map(m => id + '|' + m), HOURS, UTIL_LOOKUP);
     e._latestUtil = UTIL_LOOKUP[id + '|' + LATEST_MONTH];
     // Needs at least two of those three months reported, so a single month is
     // never presented as a three-month average.
@@ -3240,8 +3335,9 @@
     list = list || EMPLOYEES;
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     const monthVals = list.map(e => e._latestUtil).filter(v => typeof v === 'number');
-    const avg = monthVals.length ? Math.round(monthVals.reduce((s,v) => s+v, 0) / monthVals.length) : 0;
-    set('pl-avg', monthVals.length ? avg + '%' : '-');
+    // Hours-weighted, so part-timers and part-months carry their real weight.
+    const avgW = utilOver(list.map(e => String(e.WorkdayID) + '|' + LATEST_MONTH), HOURS, UTIL_LOOKUP);
+    set('pl-avg', avgW === null ? '-' : Math.round(avgW) + '%');
     set('pl-bench',     list.filter(e => e._latestUtil !== undefined && e._latestUtil < 40).length);
     set('pl-healthy',   list.filter(e => e._latestUtil !== undefined && e._latestUtil >= 80 && e._latestUtil <= 100).length);
     set('pl-stretched', list.filter(e => e._latestUtil !== undefined && e._latestUtil > 100).length);
@@ -3336,9 +3432,10 @@
     const srt = document.getElementById('pulse-sort').value;
     const FY  = FY_DATA[pulseFY];
     const mgr = mgrMatcher();
-    const fyAvg = e => { let sum = 0, n = 0; FY.months.forEach(m => { const v = FY.lookup[String(e.WorkdayID) + '|' + m]; if (v !== undefined){ sum += v; n++; } }); return n ? sum / n : null; };
+    const fyH  = HOURS_FYD[pulseFY];
+    const fyAvg = e => utilOver(FY.months.map(m => String(e.WorkdayID) + '|' + m), fyH, FY.lookup);
 
-    let list = EMPLOYEES.filter(e => {
+    let list = pulseBase().filter(e => {
       // Managing Directors are kept out of Pulse by default. Selecting one by
       // name in the RL Manager filter is an explicit request for that person,
       // so they are let through — otherwise filtering to an MD who is also an
@@ -3616,6 +3713,9 @@
     [pMgr, pRole, pLoc, pComp, pTerr, pCat].forEach(ms => { ms.selected.clear(); ms.refresh(); });
     document.getElementById('pulse-sort').value = 'avg-desc';
     plMin = 0; plMax = PL_BAND_MAX; plBasis = 'latest';
+    pulsePop = 'active';
+    document.querySelectorAll('#pulse-pop-toggle button').forEach(b =>
+      b.classList.toggle('active', b.dataset.pop === 'active'));
     if (plMinEl) plMinEl.value = plMin;
     if (plMaxEl) plMaxEl.value = plMax;
     document.querySelectorAll('#pulse-range-basis button').forEach(b =>
@@ -3627,6 +3727,15 @@
   // Fiscal-year toggle: switches which utilization dataset the heatmap shows.
   // A year whose sheet is missing or a stub is disabled rather than silently
   // showing the other year's numbers under its label.
+  document.querySelectorAll('#pulse-pop-toggle button').forEach(btn =>
+    btn.addEventListener('click', () => {
+      if (btn.dataset.pop === pulsePop) return;
+      pulsePop = btn.dataset.pop;
+      document.querySelectorAll('#pulse-pop-toggle button').forEach(b => b.classList.toggle('active', b === btn));
+      pulsePage = 0; renderPulse();
+    }));
+  if (!HAS_LEAVERS){ const t = document.getElementById('pulse-pop-toggle'); if (t) t.hidden = true; }
+
   document.querySelectorAll('#pulse-fy-toggle button').forEach(b => {
     if (FY_AVAILABLE[b.dataset.fy] === false){
       b.disabled = true;
@@ -3660,7 +3769,7 @@
     const FY = FY_DATA[pulseFY];
     const mgr = mgrMatcher();
     const q = document.getElementById('pulse-search').value.toLowerCase().trim();
-    const list = EMPLOYEES.filter(e => {
+    const list = pulseBase().filter(e => {
       // Managing Directors are kept out of Pulse by default. Selecting one by
       // name in the RL Manager filter is an explicit request for that person,
       // so they are let through — otherwise filtering to an MD who is also an
@@ -4294,7 +4403,8 @@
 
     // -- monthly utilization helpers --
     const uAt = (e, m) => UTIL_LOOKUP[String(e.WorkdayID) + '|' + m];
-    function avgAt(pool, m){ const vs = pool.map(e => uAt(e, m)).filter(v => typeof v === 'number'); return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : null; }
+    // Hours-weighted; falls back to the mean of percentages without Standard Hours.
+    function avgAt(pool, m){ return utilOver(pool.map(e => String(e.WorkdayID) + '|' + m), HOURS, UTIL_LOOKUP); }
     const insights = items => '<ul class="ana-insights">' + items.filter(Boolean).map(t => '<li>' + t + '</li>').join('') + '</ul>';
     // Utilization data usually lands a month or two in arrears, so never call the
     // latest data month "this month". Labels below derive from the data itself.
@@ -4584,8 +4694,7 @@
     });
     const STANDARD = 'standard';
     function rate(e){
-      const rl = norm(e.Role), tr = norm(e.Territory || e['Territory Filter']);
-      return rateOf[rl + '|' + tr] ?? rateOf[rl + '|' + STANDARD] ?? 0;
+      return lookupRate(rateOf, e.Role, e.Territory || e['Territory Filter']);
     }
     // Chargeable hours per person per month, from the same rows Pulse uses.
     const CH = Object.create(null);
@@ -4594,17 +4703,51 @@
       if (isFinite(h)) CH[String(u.WorkdayID) + '|' + monthKey(u['Month Year'])] = h;
     });
     const hoursOf = e => ALL_MONTHS.reduce((t, m) => t + (CH[String(e.WorkdayID) + '|' + m] || 0), 0);
-    const valueOf = e => hoursOf(e) * rate(e);
+    // Each month is valued at the grade and territory held in that month, which
+    // the Full sheet carries, so a promotion does not reprice the whole year.
+    // Falls back to the person's current grade when the sheet has no per-row
+    // designation (older workbooks).
+    const RRATE = Object.create(null);
+    UTIL.forEach(u => {
+      if (!u.Role) return;
+      RRATE[String(u.WorkdayID) + '|' + monthKey(u['Month Year'])] =
+        lookupRate(rateOf, u.Role, u.Territory || u['Territory Filter']);
+    });
+    const rateAt = (e, m) => {
+      const v = RRATE[String(e.WorkdayID) + '|' + m];
+      return v === undefined ? rate(e) : v;
+    };
+    const valueOf = e => ALL_MONTHS.reduce((t, m) =>
+      t + (CH[String(e.WorkdayID) + '|' + m] || 0) * rateAt(e, m), 0);
     // Capacity is implied by the data rather than assumed: chargeable hours
     // divided by that month's utilization gives the hours the month could hold.
     // Months with no utilization contribute nothing, so nothing is invented.
     function capacityOf(e){
       return ALL_MONTHS.reduce((t, m) => {
-        const h = CH[String(e.WorkdayID) + '|' + m], u = UTIL_LOOKUP[String(e.WorkdayID) + '|' + m];
+        // Standard Hours is the real answer where the sheet has it; otherwise
+        // fall back to inferring capacity from hours and utilization.
+        const k = String(e.WorkdayID) + '|' + m, hr = HOURS[k];
+        if (hr && hr.std > 0) return t + hr.std;
+        const h = CH[k], u = UTIL_LOOKUP[k];
         return (typeof h === 'number' && typeof u === 'number' && u > 0) ? t + h / (u / 100) : t;
       }, 0);
     }
-    const unbilledOf = e => Math.max(0, capacityOf(e) - hoursOf(e)) * rate(e);
+    // Clamped per month, not across the year: spare hours in January cannot be
+    // recovered by a busy March, so netting them off would understate the slack.
+    // Same rule and the same point-in-time rate as the landing page, so the two
+    // report the identical figure.
+    const unbilledOf = e => ALL_MONTHS.reduce((t, m) => {
+      const k = String(e.WorkdayID) + '|' + m, hr = HOURS[k];
+      const ch = CH[k];
+      let cap;
+      if (hr && hr.std > 0) cap = hr.std;
+      else {
+        const u = UTIL_LOOKUP[k];
+        cap = (typeof ch === 'number' && typeof u === 'number' && u > 0) ? ch / (u / 100) : 0;
+      }
+      if (!cap) return t;
+      return t + Math.max(0, cap - (ch || 0)) * rateAt(e, m);
+    }, 0);
     const money = v => '$' + Math.round(v).toLocaleString('en-US');
     const compact = v => v >= 1e6 ? '$' + (v / 1e6).toFixed(1) + 'M'
                        : v >= 1e3 ? '$' + Math.round(v / 1e3) + 'k' : '$' + Math.round(v);
@@ -4619,10 +4762,13 @@
       renderRates(); broadcastAll();
     });
 
+    // Leavers are included here on purpose: the hours they billed are revenue
+    // the practice earned, and excluding them understates the value of the year.
+    const RATE_POOL = HAS_LEAVERS ? EMPLOYEES.concat(LEAVERS) : EMPLOYEES;
     function poolR(){
-      return EMPLOYEES.filter(e => {
+      return RATE_POOL.filter(e => {
         const s = String(e.Status || '').trim().toLowerCase();
-        if (!(s === '' || s === 'active' || s === 'in leave')) return false;
+        if (!(s === '' || s === 'active' || s === 'in leave' || s === 'left')) return false;
         if (rRole.selected.size && !rRole.selected.has(String(e.Role || ''))) return false;
         if (rLoc.selected.size  && !rLoc.selected.has(String(e.Location || ''))) return false;
         if (rComp.selected.size && !rComp.selected.has(String(e['Competency Filter'] || ''))) return false;
@@ -4866,8 +5012,7 @@
 
       // --- the scenario ---
       const factor = 1 + rateAdj / 100;
-      const cardRate = g => (rateOf[norm(roleForGrade[g]) + '|' + norm(terr)]
-                          ?? rateOf[norm(roleForGrade[g]) + '|' + STANDARD] ?? 0) * factor;
+      const cardRate = g => lookupRate(rateOf, roleForGrade[g], terr) * factor;
       let addHeads = 0, addValue = 0, addHours = 0, addSrs = 0, unpriced = [];
       const lines = [];
       GRADES.forEach(g => {
@@ -5151,13 +5296,20 @@
     const HAS_U = !SHARE_MODE && typeof ALL_MONTHS !== 'undefined' && ALL_MONTHS.length && LATEST_MONTH;
     const uPool = ACT.filter(e => groupForRole(e.Role) !== 'Managing Directors');
     const uAt = (e, m) => UTIL_LOOKUP[String(e.WorkdayID) + '|' + m];
+    // Everyone who worked in the period, not only who is still here. The
+    // latest-month counts are unchanged by this — a leaver has no hours in the
+    // latest month — but the yearly trend now shows what the practice actually
+    // delivered rather than what today's roster delivered.
+    const uPoolFull = HAS_LEAVERS
+      ? uPool.concat(LEAVERS.filter(l => groupForRole(l.Role) !== 'Managing Directors'))
+      : uPool;
     const uVals = HAS_U ? uPool.map(e => uAt(e, LATEST_MONTH)).filter(v => typeof v === 'number') : [];
     let spare = null, bench = 0;
     if (!uVals.length){
       $('ov-cap-lede').textContent = 'Utilization data is not included in this build, so this section is not shown.';
       ['ov-util','ov-util2','ov-trend-wrap','ov-util-ins'].forEach(id => { const n = $(id); if (n) n.style.display = 'none'; });
     } else {
-      const avgU = uVals.reduce((a, b) => a + b, 0) / uVals.length;
+      const avgU = utilOver(uPool.map(e => String(e.WorkdayID) + '|' + LATEST_MONTH), HOURS, UTIL_LOOKUP);
       bench = uVals.filter(v => v < 40).length;
       const hot = uVals.filter(v => v > 100).length;
       const healthy = uVals.filter(v => v >= 80 && v <= 100).length;
@@ -5165,8 +5317,10 @@
       const burn = uPool.filter(e => typeof e._sustained3 === 'number' && e._sustained3 > 100).length;
       const trainH = UTIL.reduce((t, u) => { const v = Number(u['Training Hours']); return t + (isFinite(v) ? v : 0); }, 0);
       const chargeH = UTIL.reduce((t, u) => { const v = Number(u['Chargeable Hours']); return t + (isFinite(v) ? v : 0); }, 0);
+      const gone = HAS_LEAVERS ? LEAVERS.length : 0;
       $('ov-cap-lede').innerHTML = 'Latest month with data is <strong>' + esc(fmtMonth(LATEST_MONTH))
-        + '</strong>, across ' + uVals.length + ' people.';
+        + '</strong>, across ' + uVals.length + ' people. Hours and the trend cover everyone who worked in the period'
+        + (gone ? ', including <strong>' + gone + '</strong> who ' + (gone === 1 ? 'has' : 'have') + ' since left.' : '.');
       $('ov-util').innerHTML = stat(Math.round(avgU) + '%', 'Average utilization')
         + stat(bench, 'On the bench (<40%)') + stat(hot, 'Stretched (>100%)')
         + stat(spare.toFixed(1), 'Spare capacity (FTE)');
@@ -5174,10 +5328,8 @@
         + stat(burn, 'Burnout watch (3-mo >100%)')
         + stat(nfmt(chargeH), 'Chargeable hours booked') + stat(nfmt(trainH), 'Training hours logged');
 
-      const series = ALL_MONTHS.map(m => {
-        const vs = uPool.map(e => uAt(e, m)).filter(v => typeof v === 'number');
-        return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : null;
-      });
+      const series = ALL_MONTHS.map(m =>
+        utilOver(uPoolFull.map(e => String(e.WorkdayID) + '|' + m), HOURS, UTIL_LOOKUP));
       const pts = series.map((v, i) => ({ v, i })).filter(p => p.v !== null);
       if (pts.length > 1){
         const W = 900, H = 180, L = 34, R = 12, T = 14, B = 26;
@@ -5232,50 +5384,68 @@
       const card = Object.create(null);
       RATES.forEach(r => { const v = Number(r['Hourly Rate (USD)'] ?? r['Hourly Rate'] ?? r.Rate);
         if (isFinite(v)) card[nm(r.Role) + '|' + nm(r.Territory)] = v; });
-      const rateFor = e => card[nm(e.Role) + '|' + nm(e.Territory || e['Territory Filter'])] ?? card[nm(e.Role) + '|standard'] ?? 0;
-      const chg = Object.create(null);
-      UTIL.forEach(u => { const h = Number(u['Chargeable Hours']);
-        if (isFinite(h)) chg[String(u.WorkdayID) + '|' + monthKey(u['Month Year'])] = h; });
-      const hoursFor = e => ALL_MONTHS.reduce((t, m) => t + (chg[String(e.WorkdayID) + '|' + m] || 0), 0);
-      const capFor = e => ALL_MONTHS.reduce((t, m) => {
-        const h = chg[String(e.WorkdayID) + '|' + m], u = UTIL_LOOKUP[String(e.WorkdayID) + '|' + m];
-        return (typeof h === 'number' && typeof u === 'number' && u > 0) ? t + h / (u / 100) : t; }, 0);
+      // Priced row by row rather than person by person. Each month is valued at
+      // the grade and territory held *in that month* (the Full sheet carries
+      // both), so a promotion does not reprice the whole year, and people who
+      // have since left are still credited with the work they did.
+      const rateOf = (role, terr) => lookupRate(card, role, terr);
+      const byId = Object.create(null);
+      ACT.forEach(e => { byId[String(e.WorkdayID)] = e; });
+      if (HAS_LEAVERS) LEAVERS.forEach(e => { byId[String(e.WorkdayID)] = e; });
+      const MSET = new Set(ALL_MONTHS);
+      const rows = UTIL.map(u => {
+        const m = monthKey(u['Month Year']);
+        if (!MSET.has(m)) return null;
+        const id = String(u.WorkdayID), e = byId[id] || {};
+        const role = u.Role || e.Role || '';
+        const terr = u.Territory || u['Territory Filter'] || e.Territory || e['Territory Filter'] || '';
+        const h  = Number(u['Chargeable Hours']);
+        const sd = Number(u['Standard Hours']);
+        if (!isFinite(h)) return null;
+        const rate = rateOf(role, terr);
+        return { id, m, role, h, rate, v: h * rate,
+                 spare: isFinite(sd) ? Math.max(0, sd - h) * rate : 0 };
+      }).filter(Boolean);
       const short = v => v >= 1e6 ? '$' + (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? '$' + Math.round(v / 1e3) + 'k' : '$' + Math.round(v);
 
-      const totV = ACT.reduce((t, e) => t + hoursFor(e) * rateFor(e), 0);
-      const totH = ACT.reduce((t, e) => t + hoursFor(e), 0);
-      const totU = ACT.reduce((t, e) => t + Math.max(0, capFor(e) - hoursFor(e)) * rateFor(e), 0);
+      const totV = rows.reduce((t, r) => t + r.v, 0);
+      const totH = rows.reduce((t, r) => t + r.h, 0);
+      const totU = rows.reduce((t, r) => t + r.spare, 0);
+      const heads = new Set(rows.filter(r => r.v > 0).map(r => r.id)).size;
       if (!totV){ valScene.style.display = 'none'; return; }
 
       // The landing shows these figures before anyone reaches the Rate Analysis
       // tab, so the provenance has to travel with them.
+      const goneV = HAS_LEAVERS ? LEAVERS.length : 0;
       $('ov-val-lede').innerHTML = 'Chargeable hours priced through the rate card, over ' + ALL_MONTHS.length
-        + ' months. <b>Sample rates</b> &mdash; indicative value, not booked revenue.';
+        + ' months, for all ' + heads + ' people who worked in the period'
+        + (goneV ? ' &mdash; including ' + goneV + ' who ' + (goneV === 1 ? 'has' : 'have') + ' since left' : '')
+        + '. <b>Sample rates</b> &mdash; indicative value, not booked revenue.';
       $('ov-value').innerHTML = stat(short(totV), 'Billable value')
         + stat('$' + Math.round(totV / totH), 'Blended rate / hr')
         + stat(short(totU), 'Unbilled at card rate')
-        + stat(short(totV / ACT.length), 'Value per person');
+        + stat(short(totV / heads), 'Value per person');
 
       const byGrade = Object.create(null);
-      ACT.forEach(e => { const g = groupForRole(e.Role); byGrade[g] = (byGrade[g] || 0) + hoursFor(e) * rateFor(e); });
+      rows.forEach(r => { const g = groupForRole(r.role); byGrade[g] = (byGrade[g] || 0) + r.v; });
       const gr = Object.keys(byGrade).filter(k => byGrade[k] > 0)
         .sort((a, b) => ROLE_GROUPS.findIndex(x => x.title === a) - ROLE_GROUPS.findIndex(x => x.title === b));
       const gmx = Math.max(1, ...gr.map(k => byGrade[k]));
       $('ov-value-bars').innerHTML = gr.map((k, i) =>
         barRow(k, byGrade[k] / gmx * 100, short(byGrade[k]), PALETTE[i % PALETTE.length])).join('');
 
-      const srs = ACT.filter(e => isManagerRole(e.Role));
-      const sv = srs.reduce((t, e) => t + hoursFor(e) * rateFor(e), 0);
-      const monthly = ALL_MONTHS.map((m, i) => ({ i,
-        v: ACT.reduce((t, e) => t + (chg[String(e.WorkdayID) + '|' + m] || 0) * rateFor(e), 0) }))
-        .filter(x => x.v > 0);
+      const sv = rows.filter(r => isManagerRole(r.role)).reduce((t, r) => t + r.v, 0);
+      const srsN = new Set(rows.filter(r => isManagerRole(r.role) && r.v > 0).map(r => r.id)).size;
+      const perMonth = Object.create(null);
+      rows.forEach(r => { perMonth[r.m] = (perMonth[r.m] || 0) + r.v; });
+      const monthly = ALL_MONTHS.map((m, i) => ({ i, v: perMonth[m] || 0 })).filter(x => x.v > 0);
       const avgMonth = monthly.length ? monthly.reduce((t, x) => t + x.v, 0) / monthly.length : 0;
       const peak = monthly.slice().sort((a, b) => b.v - a.v)[0];
       $('ov-val-ins').innerHTML = bullets([
         monthly.length ? 'Billable value averages <b>' + short(avgMonth) + '</b> a month, with a high of <b>'
           + short(peak.v) + '</b> in <b>' + esc(fmtMonth(ALL_MONTHS[peak.i])) + '</b>.' : null,
-        srs.length ? '<b>' + Math.round(sv / totV * 100) + '%</b> of billable value comes from the <b>'
-          + srs.length + '</b> people at Manager grade and above.' : null,
+        srsN ? '<b>' + Math.round(sv / totV * 100) + '%</b> of billable value comes from the <b>'
+          + srsN + '</b> people at Manager grade and above.' : null,
         // Framed as headroom to win work, not as hours people failed to bill.
         // The same hours cover leave, training and development.
         totU ? 'There is room for a further <b>' + short(totU)
