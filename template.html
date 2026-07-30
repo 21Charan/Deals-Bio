@@ -3846,6 +3846,7 @@
       b.classList.toggle('active', b.dataset.pop === 'active'));
     if (plMinEl) plMinEl.value = plMin;
     if (plMaxEl) plMaxEl.value = plMax;
+    repaintSliders();
     document.querySelectorAll('#pulse-range-basis button').forEach(b =>
       b.classList.toggle('active', b.dataset.basis === 'latest'));
     pulsePage = 0; renderPulse();
@@ -4008,7 +4009,15 @@
       const p = pool(), stats = skillStats(p), cap = $('cr-scarce-cap'), board = $('cr-risklist');
       // Keep the "scarce when <= N people" slider within the people actually in scope.
       const _sc = $('cr-scarce-slider');
-      if (_sc){ const mx = Math.max(2, p.length); if (parseInt(_sc.max, 10) !== mx) _sc.max = mx; if (parseInt(_sc.value, 10) > mx) _sc.value = mx; }
+      if (_sc){
+        const mx = Math.max(2, p.length);
+        const before = _sc.max + '/' + _sc.value;
+        if (parseInt(_sc.max, 10) !== mx) _sc.max = mx;
+        if (parseInt(_sc.value, 10) > mx) _sc.value = mx;
+        // Rescaling changes what a given value means as a fraction of the track,
+        // so the fill has to be redrawn even when the value itself did not move.
+        if (before !== _sc.max + '/' + _sc.value) paintSliderFill(_sc);
+      }
       const th = thresholds();
       const sv = $('cr-scarce-val'), hv = $('cr-hot-val');
       if (sv) sv.textContent = th.scarce;
@@ -5108,6 +5117,7 @@
       $('sc-reset').addEventListener('click', () => {
         Object.keys(plan).forEach(k => delete plan[k]);
         $('sc-util').value = 80; $('sc-rate').value = 0;
+        repaintSliders();          // set directly, so no input event to ride on
         renderScenario();
       });
       root.querySelectorAll('#rt-mode button').forEach(b => b.addEventListener('click', () => {
@@ -5853,14 +5863,24 @@
   // The tracks are styled explicitly so they can be thicker than the browser
   // default, which means the orange "filled so far" portion has to be drawn
   // here rather than left to accent-color.
+  // Declared at module scope, not inside the IIFE below, because several places
+  // change a slider's value or max programmatically — filtering rescales the
+  // "scarce when" slider to the filtered headcount — and those changes fire no
+  // input event. Without a repaint the thumb moves while the orange fill stays
+  // where it was, which reads as a blank track.
+  function paintSliderFill(el){
+    const min = parseFloat(el.min) || 0, max = parseFloat(el.max);
+    const hi = isFinite(max) ? max : 100, v = parseFloat(el.value) || 0;
+    el.style.setProperty('--fill', (hi > min ? ((v - min) / (hi - min)) * 100 : 0).toFixed(2) + '%');
+  }
+  function repaintSliders(){
+    document.querySelectorAll('.sc-assume input[type=range], .cr-thr input[type=range]')
+      .forEach(paintSliderFill);
+  }
   (function(){
     const SEL = '.sc-assume input[type=range], .cr-thr input[type=range]';
     const BAND = '#pulse-range input[type=range]';
-    function paint(el){
-      const min = parseFloat(el.min) || 0, max = parseFloat(el.max);
-      const hi = isFinite(max) ? max : 100, v = parseFloat(el.value) || 0;
-      el.style.setProperty('--fill', (hi > min ? ((v - min) / (hi - min)) * 100 : 0).toFixed(2) + '%');
-    }
+    const paint = paintSliderFill;
     document.querySelectorAll(SEL).forEach(el => {
       paint(el);
       el.addEventListener('input', () => paint(el));
