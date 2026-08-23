@@ -303,9 +303,75 @@
   .sm-pill{font-size:10px;font-weight:700;border-radius:9px;padding:2px 7px;background:var(--g-100);color:var(--g-600)}
   .sm-pill.hit-must{background:var(--pwc-orange);color:#fff}
   .sm-pill.hit-nice{background:var(--pwc-tangerine);color:#fff}
+
+  /* ---- additional-analysis hub sheet ---- */
+  #analysis-sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;background:var(--white);border-radius:16px 16px 0 0;transform:translateY(105%);transition:transform .25s ease;max-height:86vh;max-height:86dvh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom)}
+  #analysis-sheet.open{transform:translateY(0)}
+  #as-done{color:var(--pwc-orange);background:none;border:none;font-size:14px;font-weight:700;font-family:inherit;padding:4px}
+  .as-list{padding:6px 10px 16px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .as-item{display:flex;align-items:center;gap:13px;width:100%;background:none;border:none;border-radius:12px;padding:13px 10px;font-family:inherit;text-align:left;cursor:pointer}
+  .as-item:active{background:var(--g-100)}
+  .as-item+.as-item{border-top:1px solid var(--g-200)}
+  .as-ic{width:40px;height:40px;flex:none;border-radius:10px;background:#FBE9DE;color:var(--pwc-orange);display:flex;align-items:center;justify-content:center}
+  .as-ic svg{width:20px;height:20px}
+  .as-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .as-tx b{font-size:15px;color:var(--g-900);font-weight:700}
+  .as-tx em{font-size:12px;color:var(--g-600);font-style:normal;line-height:1.3}
+  .as-chev{width:18px;height:18px;color:var(--g-400);flex:none}
+  /* ---- rate analysis notice ---- */
+  .rt-notice{display:flex;gap:8px;background:#FFF7ED;border:1px solid #FCD9B6;border-radius:10px;padding:10px 12px;margin-top:12px;font-size:12px;color:var(--g-700);line-height:1.45}
+
+  /* ---- rate scenario planner ---- */
+  #rt-scenario .stats-row{grid-template-columns:repeat(2,1fr)}
+  .sc-a{margin:2px 0 14px}
+  .sc-lbl{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--g-600);margin-bottom:6px}
+  .sc-sel{width:100%;height:42px;border:1px solid var(--g-300);border-radius:10px;padding:0 12px;font-family:inherit;font-size:14px;background:var(--white);color:var(--g-900);-webkit-appearance:none;appearance:none}
+  .sc-reset{margin-top:4px;background:none;border:none;color:var(--pwc-orange);font-weight:700;font-size:13px;font-family:inherit;padding:6px 2px}
+  .sc-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;min-height:48px;border-bottom:1px solid var(--g-100)}
+  .sc-row:last-child{border-bottom:none}
+  .sc-gname{font-size:13px;font-weight:600;color:var(--g-900)}
+  .sc-have{font-size:11px;color:var(--g-600);font-weight:600;margin-top:1px}
+  .sc-step{display:flex;align-items:center;gap:11px}
+  .sc-step button{width:32px;height:32px;border:1px solid var(--g-300);border-radius:9px;background:var(--white);font-size:19px;font-weight:700;color:var(--pwc-orange);font-family:inherit;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
+  .sc-step button:disabled{color:var(--g-400);opacity:.45}
+  .sc-step .v{min-width:34px;text-align:center;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--g-900)}
+  .sc-step .v.pos{color:#1F8A44}
+  .sc-step .v.neg{color:var(--pwc-rose)}
+  .sc-foot{font-size:11px;color:var(--g-600);line-height:1.45;margin:12px 4px 0}
 </style>
 </head>
 <body>
+<noscript>
+  <div style="position:fixed;inset:0;z-index:9999;overflow:auto;background:#F7F7F7;
+              font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+              padding:28px 20px;-webkit-text-size-adjust:100%">
+    <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:10px;
+                border-top:5px solid #D04A02;box-shadow:0 2px 10px rgba(0,0,0,.10);padding:24px 22px">
+      <h1 style="margin:0 0 10px;font-size:19px;line-height:1.3;color:#2D2D2D">
+        This dashboard needs JavaScript to show its data
+      </h1>
+      <p style="margin:0 0 14px;font-size:14.5px;line-height:1.55;color:#4A4A4A">
+        You are seeing the layout but no numbers because JavaScript is switched off
+        in whatever is displaying this file. Nothing is wrong with the file itself.
+      </p>
+      <p style="margin:0 0 14px;font-size:14.5px;line-height:1.55;color:#4A4A4A">
+        <b>On an iPhone or iPad this is expected.</b> The built-in preview used by
+        Files, Mail, Teams and SharePoint renders HTML with JavaScript disabled, so
+        every figure comes out blank. Android phones open the same file in Chrome,
+        which is why it works there.
+      </p>
+      <p style="margin:0 0 6px;font-size:13px;font-weight:700;letter-spacing:.4px;
+                text-transform:uppercase;color:#D04A02">What works</p>
+      <ul style="margin:0 0 4px;padding-left:20px;font-size:14.5px;line-height:1.6;color:#4A4A4A">
+        <li>Open it on a laptop or desktop, in any browser.</li>
+        <li>Ask whoever sent it for the <b>hosted web link</b> &mdash; a normal
+            https:// address works on every phone, including iOS.</li>
+        <li>On Android, open the file from Chrome.</li>
+      </ul>
+    </div>
+  </div>
+</noscript>
+
 
 <div class="brand-bar"></div>
 <header class="hdr">
@@ -400,12 +466,13 @@
      pointing) — neither works at this width. ===== -->
 <main class="view" id="view-team">
   <div class="finder-head">
-    <h2>Team</h2>
+    <h2>Team Analytics</h2>
     <p id="tm-sub">Headline figures for the active team, and how it breaks down. Tap a bar to filter.</p>
   </div>
   <div class="stats-row" id="tm-kpis"></div>
   <div class="stats-row" id="tm-kpis2"></div>
   <div class="achips-host" id="tm-chips"></div>
+  <div id="tm-slice"></div>
   <div class="tm-card" id="tm-trend-card">
     <div class="tm-h" id="tm-trend-h">Monthly average utilization</div>
     <div id="tm-trend"></div>
@@ -468,6 +535,46 @@
   <button id="fab-down" aria-label="Scroll down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
 </div>
 
+<main class="view" id="view-rates">
+  <div class="finder-head">
+    <h2>Rate Analysis</h2>
+    <p id="rt-sub">Chargeable hours priced through an indicative rate card, matched on grade &amp; territory.</p>
+  </div>
+  <div class="rt-notice" id="rt-notice"><span><b>Sample rates for demonstration only</b> &mdash; not PwC&rsquo;s rate card. The method is real; the amounts are illustrative.</span></div>
+  <div class="seg" id="rt-mode">
+    <button data-rtmode="actual" class="active">Current position</button>
+    <button data-rtmode="scenario">Scenario planner</button>
+  </div>
+  <div id="rt-actual">
+    <div class="stats-row" id="rt-kpis"></div>
+    <div id="rt-body"></div>
+  </div>
+  <div id="rt-scenario" style="display:none">
+    <div class="stats-row" id="sc-kpis"></div>
+    <div class="tm-card">
+      <div class="tm-h">Assumptions</div>
+      <div class="sc-a">
+        <label class="sc-lbl" for="sc-terr">New hires priced as</label>
+        <select id="sc-terr" class="sc-sel"></select>
+      </div>
+      <div class="thr-row">
+        <div class="thr-top"><span class="tl">Target utilization &middot; new hires</span><span><b id="sc-util-val">80</b>%</span></div>
+        <input type="range" id="sc-util" min="40" max="110" step="5" value="80">
+      </div>
+      <div class="thr-row">
+        <div class="thr-top"><span class="tl">Rate change &middot; whole book</span><span><b id="sc-rate-val">0</b>%</span></div>
+        <input type="range" id="sc-rate" min="-20" max="30" step="1" value="0">
+      </div>
+      <button class="sc-reset" id="sc-reset">Clear scenario</button>
+    </div>
+    <div class="tm-card">
+      <div class="tm-h">Headcount by grade &middot; tap to add or remove</div>
+      <div id="sc-plan"></div>
+    </div>
+    <p class="sc-foot">Projected figures annualise the current run-rate and price added hours from the rate card. Indicative billable value, not booked revenue.</p>
+  </div>
+</main>
+
 <nav class="bottom">
   <button data-view="directory" class="active">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -477,17 +584,36 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
     Skill Finder
   </button>
-  <button data-view="team" id="nav-team">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7.5 16v-5"/><path d="M12 16V8"/><path d="M16.5 16v-3"/></svg>
-    Team
-  </button>
-  <button data-view="risk" id="nav-risk">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-    Skill Radar
+  <button id="nav-analysis" aria-haspopup="dialog" aria-label="Additional analysis">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="6.5" y="12" width="3" height="5" rx="1"/><rect x="11.5" y="8" width="3" height="9" rx="1"/><rect x="16.5" y="5" width="3" height="12" rx="1"/></svg>
+    Analysis
   </button>
 </nav>
 
 <div id="sheet-overlay"></div>
+<div id="analysis-sheet" role="dialog" aria-label="Additional analysis">
+  <div class="fs-head">
+    <h3>Additional analysis</h3>
+    <div class="fs-actions"><button id="as-done">Done</button></div>
+  </div>
+  <div class="as-list">
+    <button class="as-item" data-target="team">
+      <span class="as-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7.5 16v-5"/><path d="M12 16V8"/><path d="M16.5 16v-3"/></svg></span>
+      <span class="as-tx"><b>Team Analytics</b><em>Headcount, utilization &amp; breakdowns</em></span>
+      <svg class="as-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <button class="as-item" data-target="radar">
+      <span class="as-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
+      <span class="as-tx"><b>Capability Radar</b><em>Skill coverage vs. team load</em></span>
+      <svg class="as-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <button class="as-item" data-target="rates">
+      <span class="as-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+      <span class="as-tx"><b>Rate Analysis</b><em>Chargeable hours priced by grade</em></span>
+      <svg class="as-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+</div>
 <div id="filter-sheet" role="dialog" aria-label="Filters">
   <div class="fs-head">
     <h3>Filters</h3>
@@ -526,6 +652,21 @@
 // Pristine page source, captured before any rendering — used by the Share
 // button to rebuild a client-safe copy of this exact file.
 const PAGE_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+// PAGE_SRC is taken while the parser is still inside this script, so it stops
+// at this script's own closing tag — every later block, including the Team
+// view module in the second script, is simply absent from it, and a shared copy
+// built from it had the Team markup but none of its code. Everything after this
+// point in the file is static, so the tail is safe to take from the live DOM
+// when the copy is actually built.
+function pristineSource(){
+  const tail = Array.prototype.slice.call(document.scripts, 1)
+    .map(function(s){ return '<scr' + 'ipt>' + s.textContent + '<\/scr' + 'ipt>'; })
+    .join('\n');
+  if (!tail) return PAGE_SRC;
+  return PAGE_SRC.replace(/<\/body>\s*<\/html>\s*$/i, function(){
+    return tail + '\n</body>\n</html>';
+  });
+}
 // ============ Data (injected by generate_report.py — same contract as desktop) ============
 const EMPLOYEES = __EMPLOYEES_JSON__;
 const SKILLS    = __SKILLS_JSON__;
@@ -624,9 +765,19 @@ const HAS_UTIL = ALL_MONTHS.length > 0 && !SHARE_MODE;
 EMPLOYEES.forEach(e => { e._latestUtil = UTIL_LOOKUP[normId(e.WorkdayID) + '|' + LATEST_MONTH]; });
 // Shared / no-utilization builds: Skill Radar has nothing to show — remove the
 // whole tab (same pattern as the desktop build removing its Pulse tab).
+// Take the hub entry away with the view. Left behind, tapping it deactivated
+// every view without activating one — a blank page under the header, escapable
+// only by tapping Directory.
+function dropHubItem(target){
+  const it = document.querySelector('#analysis-sheet .as-item[data-target="' + target + '"]');
+  if (it) it.remove();
+  const list = document.querySelector('#analysis-sheet .as-list');
+  const nav  = document.getElementById('nav-analysis');
+  if (list && nav && !list.querySelector('.as-item')) nav.remove();
+}
 if (!HAS_UTIL){
-  const nb = document.getElementById('nav-risk');  if (nb) nb.remove();
   const rv = document.getElementById('view-risk'); if (rv) rv.remove();
+  dropHubItem('radar');
 }
 // PwC colour ramp for utilization (same bands as desktop)
 function utilColor(v){
@@ -774,17 +925,58 @@ function isManagerRole(role){
   set('st-mgrs',  EMPLOYEES.filter(e => isManagerRole(e.Role)).length);
 })();
 // ============ Bottom nav / view switching ============
+window.__activeView = window.__activeView || 'directory';
 document.querySelectorAll('nav.bottom button[data-view]').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('nav.bottom button').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.querySelectorAll('main.view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-' + btn.dataset.view).classList.add('active');
+    window.__activeView = btn.dataset.view;
     const fabs = document.getElementById('scroll-fabs');
     if (fabs) fabs.style.display = btn.dataset.view === 'directory' ? 'flex' : 'none';
     window.scrollTo(0, 0);
   });
 });
+// ---- Additional-analysis hub: bottom-sheet selector routing to analysis views ----
+(function(){
+  const overlay = document.getElementById('sheet-overlay');
+  const aSheet  = document.getElementById('analysis-sheet');
+  const navBtn  = document.getElementById('nav-analysis');
+  if (!overlay || !aSheet || !navBtn) return;
+  const openA  = () => { overlay.classList.add('open');  aSheet.classList.add('open'); };
+  const closeA = () => { overlay.classList.remove('open'); aSheet.classList.remove('open'); };
+  function showView(view){
+    // Fall back rather than activating nothing: a missing target used to leave
+    // the page blank with no way back except the Directory button.
+    let el = document.getElementById('view-' + view);
+    if (!el){ view = 'directory'; el = document.getElementById('view-directory'); }
+    if (!el) return;
+    document.querySelectorAll('nav.bottom button').forEach(b => b.classList.remove('active'));
+    (view === 'directory'
+      ? document.querySelector('nav.bottom button[data-view="directory"]') || navBtn
+      : navBtn).classList.add('active');
+    document.querySelectorAll('main.view').forEach(v => v.classList.remove('active'));
+    el.classList.add('active');
+    window.__activeView = view;
+    const fabs = document.getElementById('scroll-fabs');
+    if (fabs) fabs.style.display = 'none';
+    window.scrollTo(0, 0);
+  }
+  navBtn.addEventListener('click', openA);
+  const asDone = document.getElementById('as-done'); if (asDone) asDone.addEventListener('click', closeA);
+  overlay.addEventListener('click', closeA);
+  aSheet.querySelectorAll('.as-item').forEach(it => it.addEventListener('click', () => {
+    const t = it.dataset.target; closeA();
+    if (t === 'team'){ showView('team'); }
+    else if (t === 'rates'){ showView('rates'); if (typeof renderRates === 'function') renderRates(); }
+    else if (t === 'radar'){
+      showView('risk');
+      const rb = document.querySelector('#risk-modes [data-rmode="radar"]');
+      if (rb) rb.click();
+    }
+  }));
+})();
 
 // ---- Directory glide scroll: floating arrows; stops mid-way on any user input,
 // ---- on tapping the same arrow again, or when the opposite arrow reverses it.
@@ -895,6 +1087,8 @@ function onFiltersChanged(){
   if (radarMode === 'radar') renderRadarMobile();
   renderFinderResults();  // ...and so do the ranked matches
   renderExplore();        // ...and the skill explorer
+  renderRates();          // ...and the rate analysis
+  if (typeof window.__renderTeam === 'function') window.__renderTeam();   // ...and the team view
 }
 function renderActiveChips(){
   const bits = [];
@@ -1042,6 +1236,13 @@ document.getElementById('bio-next').addEventListener('click', () => stepBio(1));
 // Managing Directors are kept out of every utilization figure and chart, as on
 // the desktop build.
 function isUtilExcluded(role){ return groupForRole(role) === 'Managing Directors'; }
+// Managing Directors are HIDDEN, not excluded — the same rule the desktop build
+// follows. Their hours count in every total, rate and skill load, so the figures
+// tie back to the workbook; what they never get is an individual showing.
+// uIndiv() is the accessor for anywhere a single person's utilization is drawn,
+// sorted or counted. Aggregates read the hours directly and leave nobody out.
+const uIndiv = e => (e && !isUtilExcluded(e.Role) && typeof e._latestUtil === 'number')
+  ? e._latestUtil : undefined;
 
 function utilChartHtml(id){
   // Months with no reported utilization are dropped rather than plotted as 0.
@@ -1452,7 +1653,8 @@ function riskSkillStats(pool){
 }
 const _avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
 let _riskStats = [];   // last computed stats — the skill sheet reads from this
-let _radarExport = [];   // rows currently shown on the radar — used by the Excel export
+let _radarExport = [];   // Scarce & Stretched rows on screen — used by the Excel export
+let _capExport   = [];   // Capacity Radar rows on screen — the radar has its own shape
 function renderRisk(){
   const list = document.getElementById('risk-list');
   if (!list) return;
@@ -1573,6 +1775,7 @@ function renderRadarMobile(){
   // All qualifying skills are shown (no top-8 cap); the page scrolls natively.
   const free  = rows.filter(r => r.spare >= Math.max(0.05, fteBar)).sort((a, b) => b.spare - a.spare);
   const maxed = rows.filter(r => r.us.length && r.us.every(u => u >= commit)).sort((a, b) => b.s.holders.length - a.s.holders.length || b.avg - a.avg);
+  _capExport = { free: free, maxed: maxed };
   const maxSpare = Math.max(1, ...free.map(r => r.spare));
   const capRow = (r, col, seg) =>
     '<div class="rad-row" data-k="' + esc(r.s.key) + '" data-seg="' + seg + '">'
@@ -1648,7 +1851,7 @@ function openSkillSheet(k, ctx, seg, radar){
   const act = document.getElementById('ss-actions');
   if (ctx === 'radar'){
     // Radar: one-tap copy of the relevant people's emails (deploy = only those under the spare cut).
-    const uu = e => typeof e._latestUtil === 'number' ? e._latestUtil : undefined;
+    const uu = uIndiv;                       // MDs are not people you redeploy
     const fr = radar && typeof radar.frag === 'number' ? radar.frag : 100;
     const pick = (radar && radar.seg === 'deploy') ? baseHolders.filter(e => { const u = uu(e); return u !== undefined && u < fr; }) : baseHolders;
     const emails = pick.map(e => e.emailid).filter(Boolean);
@@ -1677,15 +1880,15 @@ function openSkillSheet(k, ctx, seg, radar){
     };
     paintActions();
   }
-  const byUtil = (a, b) => (b._latestUtil ?? -1) - (a._latestUtil ?? -1);
+  const byUtil = (a, b) => (uIndiv(b) ?? -1) - (uIndiv(a) ?? -1);
   // When drilled in from a Competency / Territory group, show that segment's
   // people first (each block sorted by utilization), then the other holders.
   const segCol = seg && seg.group ? (seg.dim === 'comp' ? 'Competency Filter' : seg.dim === 'terr' ? 'Territory Filter' : null) : null;
   let sections = [];
   if (ctx === 'radar' && radar && radar.seg === 'deploy'){
     const fr = typeof radar.frag === 'number' ? radar.frag : 100;
-    const uu = e => typeof e._latestUtil === 'number' ? e._latestUtil : undefined;
-    const avail = baseHolders.filter(e => { const u = uu(e); return u !== undefined && u < fr; }).sort((a, b) => (a._latestUtil ?? 999) - (b._latestUtil ?? 999));
+    const uu = uIndiv;                       // MDs are not people you redeploy
+    const avail = baseHolders.filter(e => { const u = uu(e); return u !== undefined && u < fr; }).sort((a, b) => (uIndiv(a) ?? 999) - (uIndiv(b) ?? 999));
     const busy  = baseHolders.filter(e => { const u = uu(e); return !(u !== undefined && u < fr); }).sort(byUtil);
     if (avail.length) sections.push({ label: 'Available &middot; under ' + fr + '% &middot; ' + avail.length, people: avail });
     if (busy.length)  sections.push({ label: 'Committed &middot; ' + fr + '%+ &middot; ' + busy.length, people: busy });
@@ -1699,8 +1902,9 @@ function openSkillSheet(k, ctx, seg, radar){
   }
   const holders = sections.flatMap(x => x.people);
   const rowHtml = e => {
-    const u = typeof e._latestUtil === 'number'
-      ? (() => { const c = utilColor(e._latestUtil); return '<span class="util-pill" style="background:' + c.bg + ';color:' + (c.dark ? '#2D2D2D' : '#fff') + '">' + Math.round(e._latestUtil) + '%</span>'; })()
+    const _uv = uIndiv(e);
+    const u = typeof _uv === 'number'
+      ? (() => { const c = utilColor(_uv); return '<span class="util-pill" style="background:' + c.bg + ';color:' + (c.dark ? '#2D2D2D' : '#fff') + '">' + Math.round(_uv) + '%</span>'; })()
       : '';
     return '<div class="rrow ss-person" data-id="' + esc(e.WorkdayID) + '" style="min-height:48px">' + avatarHtml(e, 'rav')
       + '<div style="flex:1;min-width:0"><div class="rname">' + esc(e.Name) + '</div><div class="rmeta">'
@@ -1756,6 +1960,19 @@ const PAGE_EXPORTS = {
     downloadCSV('Skill_Matches', rows);
   },
   risk(){
+    // Two different views share this button; export the one being looked at.
+    if (radarMode === 'radar'){
+      const rows = [['Section','Skill','Category','Holders','Spare FTE','Avg load %','Held by']];
+      const push = (label, list) => (list || []).forEach(r => rows.push([
+        label, SKILL_DISPLAY[r.s.key] || r.s.key, catLabel(r.s.key), r.s.holders.length,
+        r.spare.toFixed(1), r.avg === null ? '' : Math.round(r.avg),
+        r.s.holders.map(h => h.Name).join(', ')
+      ]));
+      push('Sellable capacity', _capExport.free);
+      push('Fully committed',   _capExport.maxed);
+      downloadCSV('Capacity_Radar', rows);
+      return;
+    }
     const rows = [['Skill','Category','Status','Depth (people)','Load (avg %)','Held by']];
     _radarExport.forEach(q => rows.push([
       SKILL_DISPLAY[q.s.key] || q.s.key, SKILL_CATEGORY[q.s.key] || '', q.qd.label,
@@ -1766,8 +1983,7 @@ const PAGE_EXPORTS = {
   }
 };
 document.getElementById('export-btn').addEventListener('click', () => {
-  const btn = document.querySelector('nav.bottom button[data-view].active');
-  const fn = PAGE_EXPORTS[btn ? btn.dataset.view : 'directory'];
+  const fn = PAGE_EXPORTS[window.__activeView || 'directory'];
   if (fn) fn();
 });
 
@@ -1782,10 +1998,16 @@ document.getElementById('share-btn').addEventListener('click', () => {
     });
     return c;
   });
-  let src = PAGE_SRC;
-  src = src.replace(/const EMPLOYEES = \[[\s\S]*?\];\n/,
-    'const EMPLOYEES = ' + JSON.stringify(clean).replace(/</g, '\\u003c') + ';\n');
-  src = src.replace(/const UTIL      = \[[\s\S]*?\];\n/, 'const UTIL      = [];\n');
+  // Anchored to the start of a line (/m). Without that, each pattern also
+  // matches its own replacement string a few lines above in this very handler,
+  // and for any data line declared *after* this block — RATES is — that match
+  // wins and the rewrite eats the code in between, producing a copy that will
+  // not parse.
+  let src = pristineSource();
+  src = src.replace(/^const EMPLOYEES = \[[\s\S]*?\];\n/m,
+    () => 'const EMPLOYEES = ' + JSON.stringify(clean).replace(/</g, '\\u003c') + ';\n');
+  src = src.replace(/^const UTIL      = \[[\s\S]*?\];\n/m, 'const UTIL      = [];\n');
+  src = src.replace(/^const RATES = \[[\s\S]*?\];\n/m, 'const RATES = [];\n');
   src = src.replace('const SHARE_MODE = false;', 'const SHARE_MODE = true;');
   const blob = new Blob([src], { type: 'text/html;charset=utf-8' });
   const a = document.createElement('a');
@@ -1800,6 +2022,183 @@ if (SHARE_MODE){
   if (sb) sb.style.display = 'none';
 }
 
+// ============ Rate Analysis (indicative rate card; sample data) ============
+window.__activeView = window.__activeView || 'directory';
+const RATES = __RATES_JSON__;
+const GRADE_CARD_ROLE = { 'Managing Directors':'Managing Director','Directors':'Director','Senior Managers':'Senior Manager','Managers':'Manager','Senior Associates':'Senior Associate','Associates':'Associate' };
+function cardRoleNames(role){
+  const raw = String(role||'').trim(); const out = [raw];
+  if (/^a2$/i.test(raw) || /associate\s*2/i.test(raw)) out.push('Associate 2');
+  const g = GRADE_CARD_ROLE[groupForRole(raw)]; if (g && g !== raw) out.push(g);
+  return out;
+}
+const _rateOf = Object.create(null);
+RATES.forEach(r => { const v = Number(r['Hourly Rate (USD)']); if (isFinite(v)) _rateOf[String(r.Role).trim().toLowerCase()+'|'+String(r.Territory).trim().toLowerCase()] = v; });
+function lookupRate(role, terr){
+  const n = v => String(v||'').trim().toLowerCase();
+  for (const name of cardRoleNames(role)){
+    const hit = _rateOf[n(name)+'|'+n(terr)] ?? _rateOf[n(name)+'|standard'];
+    if (hit !== undefined) return hit;
+  }
+  return 0;
+}
+function _rtActive(e){ const s = String(e.Status||'').trim().toLowerCase(); return s===''||s==='active'||s==='in leave'; }
+function _rtPool(){
+  // The global filters, nothing else. It used to read visibleOrder — the order
+  // the Directory last rendered — so typing in the Directory search silently
+  // rescoped these figures, and a search matching nobody bounced them back to
+  // the whole company.
+  return filterPool().filter(_rtActive);
+}
+const _rtHours = e => { const h = HOURS[normId(e.WorkdayID)+'|'+LATEST_MONTH]; return h ? h.ch : 0; };
+const _rtRate  = e => lookupRate(e.Role, e.Territory || e['Territory Filter']);
+const _rtRev   = e => _rtHours(e) * _rtRate(e);
+function _rtMoney(v){ return v>=1e6 ? '$'+(v/1e6).toFixed(1)+'M' : v>=1e3 ? '$'+Math.round(v/1e3)+'k' : '$'+Math.round(v); }
+function _rtMonthLabel(){ const mm=String(LATEST_MONTH).match(/^(\d{4})-(\d{2})/); if(!mm) return 'latest month'; return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mm[2]-1]+' '+mm[1]; }
+function renderRates(){
+  if (!document.getElementById('rt-kpis')) return;
+  // No 'Hourly Rates' sheet means nothing can be priced. Say so rather than
+  // presenting a page of $0 as if it were an answer.
+  if (!Array.isArray(RATES) || !RATES.length){
+    document.getElementById('rt-kpis').innerHTML = '';
+    const rb = document.getElementById('rt-body');
+    if (rb) rb.innerHTML = '<div class="tm-card"><div class="tm-empty">'
+      + 'No rate card in this workbook. Add an <b>Hourly Rates</b> sheet '
+      + '(Role | Territory | Hourly Rate (USD)) and rebuild to price these hours.'
+      + '</div></div>';
+    const sub = document.getElementById('rt-sub');
+    if (sub) sub.textContent = 'Unavailable — no rate card supplied.';
+    const nt = document.getElementById('rt-notice'); if (nt) nt.style.display = 'none';
+    const sg = document.getElementById('rt-mode');   if (sg) sg.style.display = 'none';
+    return;
+  }
+  const pool = _rtPool();
+  const totalRev = pool.reduce((s,e)=>s+_rtRev(e),0);
+  const totalHrs = pool.reduce((s,e)=>s+_rtHours(e),0);
+  const blended  = totalHrs ? totalRev/totalHrs : 0;
+  const priced   = pool.filter(e => _rtHours(e) > 0 && _rtRate(e) > 0).length;
+  const mlbl = _rtMonthLabel();
+  const stat = (v,l) => '<div class="stat"><div class="v">'+v+'</div><div class="l">'+esc(l)+'</div></div>';
+  document.getElementById('rt-kpis').innerHTML =
+      stat(_rtMoney(totalRev), 'Revenue \u00b7 '+mlbl)
+    + stat(_rtMoney(totalRev*12), 'Annualized')
+    + stat('$'+Math.round(blended), 'Blended rate/hr')
+    + stat(priced, 'Priced staff');
+  const sub = document.getElementById('rt-sub');
+  if (sub) sub.textContent = 'Chargeable hours for '+mlbl+' priced through an indicative rate card, matched on grade & territory.';
+  function card(title, keyFn, order){
+    const g = Object.create(null);
+    pool.forEach(e => { const k = keyFn(e); if (!k) return; g[k] = (g[k]||0) + _rtRev(e); });
+    let keys = Object.keys(g);
+    if (order) keys = order.filter(k => keys.indexOf(k)>=0).concat(keys.filter(k => order.indexOf(k)<0).sort());
+    else keys = keys.sort((a,b)=>g[b]-g[a]);
+    if (!keys.length) return '<div class="tm-card"><div class="tm-h">'+esc(title)+'</div><div class="tm-empty">No priced hours in this slice.</div></div>';
+    const mx = Math.max(1, ...keys.map(k=>g[k]));
+    const rows = keys.map(k =>
+      '<div class="tm-row" style="cursor:default">'
+      + '<span class="tm-lbl" title="'+esc(k)+'">'+esc(k)+'</span>'
+      + '<span class="tm-track"><span class="tm-fill" style="width:'+Math.max(4,Math.round(g[k]/mx*100))+'%;background:#D04A02"></span></span>'
+      + '<span class="tm-val">'+_rtMoney(g[k])+'</span></div>').join('');
+    return '<div class="tm-card"><div class="tm-h">'+esc(title)+'</div>'+rows+'</div>';
+  }
+  const gradeOrder = ROLE_GROUPS.map(x => x.title);
+  document.getElementById('rt-body').innerHTML =
+      card('Revenue run-rate by grade', e => groupForRole(e.Role), gradeOrder)
+    + card('By competency', e => String(e['Competency Group']||e['Competency']||'').trim())
+    + card('By territory',  e => String(e.Territory||e['Territory Filter']||'').trim());
+  if (typeof renderScenario === 'function') renderScenario();
+}
+if (typeof PAGE_EXPORTS !== 'undefined'){
+  PAGE_EXPORTS.rates = function(){
+    const pool = _rtPool();
+    const rows = [['Name','Grade','Competency','Territory','Chargeable hours ('+LATEST_MONTH+')','Rate/hr (USD)','Revenue (USD)']];
+    pool.forEach(e => { const ch = _rtHours(e), r = _rtRate(e);
+      rows.push([e.Name, e.Role, String(e['Competency Group']||e['Competency']||''), String(e.Territory||''), ch.toFixed(1), r, Math.round(ch*r)]); });
+    if (typeof downloadCSV === 'function') downloadCSV('Rate_Analysis', rows);
+  };
+}
+// ---- Rate Analysis: scenario planner ----
+const GRADES = ROLE_GROUPS.map(g => g.title).filter(t => t !== 'Other');
+const roleForGrade = Object.create(null);
+(function(){
+  const tally = Object.create(null);
+  EMPLOYEES.forEach(e => { const g = groupForRole(e.Role), r = String(e.Role||'').trim(); if (!g || !r) return; (tally[g] = tally[g] || Object.create(null)); tally[g][r] = (tally[g][r]||0)+1; });
+  GRADES.forEach(g => { const t = tally[g]; roleForGrade[g] = t ? Object.keys(t).sort((a,b)=>t[b]-t[a])[0] : g.replace(/s$/,''); });
+})();
+const CAP_PM = (function(){
+  const v = [];
+  Object.keys(HOURS).forEach(k => { const h = HOURS[k].ch, u = UTIL_LOOKUP[k]; if (typeof h === 'number' && typeof u === 'number' && u > 0) v.push(h/(u/100)); });
+  if (!v.length) return 160; v.sort((a,b)=>a-b); return v[Math.floor(v.length/2)];
+})();
+const SC_TERRS = [...new Set(RATES.map(r => r.Territory))];
+const _scPlan = Object.create(null);
+let _scMode = 'actual';
+(function initScenario(){
+  const sel = document.getElementById('sc-terr'); if (!sel) return;
+  sel.innerHTML = SC_TERRS.map(t => '<option value="'+esc(t)+'">'+esc(t)+'</option>').join('');
+  sel.value = SC_TERRS.indexOf('Standard') >= 0 ? 'Standard' : SC_TERRS[0];
+  document.querySelectorAll('#rt-mode button').forEach(b => b.addEventListener('click', () => {
+    if (b.dataset.rtmode === _scMode) return;
+    document.querySelectorAll('#rt-mode button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active'); _scMode = b.dataset.rtmode;
+    document.getElementById('rt-actual').style.display = _scMode === 'actual' ? '' : 'none';
+    document.getElementById('rt-scenario').style.display = _scMode === 'actual' ? 'none' : '';
+    if (_scMode === 'scenario') renderScenario();
+  }));
+  ['sc-util','sc-rate'].forEach(id => document.getElementById(id).addEventListener('input', renderScenario));
+  document.getElementById('sc-reset').addEventListener('click', () => {
+    Object.keys(_scPlan).forEach(k => delete _scPlan[k]);
+    document.getElementById('sc-util').value = 80; document.getElementById('sc-rate').value = 0;
+    renderScenario();
+  });
+  document.getElementById('sc-plan').addEventListener('click', ev => {
+    const btn = ev.target.closest('button[data-d]'); if (!btn) return;
+    const row = btn.closest('.sc-row'); if (!row) return;
+    const g = row.dataset.g, have = parseInt(row.dataset.have, 10) || 0, delta = parseInt(btn.dataset.d, 10);
+    const next = (_scPlan[g] || 0) + delta;
+    if (next < -have) return;
+    _scPlan[g] = next; renderScenario();
+  });
+})();
+function renderScenario(){
+  if (!document.getElementById('sc-kpis') || _scMode !== 'scenario') return;
+  const pool = _rtPool();
+  const targetU = parseInt(document.getElementById('sc-util').value, 10) || 80;
+  const rateAdj = parseInt(document.getElementById('sc-rate').value, 10) || 0;
+  const terr = document.getElementById('sc-terr').value;
+  document.getElementById('sc-util-val').textContent = targetU;
+  document.getElementById('sc-rate-val').textContent = (rateAdj > 0 ? '+' : '') + rateAdj;
+  const have = Object.create(null);
+  pool.forEach(e => { const g = groupForRole(e.Role); if (GRADES.indexOf(g) >= 0) have[g] = (have[g]||0)+1; });
+  document.getElementById('sc-plan').innerHTML = GRADES.map(g => {
+    const h = have[g] || 0, n = _scPlan[g] || 0;
+    return '<div class="sc-row" data-g="'+esc(g)+'" data-have="'+h+'">'
+      + '<div><div class="sc-gname">'+esc(g)+'</div><div class="sc-have">'+h+' now'+(n ? ' &rarr; '+(h+n) : '')+'</div></div>'
+      + '<div class="sc-step">'
+      + '<button data-d="-1"'+(n <= -h ? ' disabled' : '')+'>&minus;</button>'
+      + '<span class="v '+(n>0?'pos':n<0?'neg':'')+'">'+(n>0?'+':'')+n+'</span>'
+      + '<button data-d="1">+</button></div></div>';
+  }).join('');
+  const nowValue = pool.reduce((t,e)=>t+_rtRev(e),0) * 12;
+  const nowHours = pool.reduce((t,e)=>t+_rtHours(e),0) * 12;
+  const nowHeads = pool.length;
+  const factor = 1 + rateAdj/100;
+  let addHeads = 0, addHours = 0, addValue = 0;
+  GRADES.forEach(g => { const n = _scPlan[g] || 0; if (!n) return; const r = lookupRate(roleForGrade[g], terr) * factor; const hrs = CAP_PM * (targetU/100) * 12 * n; addHeads += n; addHours += hrs; addValue += hrs * r; });
+  const projValue = nowValue * factor + addValue;
+  const projHours = nowHours + addHours;
+  const projHeads = nowHeads + addHeads;
+  const blended = projHours ? projValue/projHours : 0;
+  const dValue = projValue - nowValue;
+  const dPct = nowValue ? dValue/nowValue*100 : 0;
+  const dcol = dValue >= 0 ? '#1F8A44' : '#E0301E';
+  const stat = (v,l) => '<div class="stat"><div class="v">'+v+'</div><div class="l">'+esc(l)+'</div></div>';
+  document.getElementById('sc-kpis').innerHTML =
+      stat(_rtMoney(projValue), 'Proj. annual value')
+    + '<div class="stat"><div class="v" style="color:'+dcol+'">'+(dValue>=0?'+':'−')+_rtMoney(Math.abs(dValue))+'</div><div class="l">vs now &middot; '+(dPct>=0?'+':'−')+Math.abs(dPct).toFixed(0)+'%</div></div>'
+    + stat('$'+Math.round(blended), 'Blended rate/hr')
+    + stat(projHeads, 'Headcount'+(addHeads?' ('+(addHeads>0?'+':'')+addHeads+')':''));
+}
 // ============ Boot ============
 buildFilterSheet();
 onFiltersChanged();
@@ -1836,11 +2235,16 @@ renderFinderResults();
 (function(){
   const root = document.getElementById('view-team'); if (!root) return;
   const $ = id => document.getElementById(id);
-  const ACT = EMPLOYEES.filter(e => {
+  const isActive = e => {
     const s = String(e.Status || '').trim().toLowerCase();
     return s === '' || s === 'active' || s === 'in leave';
-  });
-  if (!ACT.length){ const b = $('nav-team'); if (b) b.remove(); root.remove(); return; }
+  };
+  const ACT = EMPLOYEES.filter(isActive);
+  if (!ACT.length){ root.remove(); dropHubItem('team'); return; }
+  // The global filter sheet applies here too. It used to be ignored while the
+  // filter chips were still painted above these figures, so a "Mumbai" chip sat
+  // over company-wide numbers.
+  const scoped = () => filterPool().filter(isActive);
 
   const NOW = new Date();
   const tenureOf = e => { const d = new Date(String(e['Join Date'] || '')); return isNaN(d) ? null : (NOW - d) / 3.15576e10; };
@@ -1861,7 +2265,7 @@ renderFinderResults();
   ];
   const DIM = k => DIMS.find(d => d.key === k);
   let meas = 'count', sel = null;                 // sel = { dim, val }
-  const pool = () => sel ? ACT.filter(e => String(DIM(sel.dim).of(e)) === sel.val) : ACT;
+  const pool = () => sel ? scoped().filter(e => String(DIM(sel.dim).of(e)) === sel.val) : scoped();
   // MDs are excluded from utilization everywhere else, so do the same here.
   // "2026-05" -> "May '26". Used by the KPI labels and the trend chart, so it
   // lives at module scope rather than inside the chart block.
@@ -1873,9 +2277,9 @@ renderFinderResults();
   // One breakdown card. `base` excludes this dimension's own selection so the
   // other bars stay visible and the choice can be changed directly.
   function breakCard(dim){
-    const base = (sel && sel.dim === dim.key) ? ACT : pool();
+    const base = (sel && sel.dim === dim.key) ? scoped() : pool();
     const groups = Object.create(null);
-    (meas === 'util' ? noMD(base) : base).forEach(e => {
+    base.forEach(e => {
       const k = dim.of(e); if (!k) return;
       (groups[k] = groups[k] || []).push(e);
     });
@@ -1887,8 +2291,9 @@ renderFinderResults();
     const rows = keys.map(k => {
       const g = groups[k];
       if (meas === 'util'){
-        const vs = g.map(e => e._latestUtil).filter(v => typeof v === 'number');
-        const a = avg(vs);
+        // Hours-weighted over the whole group, matching the headline rate above
+        // rather than averaging percentages, and counting Managing Directors.
+        const a = utilOver(g.flatMap(e => ALL_MONTHS.map(mo => normId(e.WorkdayID) + '|' + mo)));
         return { k, n: a === null ? 0 : a, txt: a === null ? '—' : Math.round(a) + '%',
                  col: a === null ? '#DEDEDE' : utilColor(a).bg, has: a !== null };
       }
@@ -1911,11 +2316,13 @@ renderFinderResults();
 
   function render(){
     const p = pool(), up = noMD(p);
-    const us = HAS_UTIL ? up.map(e => e._latestUtil).filter(v => typeof v === 'number') : [];
+    // Band counts describe individuals, so they leave Managing Directors out;
+    // the rate below is an aggregate, so it counts everyone's hours.
+    const us = HAS_UTIL ? up.map(uIndiv).filter(v => typeof v === 'number') : [];
     // Across the whole period, matching the trend chart directly beneath it.
     // Bench / Healthy / Stretched stay point-in-time and are labelled with the
     // month, so one card cannot be read as the other's basis.
-    const uW = HAS_UTIL ? utilOver(up.flatMap(e => ALL_MONTHS.map(mo => normId(e.WorkdayID) + '|' + mo))) : null;
+    const uW = HAS_UTIL ? utilOver(p.flatMap(e => ALL_MONTHS.map(mo => normId(e.WorkdayID) + '|' + mo))) : null;
     const lastLbl = LATEST_MONTH ? lbl(LATEST_MONTH) : '';
     const m = p.filter(e => String(e.Gender || '').trim().toLowerCase() === 'male').length;
     const f = p.filter(e => String(e.Gender || '').trim().toLowerCase() === 'female').length;
@@ -1936,7 +2343,9 @@ renderFinderResults();
         + stat(us.filter(v => v > 100).length, 'Stretched · ' + lastLbl)
       : '';
 
-    $('tm-chips').innerHTML = sel
+    // Its own host: #tm-chips belongs to the global filter chips, and writing
+    // here used to destroy them (and this chip's own listener) on every repaint.
+    $('tm-slice').innerHTML = sel
       ? '<span class="achip tm-chip" id="tm-clear">' + esc(DIM(sel.dim).chip) + ': ' + esc(sel.val) + ' <i>&times;</i></span>'
       : '';
     const clr = $('tm-clear');
@@ -1990,6 +2399,25 @@ renderFinderResults();
     meas = b.dataset.meas;
     render();
   }));
+  // Filters live outside this module, so hand it a way in — and give the
+  // Export button something to do on this view.
+  window.__renderTeam = render;
+  if (typeof PAGE_EXPORTS !== 'undefined'){
+    PAGE_EXPORTS.team = function(){
+      const p = pool();
+      const rows = [['Dimension', 'Group', 'People', 'Avg utilization %']];
+      DIMS.forEach(d => {
+        const groups = Object.create(null);
+        p.forEach(e => { const k = d.of(e); if (k) (groups[k] = groups[k] || []).push(e); });
+        Object.keys(groups).sort().forEach(k => {
+          const g = groups[k];
+          const a = HAS_UTIL ? utilOver(g.flatMap(e => ALL_MONTHS.map(mo => normId(e.WorkdayID) + '|' + mo))) : null;
+          rows.push([d.title, k, g.length, a === null ? '' : Math.round(a)]);
+        });
+      });
+      downloadCSV('Team_Analytics', rows);
+    };
+  }
   render();
 })();
 </script>

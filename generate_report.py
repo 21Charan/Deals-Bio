@@ -46,12 +46,11 @@ PHOTO_JPEG_QUALITY = 72
 # ---- Configuration -------------------------------------------------------
 SCRIPT_DIR   = Path(__file__).resolve().parent          # 02_Scripts & ETL
 ROOT         = SCRIPT_DIR.parent                         # Deals Skills and Bio
-SOURCE_DIR   = ROOT / "01_source"                        # raw input files + Images + logo
+SOURCE_DIR   = ROOT / "01_Source"                        # raw input files + Images + logo
 OUTPUT_DIR   = ROOT / "03_Output files"                  # generated HTML
 OUTPUT_DIR.mkdir(exist_ok=True)
 INPUT_FILE   = OUTPUT_DIR / "Employee Details.xlsx"      # master file (built by your ETL) lives with the outputs
 IMAGES_DIR   = SOURCE_DIR / "Images"
-PINCODE_FILE = SOURCE_DIR / "pincode_coords.csv"        # PIN -> lat,lng (India Post; used to geocode Address)
 TEMPLATE     = SCRIPT_DIR / "template.html"
 MOBILE_TEMPLATE = SCRIPT_DIR / "template_mobile.html"   # phone-first companion build
 OUTPUT_FILE  = OUTPUT_DIR / "Employee_Dashboard.html"
@@ -486,36 +485,11 @@ def initials(name):
     return (parts[0][0] + parts[-1][0]).upper()
 
 
-# ---- Locations tab geocoding -------------------------------------------
-# The dashboard's Locations map places people by explicit Latitude/Longitude
-# columns when present, else by the coordinates we derive here from the PIN
-# code inside the Address column, else by a city-name lookup in the template.
-
-_PIN_RE = re.compile(r"\b([1-9][0-9]{5})\b")
-
-
-def pin_from_address(address):
-    """First plausible Indian PIN code (6 digits, not starting with 0)."""
-    m = _PIN_RE.search(str(address or ""))
-    return m.group(1) if m else None
-
-
-def load_pincode_coords():
-    """PIN -> (lat, lng) from 01_Source/pincode_coords.csv. Optional file:
-    when absent, geocoding is skipped and the map falls back gracefully."""
-    coords = {}
-    if not PINCODE_FILE.exists():
-        return coords
-    with open(PINCODE_FILE, encoding="utf-8") as f:
-        next(f, None)                                   # skip header
-        for line in f:
-            parts = line.strip().split(",")
-            if len(parts) == 3:
-                try:
-                    coords[parts[0]] = (float(parts[1]), float(parts[2]))
-                except ValueError:
-                    pass
-    return coords
+# Address-PIN geocoding used to run here, feeding Latitude/Longitude into the
+# employee JSON for the Locations map. That tab is parked (see
+# 05_Parked features/) and no template reads those columns, so the lookup was
+# removed rather than left to load 19,550 PINs on every run. The code is kept
+# in 05_Parked features/geocoding_PARKED.py next to the tab it belongs to.
 
 
 def main():
@@ -530,39 +504,27 @@ def main():
     photos = load_photos(IMAGES_DIR)
     logo_uri = load_logo()
 
-    pin_coords = load_pincode_coords()
-    geocoded = 0
     enriched = []
     for r in data["details"]:
         c = dict(r)
         c["_photo"] = photo_for(r, photos)
         c["_initials"] = initials(r.get("Name"))
-        # Geocode from the Address PIN unless the sheet already provides
-        # explicit Latitude/Longitude (sheet values always win).
-        if pin_coords and not (c.get("Latitude") and c.get("Longitude")):
-            pc = pin_coords.get(pin_from_address(c.get("Address")))
-            if pc:
-                c["Latitude"], c["Longitude"] = pc
-                geocoded += 1
         enriched.append(c)
 
-    if pin_coords:
-        print(f"[ok] Geocoded from Address PIN: {geocoded} / {len(enriched)} "
-              f"(pincode_coords.csv: {len(pin_coords)} PINs)")
-        if geocoded < len(enriched):
-            print("       Others fall back to Latitude/Longitude columns or the city-name lookup.")
-    else:
-        print("[note] 01_Source/pincode_coords.csv not found - Locations map uses city-name lookup only.")
-
-    # Photo-match diagnostic (helps spot Employee ID vs image-name mismatches)
+    # Photo-match diagnostic. Photos are matched on Employee ID, PhotoID or
+    # WorkdayID (whichever the filename stem happens to be), so report against
+    # the images actually in the folder rather than implying every employee
+    # should have one. People without a photo get their initials instead.
     if photos:
         matched = sum(1 for e in enriched if e.get("_photo"))
-        print(f"[ok] Photos matched to employees: {matched} / {len(enriched)} (by Employee ID)")
-        if matched < len(enriched):
-            unmatched = [_norm_id(e.get("Employee ID")) for e in enriched if not e.get("_photo")]
-            avail = sorted({_norm_id(k) for k in photos})
-            print(f"[warn] Unmatched Employee IDs (sample): {unmatched[:8]}")
-            print(f"       Image file names available (sample): {avail[:8]}")
+        files = len(set(photos.values()))
+        print(f"[ok] Photos matched to employees: {matched} / {len(enriched)} "
+              f"(from {files} image file(s); the rest show initials)")
+        used = {e["_photo"] for e in enriched if e.get("_photo")}
+        if len(used) < files:
+            spare = sorted({k for k, v in photos.items() if v not in used and not k.isdigit()}
+                           or {k for k, v in photos.items() if v not in used})
+            print(f"[note] {files - len(used)} image(s) match nobody on the roster: {spare[:8]}")
 
     # Stats
     exps = [e.get(EXP_TOTAL) for e in enriched if isinstance(e.get(EXP_TOTAL), (int, float))]
@@ -588,10 +550,15 @@ def main():
         util = data["utilization"]
         util_jj = data["util_jj"]
         util_am = data["util_am"]
+        rates = data["rates"]
         leavers = build_leavers(data["details"], util_jj, util_am)
         if share:
             util = util_jj = util_am = []                  # no utilization anywhere
             leavers = []                                   # and so nobody to add
+            # The Rate Analysis tab is removed at runtime in share mode, but the
+            # rate card itself was still embedded and readable in the page
+            # source. Drop it here so what is not shown is also not shipped.
+            rates = []
             emp = [{k: v for k, v in e.items() if k != "Address"} for e in enriched]  # redact full address
         return ((tpl if tpl is not None else template)
             .replace("__EMPLOYEES_JSON__", json.dumps(emp, default=str))
@@ -599,7 +566,7 @@ def main():
             .replace("__UTIL_JSON__",      json.dumps(util, default=str))
             .replace("__UTIL_JJ_JSON__",   json.dumps(util_jj, default=str))
             .replace("__UTIL_AM_JSON__",   json.dumps(util_am, default=str))
-            .replace("__RATES_JSON__",     json.dumps(data["rates"], default=str))
+            .replace("__RATES_JSON__",     json.dumps(rates, default=str))
             .replace("__LEAVERS_JSON__",   json.dumps(leavers, default=str))
             .replace("__TOTAL__",          str(len(enriched)))
             .replace("__AVG_EXP__",        str(avg_exp))
@@ -635,6 +602,20 @@ def main():
         out_file.write_text(render(share, tpl), encoding="utf-8")
         size_kb = out_file.stat().st_size / 1024
         print(f"[ok] Wrote {out_file.name} ({label}) - {size_kb:.0f} KB")
+
+    # Read-only companion: every figure rendered here in Python, no JavaScript,
+    # so it opens in previews that switch scripting off - notably iOS. Optional:
+    # if the module is missing the three builds above are unaffected.
+    try:
+        import build_static
+        static_out = OUTPUT_DIR / "Employee_Dashboard_Static.html"
+        build_static.build(data, enriched,
+                           build_leavers(data["details"], data["util_jj"], data["util_am"]),
+                           photos, logo_uri, generated_str, static_out, photo_for)
+        print(f"[ok] Wrote {static_out.name} (Static / no JavaScript - opens on iOS) "
+              f"- {static_out.stat().st_size / 1024:.0f} KB")
+    except ImportError:
+        print("[note] build_static.py not found - skipping the no-JavaScript build.")
 
 
 if __name__ == "__main__":

@@ -825,6 +825,10 @@
 
   /* ---- Pulse (capacity heatmap) ---- */
   .pulse-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  /* Reset sits at the end of the control run rather than being pushed right:
+     pushed right it wrapped onto a line of its own on narrower screens and left
+     the row empty. The search box takes up the slack instead. */
+  .pulse-controls > input{flex:1 1 180px;max-width:420px}
   /* Utilization band. Borrows .cr-thresholds/.cr-thr so the slider styling and
      the stacked toggle match the Capability Risk page exactly. */
   /* Its own row under the filter bar. Keeps .cr-thresholds' card so it matches
@@ -838,9 +842,17 @@
   .pulse-range .cr-thr{flex:0 0 auto;min-width:0;flex-direction:row;align-items:center;gap:10px}
   .pulse-range .cr-thr-top{flex:0 0 auto;gap:6px;white-space:nowrap;justify-content:flex-start}
   .pulse-range .cr-thr input[type=range]{width:150px;margin:0}
-  /* Horizontal, so the card reads as one strip rather than a stack. */
-  #pulse-range-basis{flex-direction:row;align-self:center;margin:0;flex:0 0 auto}
-  #pulse-range-basis button{padding:6px 12px;font-size:11px;white-space:nowrap}
+  /* Scope cluster — period and population, stacked side by side and ruled off
+     from the band, so the strip reads as two controls rather than five. */
+  .pl-scope{display:flex;align-items:stretch;gap:10px;flex:0 0 auto;
+            padding-right:20px;border-right:1px solid var(--pwc-grey-200)}
+  .pl-scope .atlas-view-toggle{flex-direction:column;margin:0;flex:0 0 auto}
+  .pl-scope .atlas-view-toggle button{padding:6px 12px;font-size:11px;white-space:nowrap;text-align:center}
+  .pl-scope .atlas-view-toggle[hidden]{display:none}
+  /* Legend hugs the right of the same row; the caption takes the line below it
+     so a long sentence never squeezes the sliders. */
+  .pulse-range .pulse-legend{align-self:center;flex:0 0 auto}
+  .pulse-range .pr-note{flex:1 1 100%;text-align:right;margin:0}
   /* The caption rides on the same line when there is room, and drops under the
      sliders when there is not. */
   .pr-note{flex:1 1 260px;font-size:12px;color:var(--pwc-grey-600);margin:0;text-align:right}
@@ -965,6 +977,37 @@
 </head>
 <!-- Starts on the landing; the overview script clears this if it cannot build. -->
 <body class="landing">
+<noscript>
+  <div style="position:fixed;inset:0;z-index:9999;overflow:auto;background:#F7F7F7;
+              font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+              padding:28px 20px;-webkit-text-size-adjust:100%">
+    <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:10px;
+                border-top:5px solid #D04A02;box-shadow:0 2px 10px rgba(0,0,0,.10);padding:24px 22px">
+      <h1 style="margin:0 0 10px;font-size:19px;line-height:1.3;color:#2D2D2D">
+        This dashboard needs JavaScript to show its data
+      </h1>
+      <p style="margin:0 0 14px;font-size:14.5px;line-height:1.55;color:#4A4A4A">
+        You are seeing the layout but no numbers because JavaScript is switched off
+        in whatever is displaying this file. Nothing is wrong with the file itself.
+      </p>
+      <p style="margin:0 0 14px;font-size:14.5px;line-height:1.55;color:#4A4A4A">
+        <b>On an iPhone or iPad this is expected.</b> The built-in preview used by
+        Files, Mail, Teams and SharePoint renders HTML with JavaScript disabled, so
+        every figure comes out blank. Android phones open the same file in Chrome,
+        which is why it works there.
+      </p>
+      <p style="margin:0 0 6px;font-size:13px;font-weight:700;letter-spacing:.4px;
+                text-transform:uppercase;color:#D04A02">What works</p>
+      <ul style="margin:0 0 4px;padding-left:20px;font-size:14.5px;line-height:1.6;color:#4A4A4A">
+        <li>Open it on a laptop or desktop, in any browser.</li>
+        <li>Ask whoever sent it for the <b>hosted web link</b> &mdash; a normal
+            https:// address works on every phone, including iOS.</li>
+        <li>On Android, open the file from Chrome.</li>
+      </ul>
+    </div>
+  </div>
+</noscript>
+
 <header class="brand">
   <!-- The brand block doubles as "home": on a detail page it returns to the overview. -->
   <!-- On a detail page the brand block returns to the overview. No visible
@@ -1287,7 +1330,7 @@
     <div id="cr-keyperson-view" style="display:none">
       <div class="cr-thresholds">
         <div class="cr-thr">
-          <div class="cr-thr-top"><span class="cr-thr-lbl">Key-person risk when</span><span class="cr-thr-val"><b id="cr-kp-val">2</b> or fewer people hold it</span></div>
+          <div class="cr-thr-top"><span class="cr-thr-lbl">Key-person risk when</span><span class="cr-thr-val"><b id="cr-kp-val">2</b> or fewer people hold the skill</span></div>
           <input type="range" id="cr-kp-slider" min="1" max="10" step="1" value="2">
         </div>
       </div>
@@ -1385,15 +1428,6 @@
         <option value="latest-asc">Sort: latest month &#8593;</option>
         <option value="name">Sort: Name</option>
       </select>
-      <div class="atlas-view-toggle" id="pulse-pop-toggle" title="Whether to include people who worked in this period but have since left">
-        <button data-pop="active" class="active">Active only</button>
-        <button data-pop="all">All contributors</button>
-      </div>
-      <div class="atlas-view-toggle" id="pulse-fy-toggle" title="Switch fiscal-year window">
-        <button data-fy="jj" class="active">FY Jul&ndash;Jun</button>
-        <button data-fy="am" title="Performance Year May to April">PY May&ndash;Apr</button>
-      </div>
-      <div class="pulse-legend" id="pulse-legend"></div>
       <button class="reset-btn" id="pulse-reset" title="Clear filters">Reset</button>
     </div>
 
@@ -1401,6 +1435,18 @@
          insight lists deliberately keep reporting the whole filtered team, so
          the bands they count against stay meaningful while the band is applied. -->
     <div class="cr-thresholds pulse-range" id="pulse-range">
+      <!-- Scope: which period, which population. Both answer "who and when am
+           I looking at", so they sit together, in front of the band they scope. -->
+      <div class="pl-scope">
+        <div class="atlas-view-toggle" id="pulse-fy-toggle" title="Switch fiscal-year window">
+          <button data-fy="jj" class="active">FY Jul&ndash;Jun</button>
+          <button data-fy="am" title="Performance Year May to April">PY May&ndash;Apr</button>
+        </div>
+        <div class="atlas-view-toggle" id="pulse-pop-toggle" title="Whether to include people who worked in this period but have since left">
+          <button data-pop="all" class="active">All contributors</button>
+          <button data-pop="active">Active only</button>
+        </div>
+      </div>
       <div class="cr-thr-group">
         <div class="cr-thr-gh">Utilization band</div>
         <div class="cr-thr-row">
@@ -1412,12 +1458,11 @@
             <div class="cr-thr-top"><span class="cr-thr-lbl">To</span><span class="cr-thr-val"><b id="pl-rmax">150</b>%<span id="pl-rplus">+</span></span></div>
             <input type="range" id="pl-max-slider" min="0" max="150" step="5" value="150" aria-label="Highest utilization to show">
           </div>
-          <div class="atlas-view-toggle" id="pulse-range-basis" title="Which utilization figure the band is measured on">
-            <button data-basis="latest" class="active">Latest month</button>
-            <button data-basis="avg" id="pl-basis-avg">FY average</button>
-          </div>
         </div>
       </div>
+      <!-- The colour key belongs next to the grid it explains, not up among
+           the filters where it was competing for the same row. -->
+      <div class="pulse-legend" id="pulse-legend"></div>
       <div class="pr-note" id="pulse-range-note"></div>
     </div>
 
@@ -1864,6 +1909,18 @@
   Object.keys(CAT_SKILL_PPL).forEach(cat => { Object.keys(CAT_SKILL_PPL[cat]).forEach(k => { (SKILL_CATS[k] || (SKILL_CATS[k] = [])).push(cat); }); });
   Object.keys(SKILL_CATS).forEach(k => SKILL_CATS[k].sort());
   function catLabel(k){ const a = SKILL_CATS[k]; return (a && a.length) ? a.join(' · ') : (SKILL_CATEGORY[k] || ''); }
+  // Every category a skill is tagged under. SKILL_CATEGORY keeps only the
+  // first-seen one, so testing membership against it hid people whose only
+  // match was a multi-category skill — Power BI is tagged under both FDD and
+  // Data & Analytics, and its holders vanished under the second filter.
+  function catsOf(k){
+    const a = SKILL_CATS[k];
+    if (a && a.length) return a;
+    const c = SKILL_CATEGORY[k];
+    return c ? [c] : [];
+  }
+  // Every category that appears anywhere, not just those that won a first-seen race.
+  const ALL_CATS = [...new Set([].concat(...Object.keys(SKILL_DISPLAY).map(catsOf)))].sort();
   const ALL_SKILLS = Object.keys(SKILL_DISPLAY)
     .sort((a, b) => SKILL_DISPLAY[a].localeCompare(SKILL_DISPLAY[b], undefined, { sensitivity: 'base' }));
 
@@ -2019,6 +2076,12 @@
   // including them would put an MD in the bench and burnout counts. Their hours
   // still count towards billable value on the Rate Analysis tab, which measures
   // revenue rather than utilization.
+  // Managing Directors are HIDDEN, not excluded. Their hours count in every
+  // total, rate and load on the dashboard, so the figures reconcile straight to
+  // the workbook. What they never get is an individual showing: no heatmap row,
+  // no utilization badge, no bench or burnout listing, and no place in the
+  // per-person band counts — an MD's chargeable pattern is not comparable with
+  // delivery staff, and a reader cannot act on it anyway.
   function isUtilExcluded(role){ return groupForRole(role) === 'Managing Directors'; }
   function groupForRole(role){
     const r = String(role || '').trim();
@@ -2059,7 +2122,7 @@
       if (locSel.size  && !locSel.has(String(e['Location'] || ''))) return false;
       if (terrSel.size && !terrSel.has(String(e['Territory Filter'] || ''))) return false;
       if (compSel.size && !compSel.has(String(e['Competency Filter'] || ''))) return false;
-      if (catSel.size){ let _h = false; for (const k of (e._skills || [])){ if (catSel.has(SKILL_CATEGORY[k])){ _h = true; break; } } if (!_h) return false; }
+      if (catSel.size){ let _h = false; for (const k of (e._skills || [])){ if (catsOf(k).some(c => catSel.has(c))){ _h = true; break; } } if (!_h) return false; }
       if (!expFull){ const _v = parseFloat(e[EXP_TOTAL]); if (isNaN(_v) || _v < expLo || _v > expHi) return false; }
       // Skills filter — AND match (employee must have EVERY selected skill).
       if (selectedSkills.size > 0){
@@ -2260,7 +2323,7 @@
     return self;
   }
   document.addEventListener('click', () => document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open')));
-  const _cats = [...new Set(Object.values(SKILL_CATEGORY))].filter(c => c && c !== 'Uncategorised').sort();
+  const _cats = ALL_CATS.filter(c => c && c !== 'Uncategorised');
   const msRole = buildMS('dir-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), renderDirectory, 'role');
   const msLoc  = buildMS('dir-loc-ms',  'All locations',        uniqueValues('Location'),                   renderDirectory, 'loc');
   const msTerr = buildMS('dir-terr-ms', 'All territories',      orderTerritory(uniqueValues('Territory Filter')),            renderDirectory, 'terr');
@@ -2494,7 +2557,14 @@
         +   monthLabels
         + '</svg></div>';
     } else {
-      utilHtml = '<em style="color:var(--pwc-grey-600);">No utilization data.</em>';
+      // A Managing Director has hours — they are counted in every total on the
+      // dashboard — they are simply never charted individually. Saying "no data"
+      // here would be a plain untruth about the workbook.
+      utilHtml = '<em style="color:var(--pwc-grey-600);">'
+        + (emp && isUtilExcluded(emp.Role)
+            ? 'Utilization is not charted for Managing Directors. Their hours are still counted in the practice totals.'
+            : 'No utilization data.')
+        + '</em>';
     }
 
     // Team — render as a comma-separated value in the info grid (like Email).
@@ -2669,7 +2739,7 @@
 
   // Category colour assignment — cycle through the PwC palette
   const CAT_COLOR = Object.create(null);
-  const ORDERED_CATS = [...new Set(Object.values(SKILL_CATEGORY))].sort();
+  const ORDERED_CATS = ALL_CATS.slice();
   // Uncategorised always grey
   const CAT_PALETTE = [ORANGE, PINK, TANGERINE, BURGUNDY, YELLOW, ROSE, BLACK];
   let pi = 0;
@@ -2746,7 +2816,7 @@
       if (!ids.has(String(e.WorkdayID))) return;
       const comp = empComp(e);
       e._skills.forEach(k => {
-        if (catSel.size && !catSel.has(SKILL_CATEGORY[k] || 'Uncategorised')) return;
+        if (catSel.size && !catsOf(k).some(c => catSel.has(c || 'Uncategorised'))) return;
         if (!cats[comp]) cats[comp] = { skills: Object.create(null), people: new Set() };
         cats[comp].people.add(e.WorkdayID);
         cats[comp].skills[k] = (cats[comp].skills[k] || 0) + 1;
@@ -3344,9 +3414,11 @@
   };
   const FY_AVAILABLE = { jj: fyUsable(UTIL_FY.jj) || !!UTIL.length, am: fyUsable(UTIL_FY.am) };
   let pulseFY = 'jj';
-  // Which population the heatmap covers. Defaults to the active roster, so the
-  // page looks exactly as it did until someone asks for the fuller picture.
-  let pulsePop = 'active';
+  // Which population the heatmap covers. Defaults to everyone who worked in the
+  // period, leavers included, so the strip opens on the same basis as the
+  // landing page and reconciles straight to the workbook. 'Active only' narrows
+  // it to today's roster.
+  let pulsePop = 'all';
   const pulseBase = () => (pulsePop === 'all' && HAS_LEAVERS) ? EMPLOYEES.concat(LEAVERS) : EMPLOYEES;
 
   // Pre-compute per-employee: avg util, latest util, sustained risk flag
@@ -3377,8 +3449,16 @@
   }
 
   // KPIs (against latest month)
-  function setPulseKpis(list){
+  function setPulseKpis(list, agg, universe){
     list = list || EMPLOYEES;
+    // Rates and hour totals are computed over `agg` (includes Managing
+    // Directors); the per-person band counts over `list` (does not), so every
+    // tile that counts people counts people you can actually find below.
+    agg = agg || EMPLOYEES;
+    // Everyone matching the current filters before the MD and leaver rules are
+    // applied. Falls back to the roster on the initial paint, which has no
+    // filters yet.
+    universe = universe || EMPLOYEES.concat(HAS_LEAVERS ? LEAVERS : []);
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     // Everything on this strip is reported over whichever fiscal year is
     // selected, so switching FY / PY moves every figure together. Reading the
@@ -3393,9 +3473,9 @@
     const hfmt = n => Math.round(n).toLocaleString('en-US');
 
     // --- row 1: rates -----------------------------------------------------
-    set('pl-fyavg', pct(utilOver(keys(list, MS), HRS, FY.lookup)));
+    set('pl-fyavg', pct(utilOver(keys(agg, MS), HRS, FY.lookup)));
     set('pl-fyavg-lbl', 'Avg Utilization \u00b7 ' + win);
-    set('pl-avg',   pct(last ? utilOver(keys(list, [last]), HRS, FY.lookup) : null));
+    set('pl-avg',   pct(last ? utilOver(keys(agg, [last]), HRS, FY.lookup) : null));
     set('pl-avg-lbl', 'Latest Month Avg' + (last ? ' \u00b7 ' + fmtMonth(last) : ''));
 
     // Band counts read the same window, so they cannot drift from the average
@@ -3416,7 +3496,7 @@
 
     // --- row 2: the hours those rates are made of -------------------------
     let ch = 0, std = 0, tr = 0;
-    keys(list, MS).forEach(k => { const h = HRS[k]; if (h){ ch += h.ch; std += h.std; tr += h.tr; } });
+    keys(agg, MS).forEach(k => { const h = HRS[k]; if (h){ ch += h.ch; std += h.std; tr += h.tr; } });
     set('pl-std',    std ? hfmt(std) : '-');
     set('pl-charge', (ch || std) ? hfmt(ch) : '-');
     set('pl-train',  (tr || std) ? hfmt(tr) : '-');
@@ -3429,40 +3509,43 @@
     // gender recorded — which includes leavers, whose record carries none —
     // are in neither figure.
     const g = v => String(v || '').trim().toLowerCase();
-    const mU = utilOver(keys(list.filter(e => g(e.Gender) === 'male'), MS), HRS, FY.lookup);
-    const fU = utilOver(keys(list.filter(e => g(e.Gender) === 'female'), MS), HRS, FY.lookup);
+    const mU = utilOver(keys(agg.filter(e => g(e.Gender) === 'male'), MS), HRS, FY.lookup);
+    const fU = utilOver(keys(agg.filter(e => g(e.Gender) === 'female'), MS), HRS, FY.lookup);
     set('pl-mf', (mU === null && fU === null) ? '-' : pct(mU) + ' : ' + pct(fU));
 
     setTerritoryNote();
 
-    // Reconciliation. Pulse deliberately leaves people out — Managing Directors
-    // always, leavers unless asked for — so without saying by how much, no
-    // figure here can be checked against the workbook.
+    // Reconciliation. The figures above cover everyone in the slice, Managing
+    // Directors included, but leavers are held back unless asked for — and MDs,
+    // though counted, have no row below. Say both, or the strip cannot be
+    // checked against the workbook and the row count looks wrong.
     const br = document.getElementById('pulse-bridge');
     if (br){
-      const shown = new Set(list.map(e => String(e.WorkdayID)));
-      let outCh = 0, mdN = 0, lvN = 0, allCh = 0;
-      const inRoster = new Set(EMPLOYEES.map(e => String(e.WorkdayID)));
-      const counted = new Set();
-      Object.keys(HRS).forEach(k => {
-        const id = k.slice(0, k.indexOf('|'));
-        if (!MS.includes(k.slice(k.indexOf('|') + 1))) return;
-        allCh += HRS[k].ch;
-        if (shown.has(id)) return;
-        outCh += HRS[k].ch;
-        if (!counted.has(id)){
-          counted.add(id);
-          if (inRoster.has(id)) mdN++; else lvN++;
-        }
-      });
-      const bits = [];
-      if (mdN) bits.push('<b>' + mdN + '</b> Managing Director' + (mdN === 1 ? '' : 's'));
-      if (lvN) bits.push('<b>' + lvN + '</b> who ' + (lvN === 1 ? 'has' : 'have') + ' since left');
-      br.innerHTML = outCh > 0.5
-        ? 'Not counted above: ' + bits.join(' and ') + ' &mdash; <b>' + Math.round(outCh).toLocaleString('en-US')
-          + '</b> chargeable hrs. With them the ' + win + ' total is <b>'
-          + Math.round(allCh).toLocaleString('en-US') + '</b> hrs.'
-          + (lvN ? ' Use <b>All contributors</b> to include leavers.' : '')
+      const aggIds = new Set(agg.map(e => String(e.WorkdayID)));
+      const chOver = ids => {
+        let t = 0;
+        ids.forEach(id => MS.forEach(m => { const h = HRS[id + '|' + m]; if (h) t += h.ch; }));
+        return t;
+      };
+      const mdIds   = new Set(agg.filter(e => isUtilExcluded(e.Role)).map(e => String(e.WorkdayID)));
+      const leftIds = new Set(universe.filter(e => !aggIds.has(String(e.WorkdayID)))
+                                      .map(e => String(e.WorkdayID)));
+      const countedCh = chOver(aggIds);
+      const leftCh    = chOver(leftIds);
+      const parts = [];
+      if (mdIds.size){
+        parts.push('Includes <b>' + mdIds.size + '</b> Managing Director'
+          + (mdIds.size === 1 ? '' : 's') + ' &mdash; counted in the figures above, '
+          + (mdIds.size === 1 ? 'but with no row' : 'but with no rows') + ' below.');
+      }
+      if (leftIds.size && leftCh > 0.5){
+        parts.push('Not counted: <b>' + leftIds.size + '</b> who '
+          + (leftIds.size === 1 ? 'has' : 'have') + ' since left &mdash; <b>'
+          + Math.round(leftCh).toLocaleString('en-US') + '</b> chargeable hrs. With them the '
+          + win + ' total is <b>' + Math.round(countedCh + leftCh).toLocaleString('en-US')
+          + '</b> hrs. Use <b>All contributors</b> to include leavers.');
+      }
+      br.innerHTML = parts.length ? parts.join(' ')
         : 'Covers everyone with hours in ' + win + '.';
     }
   }
@@ -3527,7 +3610,10 @@
     return { active: true, isMgr, ok: e => sel.has(MN(e['RL Manager'])) || isMgr(e) };
   }
 
-  const pRole = buildMS('pulse-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), pChange, 'role');
+  // Pulse only: Managing Directors have no rows here, so offering their grade
+  // in the filter could only ever empty the heatmap.
+  const pRole = buildMS('pulse-role-ms', 'All roles',
+    orderBy(uniqueValues('Role'), ROLE_ORDER).filter(r => !isUtilExcluded(r)), pChange, 'role');
   const pLoc  = buildMS('pulse-loc-ms',  'All locations',        uniqueValues('Location'),                  pChange, 'loc');
   const pComp = buildMS('pulse-comp-ms', 'All competencies',     orderCompetency(uniqueValues('Competency Filter')), pChange, 'comp');
   const pTerr = buildMS('pulse-terr-ms', 'All territories',      orderTerritory(uniqueValues('Territory Filter')),           pChange, 'terr');
@@ -3540,7 +3626,10 @@
   // Utilization band. PL_BAND_MAX doubles as "and above" — the top of the
   // slider is an open end, so a person at 135% is still inside a 100-150 band.
   const PL_BAND_MAX = 150;
-  let plMin = 0, plMax = PL_BAND_MAX, plBasis = 'latest';
+  // The band is always measured on the latest month of the selected window.
+  // The FY-average alternative was removed: two windows plus two bases was four
+  // ways to read one slider, and the month is the one people act on.
+  let plMin = 0, plMax = PL_BAND_MAX;
 
   function fmtMonth(ym){
     // "2026-01" -> "Jan '26"
@@ -3557,35 +3646,56 @@
     const fyH  = HOURS_FYD[pulseFY];
     const fyAvg = e => utilOver(FY.months.map(m => String(e.WorkdayID) + '|' + m), fyH, FY.lookup);
 
-    let list = pulseBase().filter(e => {
-      if (isUtilExcluded(e.Role)) return false;   // no MD utilization anywhere
+    // The filters, on their own. Kept separate from the MD and population rules
+    // so the reconciliation note below can ask "who ELSE matched these filters
+    // but was deliberately left out?" — previously it could only ask "who is not
+    // on screen?", which counted everybody the filters removed as an MD.
+    const matchesFilters = e => {
       if (!mgr.ok(e)) return false;
       if (pRole.selected.size && !pRole.selected.has(String(e['Role'] || ''))) return false;
       if (pLoc.selected.size  && !pLoc.selected.has(String(e['Location'] || ''))) return false;
       if (pComp.selected.size && !pComp.selected.has(String(e['Competency Filter'] || ''))) return false;
       if (pTerr.selected.size && !pTerr.selected.has(String(e['Territory Filter'] || ''))) return false;
-      if (pCat.selected.size){ let has = false; for (const k of (e._skills || [])){ if (pCat.selected.has(SKILL_CATEGORY[k])){ has = true; break; } } if (!has) return false; }
+      if (pCat.selected.size){ let has = false; for (const k of (e._skills || [])){ if (catsOf(k).some(c => pCat.selected.has(c))){ has = true; break; } } if (!has) return false; }
       if (!q) return true;
       return ['Name','Role','Location','Territory Group','Competency Group','Qualification']
         .some(k => String(e[k] ?? '').toLowerCase().includes(q));
-    });
+    };
+
+    // Rows on screen: Managing Directors have none.
+    let list = pulseBase().filter(e => !isUtilExcluded(e.Role) && matchesFilters(e));
+    // The same population WITH them, which is what every hour total and rate on
+    // the strip is computed over, so those figures tie back to the workbook.
+    const aggPool = pulseBase().filter(matchesFilters);
+    // Everyone matching the filters, leavers included: what the note reconciles to.
+    const universe = EMPLOYEES.concat(HAS_LEAVERS ? LEAVERS : []).filter(matchesFilters);
 
     // People with nothing reported sort to the bottom in every direction. The
     // old version flipped the arguments to reverse the sort, which flipped the
     // null handling too and floated blank rows to the very top of a descending
     // list — the emptiest rows in the most prominent position.
-    const cmpVal = (a, b, key, desc) => {
-      const av = a[key], bv = b[key];
+    const cmpVal = (a, b, val, desc) => {
+      const av = val.get(a), bv = val.get(b);
       const an = av == null, bn = bv == null;
       if (an && bn) return String(a.Name).localeCompare(String(b.Name));
       if (an) return 1;
       if (bn) return -1;
       return desc ? bv - av : av - bv;
     };
-    if      (srt === 'avg-desc')    list.sort((a,b) => cmpVal(a, b, '_avgUtil', true));
-    else if (srt === 'avg-asc')     list.sort((a,b) => cmpVal(a, b, '_avgUtil', false));
-    else if (srt === 'latest-desc') list.sort((a,b) => cmpVal(a, b, '_latestUtil', true));
-    else if (srt === 'latest-asc')  list.sort((a,b) => cmpVal(a, b, '_latestUtil', false));
+    // Sort on the window that is showing. The precomputed _avgUtil /
+    // _latestUtil are fixed to FY Jul-Jun, so sorting on them left the rows in
+    // Jul-Jun order under the PY May-Apr heading — the column read as unsorted.
+    const sortLast = FY.months.length ? FY.months[FY.months.length - 1] : '';
+    const mapOf = f => new Map(list.map(e => {
+      const v = f(e);
+      return [e, (v === undefined || v === null || isNaN(v)) ? null : v];
+    }));
+    const avgMap    = mapOf(fyAvg);
+    const latestMap = mapOf(e => FY.lookup[String(e.WorkdayID) + '|' + sortLast]);
+    if      (srt === 'avg-desc')    list.sort((a,b) => cmpVal(a, b, avgMap, true));
+    else if (srt === 'avg-asc')     list.sort((a,b) => cmpVal(a, b, avgMap, false));
+    else if (srt === 'latest-desc') list.sort((a,b) => cmpVal(a, b, latestMap, true));
+    else if (srt === 'latest-asc')  list.sort((a,b) => cmpVal(a, b, latestMap, false));
     else                            list.sort((a,b) => String(a.Name).localeCompare(String(b.Name)));
 
     // KPI cards + insight boxes reflect the current filter selection. The
@@ -3594,26 +3704,27 @@
     // "Healthy" and "Stretched" and read as broken rather than filtered.
     // The cards, the lists and the rows all cover the same people, so the KPI
     // strip can be reconciled against the heatmap and against the workbook.
-    setPulseKpis(list);
+    setPulseKpis(list, aggPool, universe);
     renderInsights(list);
     const mdNote = document.getElementById('pulse-md-note');
     if (mdNote) mdNote.innerHTML = '';
 
-    // Utilization band — heatmap rows only. Measured on whichever fiscal
-    // window is selected, so switching to PY re-reads both the latest month
-    // and the average from the May-Apr sheet.
-    const bandLast = FY.months.length ? FY.months[FY.months.length - 1] : null;
+    // Utilization band — heatmap rows only, measured on the average across the
+    // selected fiscal window. That is the same number the FY / PY Util column
+    // shows and the same one the default sort ranks by, so dragging the band
+    // narrows the list to exactly the rows whose first column is inside it. A
+    // single month was too noisy to band on: one quiet month dropped people who
+    // ran hot all year.
     const bandVal = e => {
-      if (plBasis === 'avg') return fyAvg(e);
-      const v = bandLast ? FY.lookup[String(e.WorkdayID) + '|' + bandLast] : undefined;
-      return v === undefined ? null : v;
+      const v = fyAvg(e);
+      return (v === undefined || v === null || isNaN(v)) ? null : v;
     };
     const bandOn = plMin > 0 || plMax < PL_BAND_MAX;
     const bandHi = plMax >= PL_BAND_MAX ? Infinity : plMax;
     const rows = bandOn
       ? list.filter(e => { const v = bandVal(e); return typeof v === 'number' && v >= plMin && v <= bandHi; })
       : list;
-    paintBandNote(list.length, rows.length, bandOn, bandLast);
+    paintBandNote(list.length, rows.length, bandOn);
 
     // Pagination
     const totalPages = Math.max(1, Math.ceil(rows.length / PULSE_PAGE_SIZE));
@@ -3632,7 +3743,11 @@
     }
 
     let html = '<div class="hm-corner">Employee (' + rows.length + ')</div>';
-    html += '<div class="hm-month-header hm-fy-col" title="Average utilization across the selected fiscal year">FY Util</div>';
+    // Named after the window that is showing. It read "FY Util" in both, which
+    // made the PY column look like it was still reporting Jul-Jun.
+    const winShort = pulseFY === 'am' ? 'PY' : 'FY';
+    const winLong  = pulseFY === 'am' ? 'PY May-Apr' : 'FY Jul-Jun';
+    html += '<div class="hm-month-header hm-fy-col" title="Average utilization across ' + winLong + '">' + winShort + ' Util</div>';
     html += '<div class="hm-spacer"></div>';
     FY.months.forEach(m => { html += '<div class="hm-month-header">' + esc(fmtMonth(m)) + '</div>'; });
 
@@ -3660,7 +3775,7 @@
             +   '</div></div>';
       const fv = fyAvg(e);
       if (fv === null){ html += '<div class="hm-cell hm-fy-col empty" title="No data"></div>'; }
-      else { const fc = utilColor(fv); html += '<div class="hm-cell hm-fy-col' + (fc.dark ? ' text-dark' : '') + '" style="background:' + fc.bg + ';font-weight:700;" data-id="' + esc(e.WorkdayID) + '" title="FY average &middot; ' + Math.round(fv) + '%">' + Math.round(fv) + '%</div>'; }
+      else { const fc = utilColor(fv); html += '<div class="hm-cell hm-fy-col' + (fc.dark ? ' text-dark' : '') + '" style="background:' + fc.bg + ';font-weight:700;" data-id="' + esc(e.WorkdayID) + '" title="' + winShort + ' average &middot; ' + Math.round(fv) + '%">' + Math.round(fv) + '%</div>'; }
       html += '<div class="hm-spacer"></div>';
       FY.months.forEach(m => {
         const v = FY.lookup[String(e.WorkdayID) + '|' + m];
@@ -3706,6 +3821,19 @@
   // Insight panels — independent of heatmap filters; always show the team picture.
   function renderInsights(list){
     list = list || EMPLOYEES;
+    // Read the selected fiscal window, not the fixed FY Jul-Jun globals. The
+    // KPI cards above these lists already switch with the toggle, and the two
+    // must not appear to disagree.
+    const iFY   = FY_DATA[pulseFY];
+    const iLast = iFY.months.length ? iFY.months[iFY.months.length - 1] : '';
+    const iL3   = iFY.months.slice(-3);
+    const latestOf = e => iFY.lookup[String(e.WorkdayID) + '|' + iLast];
+    const sustainedOf = e => {
+      const vs = iL3.map(m => iFY.lookup[String(e.WorkdayID) + '|' + m])
+                    .filter(v => typeof v === 'number');
+      return vs.length >= Math.min(2, iL3.length)
+        ? vs.reduce((s, v) => s + v, 0) / vs.length : null;
+    };
     function rowHtml(e, statText, statClass){
       const ph = e._photo
         ? '<div class="insight-row-photo"><img loading="lazy" src="' + e._photo + '" alt="' + esc(e.Name) + '"></div>'
@@ -3732,21 +3860,21 @@
 
     // On the bench — lowest latest-month util
     const benchAll = list
-      .filter(e => typeof e._latestUtil === 'number' && e._latestUtil < 40)
-      .sort((a,b) => a._latestUtil - b._latestUtil);
+      .filter(e => typeof latestOf(e) === 'number' && latestOf(e) < 40)
+      .sort((a,b) => latestOf(a) - latestOf(b));
     const bench = benchAll.slice(0, LIST_CAP);
     document.getElementById('insight-bench').innerHTML = bench.length
-      ? bench.map(e => rowHtml(e, Math.round(e._latestUtil) + '%', 'bench')).join('')
+      ? bench.map(e => rowHtml(e, Math.round(latestOf(e)) + '%', 'bench')).join('')
         + capNote(bench.length, benchAll.length)
       : '<div class="insight-empty">No utilization data yet.</div>';
 
     // Watch list — sustained 3-month avg > 100, ranked by intensity
     const watchAll = list
-      .filter(e => e._sustained3 !== null && e._sustained3 > 100)
-      .sort((a,b) => b._sustained3 - a._sustained3);
+      .filter(e => sustainedOf(e) !== null && sustainedOf(e) > 100)
+      .sort((a,b) => sustainedOf(b) - sustainedOf(a));
     const watch = watchAll.slice(0, LIST_CAP);
     document.getElementById('insight-watch').innerHTML = watch.length
-      ? watch.map(e => rowHtml(e, Math.round(e._sustained3) + '% avg', 'watch')).join('')
+      ? watch.map(e => rowHtml(e, Math.round(sustainedOf(e)) + '% avg', 'watch')).join('')
         + capNote(watch.length, watchAll.length)
       : '<div class="insight-empty">No one sustained above 100% &mdash; nice!</div>';
 
@@ -3794,19 +3922,14 @@
   const plMaxEl  = document.getElementById('pl-max-slider');
   const plBandEl = document.getElementById('pulse-range');
 
-  function paintBandNote(total, shown, on, lastMonth){
+  function paintBandNote(total, shown, on){
     document.getElementById('pl-rmin').textContent = plMin;
     document.getElementById('pl-rmax').textContent = plMax;
     document.getElementById('pl-rplus').hidden = plMax < PL_BAND_MAX;
-    // The average is over whichever fiscal window is showing, so say which.
-    const avgBtn = document.getElementById('pl-basis-avg');
-    if (avgBtn) avgBtn.textContent = (pulseFY === 'am' ? 'PY' : 'FY') + ' average';
     const note = document.getElementById('pulse-range-note');
     if (!note) return;
     if (!on){ note.innerHTML = ''; return; }
-    const basis = plBasis === 'avg'
-      ? (pulseFY === 'am' ? 'PY May&ndash;Apr average' : 'FY Jul&ndash;Jun average')
-      : ('latest month' + (lastMonth ? ' (' + esc(fmtMonth(lastMonth)) + ')' : ''));
+    const basis = (pulseFY === 'am' ? 'PY May&ndash;Apr' : 'FY Jul&ndash;Jun') + ' average';
     note.innerHTML = 'Band <b>' + plMin + '&ndash;' + plMax + (plMax >= PL_BAND_MAX ? '%+' : '%')
       + '</b> on ' + basis + ' &mdash; showing <b>' + shown + '</b> of ' + total
       + ' filtered ' + (total === 1 ? 'person' : 'people')
@@ -3825,13 +3948,6 @@
       if (plMax < plMin){ plMin = plMax; plMinEl.value = plMin; }
       bandChange();
     });
-    document.querySelectorAll('#pulse-range-basis button').forEach(btn =>
-      btn.addEventListener('click', () => {
-        if (btn.dataset.basis === plBasis) return;
-        plBasis = btn.dataset.basis;
-        document.querySelectorAll('#pulse-range-basis button').forEach(b => b.classList.toggle('active', b === btn));
-        bandChange();
-      }));
   }
   // No utilization in this build means nothing to band on.
   if (plBandEl && !FY_DATA.jj.months.length && !FY_DATA.am.months.length) plBandEl.hidden = true;
@@ -3840,15 +3956,13 @@
     document.getElementById('pulse-search').value = '';
     [pMgr, pRole, pLoc, pComp, pTerr, pCat].forEach(ms => { ms.selected.clear(); ms.refresh(); });
     document.getElementById('pulse-sort').value = 'avg-desc';
-    plMin = 0; plMax = PL_BAND_MAX; plBasis = 'latest';
-    pulsePop = 'active';
+    plMin = 0; plMax = PL_BAND_MAX;
+    pulsePop = 'all';
     document.querySelectorAll('#pulse-pop-toggle button').forEach(b =>
-      b.classList.toggle('active', b.dataset.pop === 'active'));
+      b.classList.toggle('active', b.dataset.pop === 'all'));
     if (plMinEl) plMinEl.value = plMin;
     if (plMaxEl) plMaxEl.value = plMax;
     repaintSliders();
-    document.querySelectorAll('#pulse-range-basis button').forEach(b =>
-      b.classList.toggle('active', b.dataset.basis === 'latest'));
     pulsePage = 0; renderPulse();
     broadcastAll();          // shared filters are cleared everywhere, so repaint every tab
   });
@@ -3905,7 +4019,7 @@
       if (pLoc.selected.size  && !pLoc.selected.has(String(e['Location'] || ''))) return false;
       if (pComp.selected.size && !pComp.selected.has(String(e['Competency Filter'] || ''))) return false;
       if (pTerr.selected.size && !pTerr.selected.has(String(e['Territory Filter'] || ''))) return false;
-      if (pCat.selected.size){ let has = false; for (const k of (e._skills || [])){ if (pCat.selected.has(SKILL_CATEGORY[k])){ has = true; break; } } if (!has) return false; }
+      if (pCat.selected.size){ let has = false; for (const k of (e._skills || [])){ if (catsOf(k).some(c => pCat.selected.has(c))){ has = true; break; } } if (!has) return false; }
       if (!q) return true;
       return ['Name','Role','Location','Territory Group','Competency Group','Qualification'].some(k => String(e[k] ?? '').toLowerCase().includes(q));
     });
@@ -3939,6 +4053,9 @@
     // headcount. A 0.6 FTE or a half-month should not pull a skill's load
     // around as hard as a full-time full month does.
     const winMonths = w => (w === 'avg3' ? LAST_3_MONTHS : [LATEST_MONTH]);
+    // Load counts every holder's hours, Managing Directors included, so a
+    // skill's figure ties to the workbook. They are hidden row by row instead —
+    // see peopleRows().
     const groupUtil = (people, w) => utilOver(
       people.flatMap(e => winMonths(w).map(m => String(e.WorkdayID) + '|' + m)),
       HOURS, UTIL_LOOKUP);
@@ -3965,7 +4082,7 @@
     function skillStats(p){
       const catSel = crCat.selected, skillSel = crSkill.selected, map = new Map();
       p.forEach(e => e._skills.forEach(k => {
-        if (catSel.size && !catSel.has(SKILL_CATEGORY[k])) return;
+        if (catSel.size && !catsOf(k).some(c => catSel.has(c))) return;
         if (skillSel.size && !skillSel.has(SKILL_DISPLAY[k])) return;
         let s = map.get(k); if (!s){ s = { key: k, holders: [], senior: 0, utils: [] }; map.set(k, s); }
         s.holders.push(e);
@@ -3979,14 +4096,18 @@
     function peopleRows(arr, withUtil, availFirst, utilOf){
       // utilOf lets callers pick which utilisation window to show/sort by
       // (radar passes the Latest-month / 3-month-avg accessor); defaults to latest.
-      const val = typeof utilOf === 'function' ? utilOf : (e => (typeof e._latestUtil === 'number' ? e._latestUtil : undefined));
-      const u = e => { const v = val(e); return typeof v === 'number' ? v : (availFirst ? 999 : -1); };
+      const val = typeof utilOf === 'function' ? utilOf
+        : (e => (typeof e._latestUtil === 'number' ? e._latestUtil : undefined));
+      // A Managing Director is listed as a holder but never shown with a
+      // percentage, and sorts with the people who have no figure.
+      const showU = e => !isUtilExcluded(e.Role);
+      const u = e => { const v = showU(e) ? val(e) : undefined; return typeof v === 'number' ? v : (availFirst ? 999 : -1); };
       const sorted = arr.slice().sort((a, b) => withUtil ? (availFirst ? u(a) - u(b) : u(b) - u(a)) : String(a.Name).localeCompare(String(b.Name)));
       return '<div class="smap-people">' + sorted.map(e => {
         const av = e._photo ? '<div class="sp-av" style="background-image:url(' + e._photo + ');background-size:cover;color:transparent">' + esc(e._initials || '') + '</div>' : '<div class="sp-av">' + esc(e._initials || '?') + '</div>';
         let u = '';
         const uv = val(e);
-        if (withUtil && typeof uv === 'number'){ const c = utilColor(uv); u = '<span class="cr-util" style="background:' + c.bg + ';color:' + (c.dark ? '#2D2D2D' : '#fff') + '">' + Math.round(uv) + '%</span>'; }
+        if (withUtil && showU(e) && typeof uv === 'number'){ const c = utilColor(uv); u = '<span class="cr-util" style="background:' + c.bg + ';color:' + (c.dark ? '#2D2D2D' : '#fff') + '">' + Math.round(uv) + '%</span>'; }
         return '<div class="smap-person" data-wid="' + esc(String(e.WorkdayID)) + '">' + av + '<div style="flex:1 1 auto"><div class="sp-name">' + esc(e.Name) + (isSenior(e.Role) ? ' ★' : '') + '</div><div class="sp-meta">' + esc([e.Role, e.Territory].filter(Boolean).join(' · ')) + '</div></div>' + u + '</div>';
       }).join('') + '</div>';
     }
@@ -4146,7 +4267,7 @@
         const u = radarWin === 'avg3' ? (typeof e._sustained3 === 'number' ? e._sustained3 : e._latestUtil) : e._latestUtil;
         return typeof u === 'number' ? u : undefined;
       };
-      const uOf = e => typeof e._latestUtil === 'number' ? e._latestUtil : 999;
+      const uOf = e => (!isUtilExcluded(e.Role) && typeof e._latestUtil === 'number') ? e._latestUtil : 999;
 
       // 1) Sellable capacity — spare FTE summed only from holders under the
       // fragmentation cut, so slivers on busy people don't inflate the number.
@@ -4355,7 +4476,7 @@
         const has = s.utils && s.utils.length;
         const d = has ? groupUtil(s.holders, 'latest') : null;
         const label = has ? quad(s.holders.length, d, th).label : 'No utilization data';
-        rows.push([SKILL_DISPLAY[s.key] || s.key, SKILL_CATEGORY[s.key] || '', s.holders.length, has ? Math.round(d) : '', label]);
+        rows.push([SKILL_DISPLAY[s.key] || s.key, catLabel(s.key), s.holders.length, has ? Math.round(d) : '', label]);
       });
       downloadCSV('Capability_Risk', rows);
     };
@@ -4452,7 +4573,9 @@
       '<div class="ana-card' + (full ? ' full' : '') + '"><h3 class="ana-h">' + title + '</h3><p class="ana-sub">' + sub + '</p>' + body + '</div>';
     const GLEGEND = '<div class="ana-legend"><span><span class="sw" style="background:' + TANGERINE + '"></span>Male</span>'
       + '<span><span class="sw" style="background:' + BURGUNDY + '"></span>Female</span></div>';
-    // Utilization on this tab covers every grade the workbook reports.
+    // Rates and averages cover every grade the workbook reports, Managing
+    // Directors included. noMD() is for the per-person figures only — the band
+    // counts, the mover chips and anything that names an individual.
     const noMD = pool => pool.filter(e => !isUtilExcluded(e.Role));
     // `dim` makes a chart's rows clickable cross-filters within Workforce Mix.
     // The attributes are inert everywhere else, so other views are unaffected.
@@ -4580,10 +4703,11 @@
     // ---- View 1: Utilization Trends — monthly line chart + auto-insights + movers ----
     function renderTrend(pool){
       if (!HAS_U || !ALL_MONTHS.length) return card('Utilization Trends', 'Utilization data is not included in this build, so this view cannot be shown.', '<div class="mdi-empty">No utilization available.</div>', true);
-      const upool = noMD(pool);
+      const upool = noMD(pool);       // per-person figures: no MD rows or chips
+      const apool = pool;               // rates: every grade, so they tie to the workbook
       const months = ALL_MONTHS;
       const last = months[months.length - 1], prev = months.length > 1 ? months[months.length - 2] : null;
-      const curAvg = avgAt(upool, last), prevAvg = prev ? avgAt(upool, prev) : null;
+      const curAvg = avgAt(apool, last), prevAvg = prev ? avgAt(apool, prev) : null;
       const lastU = upool.map(e => uAt(e, last)).filter(v => typeof v === 'number');
       const benchN = lastU.filter(v => v < 40).length, hotN = lastU.filter(v => v > 100).length;
       const burnN = upool.filter(e => typeof e._sustained3 === 'number' && e._sustained3 > 100).length;
@@ -4603,7 +4727,7 @@
         '<b>' + benchN + '</b> ' + (benchN === 1 ? 'person is' : 'people are') + ' on the bench (&lt;40%) and <b>' + hotN + '</b> running above 100% ' + inMonth(last) + '.',
         burnN ? '<b>' + burnN + '</b> on burnout watch &mdash; averaging above 100% for three straight months.' : 'No one on burnout watch (3-month average above 100%).'
       ]);
-      return card('Utilization Trend', 'Monthly average utilization for this slice (thick orange) with each grade behind it. Shaded band = healthy 80&ndash;100%; dashed line = 100%.', trendSVG(upool, months), true)
+      return card('Utilization Trend', 'Monthly average utilization for this slice (thick orange) with each grade behind it. Shaded band = healthy 80&ndash;100%; dashed line = 100%.', trendSVG(apool, upool, months), true)
         + card(monthsBehind(last) <= 0 ? 'This Month in Numbers' : 'Latest Month &mdash; ' + esc(fmtMonth(last)),
             'Auto-computed for ' + esc(fmtMonth(last)) + '.', ins + staleNote(last))
         + card('Biggest Movers', 'Utilization from ' + (prev ? esc(fmtMonth(prev)) : '&mdash;') + ' to ' + esc(fmtMonth(last)) + ' &mdash; who got busier, and who freed up.',
@@ -4611,9 +4735,12 @@
             + (fallers.length ? '<div class="ana-note" style="border:none;margin:8px 0 4px;padding:0"><b>Freed up</b></div><div>' + fallers.map(chip).join('') + '</div>' : '')
             + (!risers.length && !fallers.length ? '<div class="mdi-empty">No meaningful movement vs last month.</div>' : ''));
     }
-    function trendSVG(pool, months){
-      const overall = months.map(m => avgAt(pool, m));
-      const bg = gradesOf(pool);
+    // aPool drives the thick overall line (everyone, so it ties to the
+    // workbook); gPool drives the per-grade lines behind it, and leaves out
+    // Managing Directors so no single person's trend is drawn as a grade.
+    function trendSVG(aPool, gPool, months){
+      const overall = months.map(m => avgAt(aPool, m));
+      const bg = gradesOf(gPool);
       const gl = GRADE_ORDER_T.filter(t => bg[t] && bg[t].length);
       const series = gl.map(t => ({ t, col: GRADE_COL[t], vals: months.map(m => avgAt(bg[t], m)) }));
       const allVals = overall.concat.apply(overall.filter(v => v !== null), series.map(s => s.vals.filter(v => v !== null)));
@@ -4650,12 +4777,15 @@
       const last = HAS_U && ALL_MONTHS.length ? ALL_MONTHS[ALL_MONTHS.length - 1] : null;
       const rows = Object.keys(by).map(mg => {
         const g = by[mg], gu = noMD(g);
-        const us = last ? gu.map(e => uAt(e, last)).filter(v => typeof v === 'number') : [];
+        // Average over the whole team; the bench / stretched / burnout counts
+        // below over gu, so they only count people the table can show.
+        const us  = last ? gu.map(e => uAt(e, last)).filter(v => typeof v === 'number') : [];
+        const usA = last ? g.map(e => uAt(e, last)).filter(v => typeof v === 'number') : [];
         const exps = g.map(e => parseFloat(e[EXP_TOTAL])).filter(v => !isNaN(v));
         const s3 = gu.map(e => e._sustained3).filter(v => typeof v === 'number');
         return { mg, n: g.length,
           mf: g.filter(e => gOf(e) === 'm').length + ' : ' + g.filter(e => gOf(e) === 'f').length,
-          exp: avgOf(exps), a: avgOf(us), a3: avgOf(s3),
+          exp: avgOf(exps), a: avgOf(usA), a3: avgOf(s3),
           bench: us.filter(v => v < 40).length, hot: us.filter(v => v > 100).length,
           burn: gu.filter(e => typeof e._sustained3 === 'number' && e._sustained3 > 100).length };
       }).sort((x, y) => y.n - x.n);
@@ -4966,7 +5096,10 @@
       const pool = poolR(), body = $('rt-body');
       const totalV = pool.reduce((t, e) => t + valueOf(e), 0);
       const totalH = pool.reduce((t, e) => t + hoursOf(e), 0);
-      const priced = pool.filter(e => rate(e) > 0).length;
+      // Priced means their hours actually earned something, not that their
+      // current grade happens to be on the card — with point-in-time pricing
+      // those two can disagree.
+      const priced = pool.filter(e => (hoursOf(e) > 0 ? valueOf(e) > 0 : rate(e) > 0)).length;
       $('rt-meta').innerHTML = '<strong>' + compact(totalV) + '</strong> across ' + pool.length + ' people'
         + (priced < pool.length ? ' &middot; <b>' + (pool.length - priced) + '</b> unpriced' : '');
       if (!pool.length){ body.innerHTML = '<div class="ana-card full"><div class="mdi-empty">No one matches the current filters.</div></div>'; return; }
@@ -5018,18 +5151,32 @@
 
       // Everything on one page: headline figures, where the value sits, the
       // monthly shape, then every person priced.
-      const series = ALL_MONTHS.map(m => pool.reduce((t, e) => t + (CH[String(e.WorkdayID) + '|' + m] || 0) * rate(e), 0));
+      // Each month priced at the grade held in THAT month, the same basis as
+      // valueOf() above. Using the person's current grade instead re-priced the
+      // whole year at their latest rate, so the bars did not add up to the
+      // headline for anyone who was promoted mid-period.
+      const series = ALL_MONTHS.map(m => pool.reduce((t, e) => t + (CH[String(e.WorkdayID) + '|' + m] || 0) * rateAt(e, m), 0));
       const first = series[0], last = series[series.length - 1];
       const dir = (first && last) ? (last - first) / first * 100 : 0;
 
-      const rows = pool.map(e => ({ e, h: hoursOf(e), r: rate(e), v: valueOf(e) }))
-        .filter(r => r.h > 0).sort((a, b) => b.v - a.v);
+      // Rate shown is what the hours actually earned: value / hours. For anyone
+      // at one grade all period that is exactly their card rate; for someone
+      // promoted mid-period it is the blend, so the row multiplies out instead
+      // of showing a rate that contradicts its own value column.
+      const rows = pool.map(e => {
+        const h = hoursOf(e), v = valueOf(e);
+        return { e, h, v, r: h > 0 ? v / h : rate(e), card: rate(e) };
+      }).filter(r => r.h > 0).sort((a, b) => b.v - a.v);
       const tbl = '<div class="ana-tblwrap"><table class="ana-table"><thead><tr>'
         + '<th>Name</th><th>Grade</th><th>Territory</th><th>Rate</th><th>Chargeable hrs</th><th>Indicative value</th></tr></thead><tbody>'
         + rows.map(r => '<tr class="ana-mgr-row" data-wid="' + esc(String(r.e.WorkdayID)) + '" title="Open bio">'
             + '<td><b>' + esc(r.e.Name) + '</b></td><td>' + esc(groupForRole(r.e.Role)) + '</td>'
             + '<td>' + esc(r.e.Territory || r.e['Territory Filter'] || '') + '</td>'
-            + '<td>' + (r.r ? '$' + r.r : '<span style="color:var(--pwc-grey-400)">not priced</span>') + '</td>'
+            + '<td'
+            + (r.r && Math.round(r.r) !== Math.round(r.card)
+                ? ' title="Blended: grade changed during the period. Current card rate $' + Math.round(r.card) + '/hr."'
+                : '')
+            + '>' + (r.r ? '$' + Math.round(r.r) : '<span style="color:var(--pwc-grey-400)">not priced</span>') + '</td>'
             + '<td>' + Math.round(r.h).toLocaleString('en-US') + '</td>'
             + '<td><b>' + money(r.v) + '</b></td></tr>').join('')
         + '</tbody></table></div>';
@@ -5365,7 +5512,7 @@
     const keys = Object.keys(holders);
     const held = ACT.reduce((t, e) => t + ((e._skills || { size: 0 }).size), 0);
     const perPerson = Math.round(ACT.length ? held / ACT.length : 0);   // skills are whole things
-    const cats = new Set(keys.map(k => SKILL_CATEGORY[k]).filter(c => c && c !== 'Uncategorised'));
+    const cats = new Set([].concat(...keys.map(catsOf)).filter(c => c && c !== 'Uncategorised'));
     $('ov-capstats').innerHTML =
         stat(keys.length, 'Distinct skills') + stat(cats.size, 'Skill categories')
       + stat('~' + perPerson, 'Skills per person') + stat(Object.keys(comps).length, 'Competencies');
@@ -5434,18 +5581,20 @@
       } else { noteEl.style.display = 'none'; }
     }
 
-    // ---- 03 Capacity ---- (MDs excluded, as on every other tab)
+    // ---- 03 Capacity ----
+    // uPool carries everyone, Managing Directors included, so the rate and the
+    // hour totals reconcile to the workbook. uPeople is the same list without
+    // them, for the figures that count or name individuals.
     const HAS_U = !SHARE_MODE && typeof ALL_MONTHS !== 'undefined' && ALL_MONTHS.length && LATEST_MONTH;
-    const uPool = ACT.filter(e => !isUtilExcluded(e.Role));
+    const uPool = ACT;
+    const uPeople = ACT.filter(e => !isUtilExcluded(e.Role));
     const uAt = (e, m) => UTIL_LOOKUP[String(e.WorkdayID) + '|' + m];
     // Everyone who worked in the period, not only who is still here. The
     // latest-month counts are unchanged by this — a leaver has no hours in the
     // latest month — but the yearly trend now shows what the practice actually
     // delivered rather than what today's roster delivered.
-    const uPoolFull = HAS_LEAVERS
-      ? uPool.concat(LEAVERS.filter(l => !isUtilExcluded(l.Role)))
-      : uPool;
-    const uVals = HAS_U ? uPool.map(e => uAt(e, LATEST_MONTH)).filter(v => typeof v === 'number') : [];
+    const uPoolFull = HAS_LEAVERS ? uPool.concat(LEAVERS) : uPool;
+    const uVals = HAS_U ? uPeople.map(e => uAt(e, LATEST_MONTH)).filter(v => typeof v === 'number') : [];
     let spare = null, bench = 0, avgU = null;   // avgU is read again by the destination cards below
     if (!uVals.length){
       $('ov-cap-lede').textContent = 'Utilization data is not included in this build, so this section is not shown.';
@@ -5470,7 +5619,7 @@
         const v = uAt(e, LATEST_MONTH);
         return typeof v === 'number' ? t + Math.max(0, 100 - v) / 100 : t;
       }, 0);
-      const burn = uPool.filter(e => typeof e._sustained3 === 'number' && e._sustained3 > 100).length;
+      const burn = uPeople.filter(e => typeof e._sustained3 === 'number' && e._sustained3 > 100).length;
       // Same population as the utilization figure beside them, so the section
       // cannot show a rate for one group and hours for another.
       const uIds = new Set(uPoolFull.map(e => String(e.WorkdayID)));
