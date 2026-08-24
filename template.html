@@ -1149,7 +1149,7 @@
   <section class="tab-panel" id="tab-directory">
     <div class="dir-head"><h1>Team Directory</h1></div>
     <section class="stats">
-      <div class="stat-card"><div class="value" id="kpi-total">-</div><div class="label">Active Employees</div></div>
+      <div class="stat-card"><div class="value" id="kpi-total">-</div><div class="label">Head Count</div></div>
       <div class="stat-card t2"><div class="value" id="kpi-gender">-</div><div class="label">Male : Female</div></div>
       <div class="stat-card t3"><div class="value" id="kpi-locs">-</div><div class="label">Locations</div></div>
       <div class="stat-card t4"><div class="value" id="kpi-comps">-</div><div class="label">Competencies</div></div>
@@ -4833,7 +4833,7 @@
       const n3 = withD.filter(r => r.y < 3).length;
       const word = (filtersOn() || mixOn()) ? 'slice' : 'team';
       const kpis = '<div class="cr-kpis">'
-        + kpi(pool.length, (filtersOn() || mixOn()) ? 'People in slice' : 'Active employees', ORANGE)
+        + kpi(pool.length, (filtersOn() || mixOn()) ? 'People in slice' : 'Head Count', ORANGE)
         + kpi(pct + '%', 'Female &mdash; ' + f + ' of ' + (m + f) + ' people', BURGUNDY)
         + kpi(srs.length ? ((pool.length - srs.length) / srs.length).toFixed(1) + '&times;' : '&mdash;',
               'Leverage &mdash; ' + (pool.length - srs.length) + ' staff per ' + srs.length + ' at Manager &amp; above', TANGERINE)
@@ -5442,7 +5442,7 @@
       return isOtherTerr(t) ? '' : t;
     });
     $('ov-scale').innerHTML =
-        stat(nfmt(ACT.length), 'Active people') + stat(Object.keys(comps).length, 'Competencies')
+        stat(nfmt(ACT.length), 'Head Count') + stat(Object.keys(comps).length, 'Competencies')
       + stat(Object.keys(locs).length, 'Locations')
       + stat(xps.length ? (xps.reduce((a, b) => a + b, 0) / xps.length).toFixed(1) : '—', 'Avg years experience');
 
@@ -5569,14 +5569,24 @@
     const otherBuckets = cRows.map(([c]) => c).filter(c => c.toLowerCase().startsWith('other'));
     const noteEl = $('ov-cap-note');
     if (noteEl){
+      // People with no competency in the source sit in this bucket too, carrying
+      // the marker below as their own Competency. It is a gap, not a competency,
+      // so it gets its own sentence instead of being listed as bucket contents.
+      const UNMAPPED = 'Other*';
+      const parts = [];
       if (otherBuckets.length){
         const inside = new Set();
         ACT.forEach(e => { if (otherBuckets.indexOf(cOf(e)) >= 0){
-          const d = String(e['Competency'] || '').trim(); if (d) inside.add(d); } });
+          const d = String(e['Competency'] || '').trim(); if (d && d !== UNMAPPED) inside.add(d); } });
         const list = [...inside].sort();
-        noteEl.innerHTML = otherBuckets.map(esc).join(' and ') + ' covers '
+        parts.push(otherBuckets.map(esc).join(' and ') + ' covers '
           + (list.length ? list.slice(0, 8).map(esc).join(', ') + (list.length > 8 ? ' and others' : '') + '.'
-                         : 'competencies with no more specific grouping.');
+                         : 'competencies with no more specific grouping.'));
+      }
+      if (ACT.some(e => String(e['Competency'] || '').trim() === UNMAPPED))
+        parts.push(esc(UNMAPPED) + ' marks people with no competency recorded in the source data.');
+      if (parts.length){
+        noteEl.innerHTML = parts.join(' ');
         noteEl.style.display = '';
       } else { noteEl.style.display = 'none'; }
     }

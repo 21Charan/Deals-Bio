@@ -80,6 +80,41 @@ ROLE_RENAME = {
     "a1": "Associate", "a": "Associate", "a3": "Associate", "associate": "Associate",
 }
 
+# Competency can be blank in the extract - typically for leavers, new joiners
+# not yet mapped, or admin/shared-service people. Left blank, each view invents
+# its own label for them ("Unspecified", "(not set)"), which reads as a data
+# fault rather than a bucket.
+#
+# They are folded into the existing Other bucket rather than given a row of
+# their own, so the charts and filters keep one Other line instead of two. The
+# individual record is the exception: there the asterisk says the competency is
+# missing rather than genuinely "Other".
+#
+# Change BUCKET if the catch-all competency is ever renamed in the source.
+COMPETENCY_BUCKET   = "Other"    # grouping + filtering: charts, chips, exports
+COMPETENCY_UNMAPPED = "Other*"   # the person's own record: card, bio, detail list
+COMPETENCY_COLS = {
+    "Competency Group":  COMPETENCY_BUCKET,
+    "Competency Filter": COMPETENCY_BUCKET,
+    "Competency":        COMPETENCY_UNMAPPED,
+}
+
+
+def fill_competency(*row_sets):
+    """Blank competency cells -> the Other bucket, each column on its own.
+
+    Per-column rather than all-or-nothing: a person whose Competency Filter is
+    blank but whose Competency Group is set would otherwise drop out of every
+    competency filter while still appearing in the cards."""
+    filled = 0
+    for rows in row_sets:
+        for r in rows:
+            for c, val in COMPETENCY_COLS.items():
+                if not str(r.get(c) or "").strip():
+                    r[c] = val
+                    filled += 1
+    return filled
+
 
 def rename_role(v):
     return ROLE_RENAME.get(str(v or "").strip().lower(), v)
@@ -217,6 +252,22 @@ def load_workbook_data(path):
         data["utilization"] = full_jj
     if full_am:
         data["util_am"] = full_am
+
+    # Done once here, after the Full sheets have superseded the older ones, so
+    # every consumer downstream (dashboard, mobile, static site, leavers built
+    # from the utilization rows) sees the same competency labels.
+    filled = fill_competency(data["details"], data["utilization"],
+                             data["util_jj"], data["util_am"])
+    if filled:
+        # Only "Competency" identifies them: the other two now read "Other",
+        # which they share with people genuinely mapped to Other.
+        people = {str(r.get("Name") or r.get("WorkdayID") or "?").strip()
+                  for rows in (data["details"], data["util_jj"], data["util_am"])
+                  for r in rows
+                  if str(r.get("Competency") or "") == COMPETENCY_UNMAPPED}
+        print(f"[info] {filled} blank competency cell(s) folded into '{COMPETENCY_BUCKET}' "
+              f"({len(people)} person/people, shown as '{COMPETENCY_UNMAPPED}' on their own "
+              f"record): {', '.join(sorted(people)[:8])}")
 
     # ---- tell the operator what was and was not picked up -------------------
     seen = sorted({ws.title.strip() for ws in wb.worksheets})
