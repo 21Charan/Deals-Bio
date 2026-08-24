@@ -91,13 +91,50 @@ ROLE_RENAME = {
 # missing rather than genuinely "Other".
 #
 # Change BUCKET if the catch-all competency is ever renamed in the source.
-COMPETENCY_BUCKET   = "Other"    # grouping + filtering: charts, chips, exports
-COMPETENCY_UNMAPPED = "Other*"   # the person's own record: card, bio, detail list
+COMPETENCY_BUCKET   = "Others"    # grouping + filtering: charts, chips, exports
+COMPETENCY_UNMAPPED = "Others*"   # the person's own record: card, bio, detail list
 COMPETENCY_COLS = {
     "Competency Group":  COMPETENCY_BUCKET,
     "Competency Filter": COMPETENCY_BUCKET,
     "Competency":        COMPETENCY_UNMAPPED,
 }
+
+# The catch-all family arrives spelled several ways in one extract - "Other",
+# "Others", "Other-DA", "Others-Deals" - which reads as several unrelated
+# competencies in a filter list when it is one family. The house style is the
+# one already written into COMPETENCY_ORDER in the templates: "Others - X".
+#
+# Only the prefix is rewritten. "Other-DA" and "Others-Deals" stay separate
+# buckets - they are genuinely different work - they just stop looking like
+# they belong to different families. A bare "Other" and a bare "Others" are the
+# same bucket and do merge. \b keeps it off words that merely start with the
+# letters, so an "Otherwise ..." competency would be left alone.
+_OTHER_PREFIX = re.compile(r"^others?\b[\s\-\u2013\u2014:]*", re.I)
+
+
+def canon_competency(v):
+    """'Other' / 'others' / 'Other-DA' -> 'Others' / 'Others - DA'."""
+    s = str(v or "").strip()
+    m = _OTHER_PREFIX.match(s) if s else None
+    if not m:
+        return s
+    rest = s[m.end():].strip()
+    return COMPETENCY_BUCKET + " - " + rest if rest else COMPETENCY_BUCKET
+
+
+def canon_competencies(*row_sets):
+    """Normalise the Other/Others family in place. Returns {before: after} for
+    the values actually changed, so the build log can name them."""
+    changed = {}
+    for rows in row_sets:
+        for r in rows:
+            for c in COMPETENCY_COLS:
+                was = str(r.get(c) or "").strip()
+                now = canon_competency(was)
+                if now != was:
+                    changed[was] = now
+                    r[c] = now
+    return changed
 
 
 def fill_competency(*row_sets):
@@ -255,7 +292,14 @@ def load_workbook_data(path):
 
     # Done once here, after the Full sheets have superseded the older ones, so
     # every consumer downstream (dashboard, mobile, static site, leavers built
-    # from the utilization rows) sees the same competency labels.
+    # from the utilization rows) sees the same competency labels. Spelling is
+    # settled first, so the blank-filling below writes into an already-canonical
+    # set of buckets rather than adding another variant to it.
+    renamed = canon_competencies(data["details"], data["utilization"],
+                                 data["util_jj"], data["util_am"])
+    if renamed:
+        pairs = ", ".join(f"{k!r} -> {v!r}" for k, v in sorted(renamed.items()))
+        print(f"[info] Competency spelling normalised ({len(renamed)}): {pairs}")
     filled = fill_competency(data["details"], data["utilization"],
                              data["util_jj"], data["util_am"])
     if filled:

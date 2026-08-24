@@ -196,6 +196,12 @@
   .skill-cat-block{margin-bottom:14px;border-left:3px solid var(--pwc-orange);padding:8px 12px;background:var(--pwc-grey-50);border-radius:0 4px 4px 0}
   .skill-cat-block .cat-header{font-size:11px;font-weight:700;color:var(--pwc-orange);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px}
   .skill-cat-block .cat-skills{display:flex;flex-wrap:wrap;gap:5px}
+  /* Title and its fiscal-year toggle share one line; the title keeps its own
+     margins so it still lines up with the other section titles above it. */
+  .bio-util-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .bio-util-head .bio-section-title{margin-bottom:10px}
+  .bio-util-toggle button{padding:6px 12px;font-size:11px;white-space:nowrap}
+  .bio-util-toggle button:disabled{opacity:.4;cursor:not-allowed}
   .bio-section-title{font-size:13px;text-transform:uppercase;letter-spacing:0.8px;color:var(--pwc-grey-600);font-weight:700;margin:22px 0 10px;border-left:3px solid var(--pwc-orange);padding-left:10px}
   .bio-description{font-size:15px;color:var(--pwc-grey-700);line-height:1.6;background:var(--pwc-grey-50);padding:14px 16px;border-radius:4px;border-left:3px solid var(--pwc-tangerine)}
   .skill-tag{display:inline-block;background:var(--pwc-grey-100);border:1px solid var(--pwc-grey-300);border-radius:3px;padding:4px 10px;margin:3px 4px 3px 0;font-size:13px}
@@ -1813,11 +1819,20 @@
     const id = String(s.WorkdayID);
     (SKILLS_BY_EMP[id] = SKILLS_BY_EMP[id] || []).push(s);
   });
-  const UTIL_BY_EMP = Object.create(null);
-  UTIL.forEach(u => {
-    const id = String(u.WorkdayID);
-    (UTIL_BY_EMP[id] = UTIL_BY_EMP[id] || []).push(u);
-  });
+  // Utilization indexed per person, once per fiscal-year window, so the bio
+  // chart can switch between them without re-scanning the rows on every click.
+  // 'jj' falls back to the generic sheet when the Jul-Jun sheet is absent -
+  // the same substitution the Pulse page makes.
+  function indexByEmp(rows){
+    const o = Object.create(null);
+    (rows || []).forEach(u => { const id = String(u.WorkdayID); (o[id] = o[id] || []).push(u); });
+    return o;
+  }
+  const UTIL_BY_EMP_FY = {
+    jj: indexByEmp(UTIL_FY.jj && UTIL_FY.jj.length ? UTIL_FY.jj : UTIL),
+    am: indexByEmp(UTIL_FY.am)
+  };
+  const FY_WINDOWS = [['jj', 'FY Jul&ndash;Jun'], ['am', 'PY May&ndash;Apr']];
 
   // ----- Populate filter dropdowns from data (so new columns Just Work) -----
   function uniqueValues(key){
@@ -2502,11 +2517,16 @@
     // Utilization — smooth area+line chart (SVG, Catmull-Rom-style bezier).
     // Months with no reported utilization are dropped rather than plotted as 0.
     // No utilization chart for a Managing Director, on screen or in a print.
-    const utilRows = (emp && isUtilExcluded(emp.Role) ? [] : (UTIL_BY_EMP[String(workdayId)] || []))
-      .filter(r => utilVal(r.Utilization) !== undefined)
-      .sort((a, b) => monthKey(a['Month Year']).localeCompare(monthKey(b['Month Year'])));
-    let utilHtml;
-    if (utilRows.length){
+    const utilExcluded = !!(emp && isUtilExcluded(emp.Role));
+    function utilRowsFor(win){
+      return (utilExcluded ? [] : (UTIL_BY_EMP_FY[win] || {})[String(workdayId)] || [])
+        .filter(r => utilVal(r.Utilization) !== undefined)
+        .sort((a, b) => monthKey(a['Month Year']).localeCompare(monthKey(b['Month Year'])));
+    }
+    function utilChart(win){
+      const utilRows = utilRowsFor(win);
+      let utilHtml;
+      if (utilRows.length){
       const W = 960, H = 220, padL = 46, padR = 22, padT = 32, padB = 44;
       const innerW = W - padL - padR, innerH = H - padT - padB;
       const yMax = Math.max(120, Math.ceil(Math.max(...utilRows.map(u => utilVal(u.Utilization))) / 20) * 20);
@@ -2569,16 +2589,44 @@
         +   dotLabels
         +   monthLabels
         + '</svg></div>';
-    } else {
-      // A Managing Director has hours — they are counted in every total on the
-      // dashboard — they are simply never charted individually. Saying "no data"
-      // here would be a plain untruth about the workbook.
-      utilHtml = '<em style="color:var(--pwc-grey-600);">'
-        + (emp && isUtilExcluded(emp.Role)
-            ? 'Utilization is not charted for Managing Directors. Their hours are still counted in the practice totals.'
-            : 'No utilization data.')
-        + '</em>';
+      } else {
+        // A Managing Director has hours — they are counted in every total on the
+        // dashboard — they are simply never charted individually. Saying "no data"
+        // here would be a plain untruth about the workbook.
+        utilHtml = '<em style="color:var(--pwc-grey-600);">'
+          + (utilExcluded
+              ? 'Utilization is not charted for Managing Directors. Their hours are still counted in the practice totals.'
+              : 'No utilization reported in this window.')
+          + '</em>';
+      }
+      return utilHtml;
     }
+
+    // Which window the card opens on. Coming from Pulse it follows that page's
+    // toggle, so the card agrees with the strip behind it; from anywhere else it
+    // opens on Jul-Jun. Either way the buttons are on the card, so the reader can
+    // always see which year they are looking at rather than having to remember.
+    const fromPulse = (() => {
+      const t = document.querySelector('nav.tabs button[data-tab].active');
+      return !!t && t.dataset.tab === 'pulse';
+    })();
+    let bioFY = fromPulse ? pulseFY : 'jj';
+    // A person can have rows in only one of the two sheets — a joiner, a leaver.
+    // Opening on an empty chart when the other window has data helps nobody.
+    if (!utilRowsFor(bioFY).length){
+      const other = FY_WINDOWS.map(w => w[0]).find(k => k !== bioFY && utilRowsFor(k).length);
+      if (other) bioFY = other;
+    }
+    const utilBlock = '<div class="bio-util-head">'
+      + '<div class="bio-section-title">Monthly Utilization</div>'
+      + (utilExcluded ? '' : '<div class="atlas-view-toggle bio-util-toggle" title="Switch fiscal-year window">'
+          + FY_WINDOWS.map(w => '<button data-fy="' + w[0] + '"'
+              + (w[0] === bioFY ? ' class="active"' : '')
+              + (utilRowsFor(w[0]).length ? '' : ' disabled title="No rows in this window"')
+              + '>' + w[1] + '</button>').join('')
+        + '</div>')
+      + '</div>'
+      + '<div class="bio-util-body">' + utilChart(bioFY) + '</div>';
 
     // Team — render as a comma-separated value in the info grid (like Email).
     // Names that match another employee become clickable links into that bio.
@@ -2717,7 +2765,7 @@
                     ? '<div class="bio-section-title">Monthly Utilization</div>'
                       + '<p style="font-size:13px;margin:4px 0 0;"><a href="' + PBI_URL + '" target="_blank" rel="noopener" style="color:var(--pwc-orange);font-weight:600;">View utilization in Power BI &rarr;</a></p>'
                     : '')
-                : ('<div class="bio-section-title">Monthly Utilization (FY)</div>' + utilHtml))
+                : utilBlock)
       +   '</div>'
       + '</div>';
 
@@ -2730,6 +2778,15 @@
     bioContent.querySelectorAll('.bio-report[data-id]').forEach(c => c.addEventListener('click', () => navTo(c.dataset.id, reportIds)));
     const rlBox = bioContent.querySelector('.bio-rl[data-id]');
     if (rlBox) rlBox.addEventListener('click', () => navTo(rlBox.dataset.id, visibleOrder));
+    const fyBox = bioContent.querySelector('.bio-util-toggle');
+    if (fyBox) fyBox.querySelectorAll('button[data-fy]').forEach(btn =>
+      btn.addEventListener('click', () => {
+        if (btn.disabled || btn.dataset.fy === bioFY) return;
+        bioFY = btn.dataset.fy;
+        fyBox.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+        bioContent.querySelector('.bio-util-body').innerHTML = utilChart(bioFY);
+      }));
+
     const backB = bioContent.querySelector('.bio-back');
     if (backB) backB.addEventListener('click', () => { const prev = bioStack.pop(); if (prev) showBio(prev, true, visibleOrder); });
 
@@ -5575,12 +5632,16 @@
       // People with no competency in the source sit in this bucket too, carrying
       // the marker below as their own Competency. It is a gap, not a competency,
       // so it gets its own sentence instead of being listed as bucket contents.
-      const UNMAPPED = 'Other*';
+      const UNMAPPED = 'Others*';
       const parts = [];
       if (otherBuckets.length){
         const inside = new Set();
-        ACT.forEach(e => { if (otherBuckets.indexOf(cOf(e)) >= 0){
-          const d = String(e['Competency'] || '').trim(); if (d && d !== UNMAPPED) inside.add(d); } });
+        // A person whose own Competency just repeats the bucket name adds
+        // nothing here ("Others covers Others"), so only the more specific
+        // values are listed.
+        ACT.forEach(e => { const g = cOf(e); if (otherBuckets.indexOf(g) >= 0){
+          const d = String(e['Competency'] || '').trim();
+          if (d && d !== UNMAPPED && d !== g) inside.add(d); } });
         const list = [...inside].sort();
         parts.push(otherBuckets.map(esc).join(' and ') + ' covers '
           + (list.length ? list.slice(0, 8).map(esc).join(', ') + (list.length > 8 ? ' and others' : '') + '.'
