@@ -824,11 +824,15 @@
   .smatch-empty{text-align:center;color:var(--pwc-grey-600);padding:30px;font-size:13px;font-style:italic}
 
   /* ---- Pulse (capacity heatmap) ---- */
-  .pulse-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-  /* Reset sits at the end of the control run rather than being pushed right:
-     pushed right it wrapped onto a line of its own on narrower screens and left
-     the row empty. The search box takes up the slack instead. */
-  .pulse-controls > input{flex:1 1 180px;max-width:420px}
+  /* Nine controls have to share one line. They are trimmed just enough - 8px
+     gaps, tighter multiselect triggers, a narrower search box and sort - that
+     Reset still fits beside them at a 1232px content width (a 1280-1440px
+     window) instead of dropping to a line of its own. Reset stays at the end of
+     the run rather than being pushed right: pushed right it wraps onto an
+     otherwise empty line. The search box takes up any slack. */
+  .pulse-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .pulse-controls > input{flex:1 1 120px;max-width:420px}
+  .pulse-controls .ms-compact .ms-trigger{min-width:112px;padding-left:10px;padding-right:10px}
   /* Utilization band. Borrows .cr-thresholds/.cr-thr so the slider styling and
      the stacked toggle match the Capability Risk page exactly. */
   /* Its own row under the filter bar. Keeps .cr-thresholds' card so it matches
@@ -864,8 +868,14 @@
   .pr-note b{color:var(--pwc-black)}
   @media (max-width:1200px){.pr-note{text-align:left;flex:1 1 100%}}
   .pulse-controls > input,.pulse-controls > select{padding:9px 12px;border:1px solid var(--pwc-grey-300);border-radius:4px;font-family:inherit;font-size:13px;background:var(--white);height:42px;box-sizing:border-box}
-  .pulse-controls > input{flex:1 1 150px;min-width:110px;max-width:260px}
-  #pulse-sort{width:160px;flex:0 0 auto}
+  .pulse-controls > input{flex:1 1 120px;min-width:100px;max-width:260px}
+  #pulse-sort{width:142px;flex:0 0 auto}
+  /* Under ~1280px the nine no longer fit on one line and Reset would strand
+     itself. Giving the search its own full-width line leaves the seven filters
+     and Reset as one tidy row rather than a row plus an orphan. */
+  @media (max-width:1279px){
+    .pulse-controls > input{flex:1 1 100%;max-width:none;order:-1}
+  }
   .pulse-controls > input:focus,.pulse-controls > select:focus{outline:none;border-color:var(--pwc-orange);box-shadow:0 0 0 2px rgba(208,74,2,0.15)}
   .pulse-legend{display:flex;flex-wrap:wrap;gap:8px;font-size:11px;color:var(--pwc-grey-700);margin-left:auto}
   .pulse-controls .reset-btn{padding:0 16px;height:42px;box-sizing:border-box;background:var(--white);color:var(--pwc-grey-700);border:1px solid var(--pwc-grey-300);border-radius:4px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;transition:all .15s}
