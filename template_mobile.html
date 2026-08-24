@@ -467,7 +467,7 @@
 <main class="view" id="view-team">
   <div class="finder-head">
     <h2>Team Analytics</h2>
-    <p id="tm-sub">Headline figures for the active team, and how it breaks down. Tap a bar to filter.</p>
+    <p id="tm-sub">Headline figures for the team, and how it breaks down. Tap a bar to filter.</p>
   </div>
   <div class="stats-row" id="tm-kpis"></div>
   <div class="stats-row" id="tm-kpis2"></div>
@@ -918,7 +918,8 @@ function isManagerRole(role){
 // ============ Stat chips ============
 (function(){
   const set = (id, v) => { document.getElementById(id).textContent = v; };
-  set('st-total', EMPLOYEES.filter(e => { const s = String(e.Status || '').trim().toLowerCase(); return s === '' || s === 'active' || s === 'in leave'; }).length);
+  // Everyone on the roster: Status is information, not an include/exclude rule.
+  set('st-total', EMPLOYEES.length);
   set('st-locs',  uniqueValues('Location').length);
   const comps = uniqueValues('Competency Group');
   set('st-comps', comps.length || new Set(SKILLS.map(r => String(r['Skill Category'] || '').trim()).filter(Boolean)).size);
@@ -2042,13 +2043,12 @@ function lookupRate(role, terr){
   }
   return 0;
 }
-function _rtActive(e){ const s = String(e.Status||'').trim().toLowerCase(); return s===''||s==='active'||s==='in leave'; }
 function _rtPool(){
   // The global filters, nothing else. It used to read visibleOrder — the order
   // the Directory last rendered — so typing in the Directory search silently
   // rescoped these figures, and a search matching nobody bounced them back to
   // the whole company.
-  return filterPool().filter(_rtActive);
+  return filterPool();
 }
 const _rtHours = e => { const h = HOURS[normId(e.WorkdayID)+'|'+LATEST_MONTH]; return h ? h.ch : 0; };
 const _rtRate  = e => lookupRate(e.Role, e.Territory || e['Territory Filter']);
@@ -2235,16 +2235,12 @@ renderFinderResults();
 (function(){
   const root = document.getElementById('view-team'); if (!root) return;
   const $ = id => document.getElementById(id);
-  const isActive = e => {
-    const s = String(e.Status || '').trim().toLowerCase();
-    return s === '' || s === 'active' || s === 'in leave';
-  };
-  const ACT = EMPLOYEES.filter(isActive);
+  const ACT = EMPLOYEES;
   if (!ACT.length){ root.remove(); dropHubItem('team'); return; }
   // The global filter sheet applies here too. It used to be ignored while the
   // filter chips were still painted above these figures, so a "Mumbai" chip sat
   // over company-wide numbers.
-  const scoped = () => filterPool().filter(isActive);
+  const scoped = () => filterPool();
 
   const NOW = new Date();
   const tenureOf = e => { const d = new Date(String(e['Join Date'] || '')); return isNaN(d) ? null : (NOW - d) / 3.15576e10; };

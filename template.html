@@ -1058,7 +1058,7 @@
       <div class="ov-inner">
         <p class="ov-eyebrow ov-rise">01 &mdash; Scale</p>
         <h2 class="ov-h ov-rise ov-d1">Who we are</h2>
-        <p class="ov-lede ov-rise ov-d2">The active population behind every number that follows.</p>
+        <p class="ov-lede ov-rise ov-d2">Everyone on the roster, behind every number that follows.</p>
         <div class="ov-stats ov-rise ov-d3" id="ov-scale"></div>
         <div class="ov-stats ov-rise" id="ov-scale2"></div>
         <div class="ov-pyramid ov-rise" id="ov-pyramid"></div>
@@ -1503,7 +1503,7 @@
   <!-- ===== Team Analytics: leverage pyramid, gender by grade, tenure, util vs experience ===== -->
   <section class="tab-panel" id="tab-analytics">
     <h1>Team Analytics</h1>
-    <p class="subtitle">Detailed cuts of the team &mdash; switch views with the toggle, and use the filters to slice any view by manager, role, location, competency, or territory. All charts count active employees in the current slice.</p>
+    <p class="subtitle">Detailed cuts of the team &mdash; switch views with the toggle, and use the filters to slice any view by manager, role, location, competency, or territory. All charts count everyone in the current slice.</p>
     <div class="controls smap-controls" id="ana-filters">
       <div class="multiselect ms-compact" id="ana-mgr-ms"></div>
       <div class="multiselect ms-compact" id="ana-role-ms"></div>
@@ -1854,15 +1854,18 @@
   function setKpis(list){
     list = list || EMPLOYEES;
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-    const active = list.filter(e => { const s = String(e.Status || '').trim().toLowerCase(); return s === '' || s === 'active' || s === 'in leave'; });
-    set('kpi-total', active.length);
+    // Head count is everyone on the roster. Status is recorded for information
+    // (it shows on the bio) and never decides who is counted — a person on
+    // leave or marked inactive is still a person the practice employs. Leavers
+    // are the separate case: they are not on the roster at all.
+    set('kpi-total', list.length);
     const locs = new Set(); list.forEach(e => { const v = String(e.Location || '').trim(); if (v) locs.add(v); });
     set('kpi-locs', locs.size);
     const comps = new Set(); list.forEach(e => { const v = String(e['Competency Group'] || '').trim(); if (v) comps.add(v); });
     set('kpi-comps', comps.size || (list.length === EMPLOYEES.length ? competencyCount() : 0));
     set('kpi-managers', list.filter(e => isManagerRole(e.Role)).length);
-    const male   = active.filter(e => String(e.Gender || '').trim().toLowerCase() === 'male').length;
-    const female = active.filter(e => String(e.Gender || '').trim().toLowerCase() === 'female').length;
+    const male   = list.filter(e => String(e.Gender || '').trim().toLowerCase() === 'male').length;
+    const female = list.filter(e => String(e.Gender || '').trim().toLowerCase() === 'female').length;
     set('kpi-gender', male + ' : ' + female);
   }
   setKpis();
@@ -4519,8 +4522,6 @@
 
     function poolA(){
       return EMPLOYEES.filter(e => {
-        const s = String(e.Status || '').trim().toLowerCase();
-        if (!(s === '' || s === 'active' || s === 'in leave')) return false;
         if (aMgr.selected.size && !(aMgr.selected.has(String(e['RL Manager'] || '').trim()) || aMgr.selected.has(String(e.Name || '').trim()))) return false;
         if (aRole.selected.size && !aRole.selected.has(String(e.Role || ''))) return false;
         if (aLoc.selected.size  && !aLoc.selected.has(String(e.Location || ''))) return false;
@@ -4611,14 +4612,14 @@
     }
     const gradesOf = pool => { const bg = Object.create(null); pool.forEach(e => { const g = groupForRole(e.Role); (bg[g] = bg[g] || []).push(e); }); return bg; };
 
-    const TOTAL_ACTIVE = EMPLOYEES.filter(e => { const s = String(e.Status || '').trim().toLowerCase(); return s === '' || s === 'active' || s === 'in leave'; }).length;
+    const TOTAL_PEOPLE = EMPLOYEES.length;
     const filtersOn = () => !!(aMgr.selected.size || aRole.selected.size || aLoc.selected.size || aComp.selected.size || aTerr.selected.size);
 
     function renderAnalytics(){
       const pool = poolA();
       document.getElementById('ana-meta').innerHTML = filtersOn()
-        ? '<strong>' + pool.length + '</strong> of ' + TOTAL_ACTIVE + ' people in scope &middot; filters applied'
-        : 'Showing all <strong>' + pool.length + '</strong> active employees';
+        ? '<strong>' + pool.length + '</strong> of ' + TOTAL_PEOPLE + ' people in scope &middot; filters applied'
+        : 'Showing all <strong>' + pool.length + '</strong> people';
       const body = document.getElementById('ana-body');
       if (!pool.length){ body.innerHTML = '<div class="ana-card full"><div class="mdi-empty">No employees match the current filters.</div></div>'; return; }
       // Deployment now lives inside Utilization Trends: the trend line, then how
@@ -5038,8 +5039,6 @@
     const RATE_POOL = HAS_LEAVERS ? EMPLOYEES.concat(LEAVERS) : EMPLOYEES;
     function poolR(){
       return RATE_POOL.filter(e => {
-        const s = String(e.Status || '').trim().toLowerCase();
-        if (!(s === '' || s === 'active' || s === 'in leave' || s === 'left')) return false;
         if (rRole.selected.size && !rRole.selected.has(String(e.Role || ''))) return false;
         if (rLoc.selected.size  && !rLoc.selected.has(String(e.Location || ''))) return false;
         if (rComp.selected.size && !rComp.selected.has(String(e['Competency Filter'] || ''))) return false;
@@ -5242,10 +5241,7 @@
       const preferred = bands.indexOf('Standard') >= 0 ? 'Standard' : bands[0];
       sel.innerHTML = bands.map(b => '<option value="' + esc(b) + '"' + (b === preferred ? ' selected' : '') + '>' + esc(b) + '</option>').join('');
       $('sc-plan').innerHTML = GRADES.map(g => {
-        const have = EMPLOYEES.filter(e => {
-          const s = String(e.Status || '').trim().toLowerCase();
-          return (s === '' || s === 'active' || s === 'in leave') && groupForRole(e.Role) === g;
-        }).length;
+        const have = EMPLOYEES.filter(e => groupForRole(e.Role) === g).length;
         return '<div class="sc-row" data-g="' + esc(g) + '">'
           + '<span class="sc-name">' + esc(g) + '</span>'
           + '<span class="sc-have">' + have + ' today</span>'
@@ -5413,10 +5409,7 @@
     const nfmt = n => Math.round(n).toLocaleString('en-US');
     const THIN = 3;   // matches Capability Risk's default "scarce when <= 3 people"
 
-    const ACT = EMPLOYEES.filter(e => {
-      const s = String(e.Status || '').trim().toLowerCase();
-      return s === '' || s === 'active' || s === 'in leave';
-    });
+    const ACT = EMPLOYEES;
     if (!ACT.length){ bail(); return; }
     const cOf = e => String(e['Competency Group'] || e['Competency'] || '').trim() || 'Unspecified';
     const cnt = (arr, fn) => arr.reduce((o, x) => { const k = fn(x); if (k) o[k] = (o[k] || 0) + 1; return o; }, Object.create(null));
