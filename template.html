@@ -198,6 +198,8 @@
   .skill-cat-block .cat-skills{display:flex;flex-wrap:wrap;gap:5px}
   /* Title and its fiscal-year toggle share one line; the title keeps its own
      margins so it still lines up with the other section titles above it. */
+  .bio-leaver-note{background:#FFF6EE;border:1px solid #F3D3BA;border-left:3px solid var(--pwc-orange);
+                   border-radius:4px;padding:11px 14px;margin:0 0 18px;font-size:13px;line-height:1.55;color:var(--pwc-grey-700)}
   .bio-util-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
   .bio-util-head .bio-section-title{margin-bottom:10px}
   .bio-util-toggle button{padding:6px 12px;font-size:11px;white-space:nowrap}
@@ -2477,8 +2479,16 @@
     showBio(next, true, order);
   }
 
+  // Roster first, then the people who worked in a period but have since left.
+  // The Pulse strip lists both, so both have to open — clicking a leaver used to
+  // do nothing at all, which reads as a broken row rather than a data boundary.
+  function findPerson(id){
+    return EMPLOYEES.find(e => String(e.WorkdayID) === String(id))
+        || (HAS_LEAVERS ? LEAVERS.find(e => String(e.WorkdayID) === String(id)) : null)
+        || null;
+  }
   function showBio(workdayId, keepStack, navList, noNav){
-    const emp = EMPLOYEES.find(e => String(e.WorkdayID) === String(workdayId));
+    const emp = findPerson(workdayId);
     if (!emp) return;
     if (!keepStack) bioStack = [];   // fresh open (directory / arrows) clears history
     // Decide which list the prev/next arrows walk: an explicit list (e.g. a
@@ -2726,7 +2736,7 @@
     // Resolve the RL Manager by email first (unique), then fall back to matching on name.
     const rlEmp = (rlMail && EMPLOYEES.find(x => x.emailid && _norm(x.emailid) === _norm(rlMail) && String(x.WorkdayID) !== String(emp.WorkdayID)))
               || (rlName ? EMPLOYEES.find(x => _norm(x.Name) === _norm(rlName) && String(x.WorkdayID) !== String(emp.WorkdayID)) : null);
-    const backTo = bioStack.length ? (EMPLOYEES.find(e => String(e.WorkdayID) === String(bioStack[bioStack.length - 1])) || {}).Name : '';
+    const backTo = bioStack.length ? (findPerson(bioStack[bioStack.length - 1]) || {}).Name : '';
     const backBtn = backTo ? '<button class="bio-back" type="button">&#8592; Back to ' + esc(backTo) + '</button>' : '';
     const rlChip = rlName
       ? (rlEmp
@@ -2734,6 +2744,27 @@
           : '<div class="bio-rl bio-rl-static"><span class="rl-ico">&#8599;</span> Relationship Leader <b>' + esc(rlName) + '</b></div>')
       : '';
     const chipCluster = (backBtn || rlChip) ? '<div class="bio-cluster">' + backBtn + rlChip + '</div>' : '';
+
+    // Everything the dashboard knows about a leaver comes from the utilization
+    // sheets — there is no Employee Details row — so most of this card is
+    // legitimately empty. Say so, and say when they were last reported, rather
+    // than leaving the reader to wonder what is broken.
+    let leaverNote = '';
+    if (emp._leaver){
+      const seen = FY_WINDOWS
+        .map(w => (UTIL_BY_EMP_FY[w[0]] || {})[String(workdayId)] || [])
+        .reduce((a, b) => a.concat(b), [])
+        .map(r => monthKey(r['Month Year']))
+        .filter(Boolean)
+        .sort();
+      const last = seen.length ? monthLabelLong(seen[seen.length - 1]) : '';
+      leaverNote = '<div class="bio-leaver-note">'
+        + '<b>No longer on the roster.</b> This person has utilization in the workbook but no row in '
+        + 'Employee Details, so contact details, skills and the bio below are not available'
+        + (last ? ' &mdash; last reported ' + esc(last) : '') + '. '
+        + 'The utilization chart covers the months they worked.'
+        + '</div>';
+    }
 
     bioContent.innerHTML = ''
       + '<div class="bio-card">'
@@ -2745,12 +2776,17 @@
       +       '<div class="sub">' + esc(emp.Role || '') + ((emp['Competency'] || emp['Competency Group']) ? ' &middot; ' + esc(emp['Competency'] || emp['Competency Group']) : '') + '</div>'
       +       '<div class="pills">'
       +         (emp.Location ? '<span class="pill">' + esc(emp.Location) + '</span>' : '')
-      +         '<span class="pill">' + esc(emp[EXP_TOTAL] || 0) + ' yrs total experience</span>'
+      +         // Only when the column actually holds a value. A leaver has no Employee
+        // Details row, and "0 yrs total experience" is a claim the workbook
+        // never made about them.
+        (emp[EXP_TOTAL] === undefined || emp[EXP_TOTAL] === null || emp[EXP_TOTAL] === ''
+          ? '' : '<span class="pill">' + esc(emp[EXP_TOTAL]) + ' yrs total experience</span>')
       +         (emp[EXP_PWC] ? '<span class="pill">' + esc(emp[EXP_PWC]) + ' yrs at PwC</span>' : '')
       +       '</div>'
       +     '</div>'
       +   '</div>'
       +   '<div class="bio-body">'
+      +     leaverNote
       +     '<div class="bio-grid">'
       +       gridFields
       +       teamField
