@@ -313,6 +313,33 @@ def load_workbook_data(path):
               f"({len(people)} person/people, shown as '{COMPETENCY_UNMAPPED}' on their own "
               f"record): {', '.join(sorted(people)[:8])}")
 
+    # The skills sheet carries its own Competency Filter: the competency the skill
+    # set belongs to ("FDD Skill Set" and "Deals Skill Set" both -> FDD). Every
+    # skill-set filter on the page reads it, so it gets the same Other/Others
+    # spelling treatment as the person-level columns. Blanks are left blank on
+    # purpose - the templates fall back to the holder's own competency, which keeps
+    # a workbook without the column working.
+    for r in data["skills"]:
+        was = str(r.get("Competency Filter") or "").strip()
+        if was:
+            r["Competency Filter"] = canon_competency(was)
+    skill_comps = {}
+    for r in data["skills"]:
+        cat = str(r.get("Skill Category") or "").strip()
+        val = str(r.get("Competency Filter") or "").strip()
+        if cat and val:
+            skill_comps.setdefault(cat, set()).add(val)
+    split = {c: sorted(v) for c, v in skill_comps.items() if len(v) > 1}
+    if split:
+        pairs = "; ".join(f"{c!r} -> {', '.join(v)}" for c, v in sorted(split.items()))
+        print(f"[warn] Skill category mapped to more than one competency, so its "
+              f"skills will be split across competency cards ({len(split)}): {pairs}")
+    no_comp = sum(1 for r in data["skills"]
+                  if not str(r.get("Competency Filter") or "").strip())
+    if no_comp:
+        print(f"[info] {no_comp} skill row(s) have no Competency Filter - those skills "
+              f"are filed under the holder's own competency")
+
     # ---- tell the operator what was and was not picked up -------------------
     seen = sorted({ws.title.strip() for ws in wb.worksheets})
     matched = sorted({t for t in seen if t in keymap})

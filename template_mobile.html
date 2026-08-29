@@ -808,14 +808,32 @@ SKILLS.forEach(row => {
 // A skill tagged under several categories (e.g. Power BI under FDD and Data & Analytics)
 // is listed under every category it appears in, not just the first-seen one.
 const CAT_SKILL_PPL = Object.create(null); // cat -> { skillKey -> Set(normId) }
+// Each row also carries the competency its skill set belongs to (Competency
+// Filter on the Employee Skills sheet: "FDD Skill Set" and "Deals Skill Set"
+// both -> FDD). Explore-by-competency groups on the row's competency rather than
+// the holder's HR record, so a skill sits under the competency whose skill set it
+// came from. A row from an older workbook without the column falls back to the
+// holder's own competency.
+const SKILL_ROWS = [];                       // { id, cat, comp, keys[] } — one per source row
+EMPLOYEES.forEach(e => { e._cats = new Set(); e._comps = new Set(); });
 SKILLS.forEach(row => {
-  if (!_EMP_BY_ID[normId(row.WorkdayID)]) return;
+  const emp = _EMP_BY_ID[normId(row.WorkdayID)];
+  if (!emp) return;
+  const id = normId(row.WorkdayID);
   const cat = String(row['Skill Category'] || '').trim() || 'Uncategorised';
+  const comp = String(row['Competency Filter'] || '').trim()
+            || String(emp['Competency Filter'] || '').trim() || 'Others';
   if (!CAT_SKILL_PPL[cat]) CAT_SKILL_PPL[cat] = Object.create(null);
+  const keys = [];
   String(row.Skills || '').split(/[,;]/).map(s => s.trim()).filter(Boolean).forEach(s => {
     const k = s.toLowerCase();
-    (CAT_SKILL_PPL[cat][k] || (CAT_SKILL_PPL[cat][k] = new Set())).add(normId(row.WorkdayID));
+    keys.push(k);
+    (CAT_SKILL_PPL[cat][k] || (CAT_SKILL_PPL[cat][k] = new Set())).add(id);
   });
+  if (!keys.length) return;
+  SKILL_ROWS.push({ id: id, cat: cat, comp: comp, keys: keys });
+  emp._cats.add(cat);
+  emp._comps.add(comp);
 });
 // All skill categories a skill appears in (labels that used to show only the first).
 const SKILL_CATS = Object.create(null);
@@ -1564,11 +1582,26 @@ function renderExplore(){
         });
       });
     });
+  } else if (exploreDim === 'comp'){
+    // Competency comes from the skill row, not the person's HR record, so each
+    // skill lands under the competency of the skill set it was recorded in.
+    const poolIds = new Set(pool.map(e => normId(e.WorkdayID)));
+    const seen = new Set();
+    SKILL_ROWS.forEach(r => {
+      if (!poolIds.has(r.id)) return;
+      r.keys.forEach(k => {
+        const sig = r.comp + '\u0000' + r.id + '\u0000' + k;
+        if (seen.has(sig)) return;          // same skill in two skill sets of one competency = one holder
+        seen.add(sig);
+        let o = groups.get(r.comp);
+        if (!o){ o = { skills: new Map(), people: new Set() }; groups.set(r.comp, o); }
+        o.people.add(r.id);
+        o.skills.set(k, (o.skills.get(k) || 0) + 1);
+      });
+    });
   } else {
     pool.forEach(e => e._skills.forEach(k => {
-      const g = exploreDim === 'comp' ? (String(e['Competency Filter'] || '').trim() || 'Unspecified')
-              :                         (String(e['Territory Filter']  || '').trim() || 'Unspecified');
-      bump(g, e, k);
+      bump(String(e['Territory Filter'] || '').trim() || 'Unspecified', e, k);
     }));
   }
   let names = [...groups.keys()];
@@ -1884,7 +1917,13 @@ function openSkillSheet(k, ctx, seg, radar){
   const byUtil = (a, b) => (uIndiv(b) ?? -1) - (uIndiv(a) ?? -1);
   // When drilled in from a Competency / Territory group, show that segment's
   // people first (each block sorted by utilization), then the other holders.
-  const segCol = seg && seg.group ? (seg.dim === 'comp' ? 'Competency Filter' : seg.dim === 'terr' ? 'Territory Filter' : null) : null;
+  // Competency segments come from the skill rows (see SKILL_ROWS), territory
+  // segments stay on the person's own record.
+  const inSegment = seg && seg.group
+    ? (seg.dim === 'comp' ? (e => !!(e._comps && e._comps.has(seg.group)))
+    :  seg.dim === 'terr' ? (e => String(e['Territory Filter'] || '').trim() === seg.group)
+    :  null)
+    : null;
   let sections = [];
   if (ctx === 'radar' && radar && radar.seg === 'deploy'){
     const fr = typeof radar.frag === 'number' ? radar.frag : 100;
@@ -1893,9 +1932,9 @@ function openSkillSheet(k, ctx, seg, radar){
     const busy  = baseHolders.filter(e => { const u = uu(e); return !(u !== undefined && u < fr); }).sort(byUtil);
     if (avail.length) sections.push({ label: 'Available &middot; under ' + fr + '% &middot; ' + avail.length, people: avail });
     if (busy.length)  sections.push({ label: 'Committed &middot; ' + fr + '%+ &middot; ' + busy.length, people: busy });
-  } else if (segCol){
-    const inSeg  = baseHolders.filter(e => String(e[segCol] || '').trim() === seg.group).sort(byUtil);
-    const others = baseHolders.filter(e => String(e[segCol] || '').trim() !== seg.group).sort(byUtil);
+  } else if (inSegment){
+    const inSeg  = baseHolders.filter(inSegment).sort(byUtil);
+    const others = baseHolders.filter(e => !inSegment(e)).sort(byUtil);
     if (inSeg.length)  sections.push({ label: 'In ' + seg.group + ' &middot; ' + inSeg.length, people: inSeg });
     if (others.length) sections.push({ label: 'Other holders &middot; ' + others.length, people: others });
   } else {

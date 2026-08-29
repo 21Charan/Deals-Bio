@@ -152,6 +152,29 @@
   .dir-card .role-badge{display:inline-block;font-size:10px;font-weight:600;color:var(--pwc-orange);background:rgba(208,74,2,0.1);padding:2px 7px;border-radius:3px;margin:5px 0 6px;letter-spacing:0.5px;text-transform:uppercase}
   .dir-card .meta{color:var(--pwc-grey-600);font-size:11.5px;line-height:1.5}
   .dir-card .meta span.sep{color:var(--pwc-grey-400);margin:0 6px}
+  /* ---- Span of control (Senior Manager and above) ----------------------------
+     Total team is everyone underneath at any depth; direct is the first layer.
+     Direct wears the deep orange and indirect the tangerine — one hue family,
+     checked for colour-blind separation — and both are labelled in figures, so
+     the split never depends on colour alone. */
+  .dir-card .span-chip{display:flex;align-items:baseline;gap:5px;margin-top:8px;padding-top:7px;border-top:1px solid var(--pwc-grey-100);font-size:11px;color:var(--pwc-grey-600);text-transform:uppercase;letter-spacing:.4px}
+  .dir-card .span-chip b{font-size:15px;font-weight:700;color:var(--pwc-grey-900);line-height:1;letter-spacing:0}
+  .dir-card .span-chip .sc-split{margin-left:auto;font-size:10.5px;color:var(--pwc-grey-400);text-transform:none;letter-spacing:0}
+  /* Bio: team & span of control */
+  .bio-span{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:12px;margin-bottom:12px}
+  .bio-span .sp{background:var(--pwc-grey-50);border-left:3px solid var(--pwc-orange);border-radius:0 4px 4px 0;padding:12px 14px}
+  .bio-span .sp.t2{border-left-color:var(--pwc-tangerine)}
+  .bio-span .sp.t3{border-left-color:var(--pwc-grey-400)}
+  .bio-span .sp .v{font-size:24px;font-weight:700;line-height:1.1}
+  .bio-span .sp .l{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--pwc-grey-600);margin-top:3px}
+  .bio-mix{font-size:13px;color:var(--pwc-grey-700);line-height:1.6;margin:0 0 14px}
+  .bio-mix b{color:var(--pwc-grey-900)}
+  .bio-sub-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--pwc-grey-600);margin:14px 0 8px}
+  .bio-indirect{margin-top:6px;border-top:1px solid var(--pwc-grey-100);padding-top:6px}
+  .bio-indirect summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--pwc-orange);padding:7px 0;list-style:none}
+  .bio-indirect summary::-webkit-details-marker{display:none}
+  .bio-indirect summary:before{content:'\25B8';display:inline-block;margin-right:8px;transition:transform .15s}
+  .bio-indirect[open] summary:before{transform:rotate(90deg)}
   /* ---- Modal ---- */
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:flex-start;justify-content:center;z-index:100;overflow-y:auto;padding:40px 16px;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
   .modal-overlay.open{display:flex}
@@ -1924,16 +1947,54 @@
   // A skill can be tagged under several categories (e.g. Power BI under FDD and Data & Analytics),
   // so the Skill-Category cloud lists it under every category it appears in, not just the first-seen one.
   const CAT_SKILL_PPL = Object.create(null); // cat -> { skillKey -> Set(WorkdayID) }
+  // Each row also carries the competency its skill set belongs to (Competency
+  // Filter on the Employee Skills sheet: "FDD Skill Set" and "Deals Skill Set"
+  // both -> FDD). Skill-set filters and the competency cards read the row's
+  // competency rather than the holder's HR record, so filtering a skill set
+  // leaves that competency's people on screen and nobody else. A row from an
+  // older workbook without the column falls back to the holder's competency.
+  const SKILL_ROWS = [];                       // { id, cat, comp, keys[] } — one per source row
+  const CAT_COMPS  = Object.create(null);      // cat -> Set(competency)
+  EMPLOYEES.forEach(e => { e._cats = new Set(); e._comps = new Set(); e._skillCats = Object.create(null); });
   SKILLS.forEach(row => {
     const empId = String(row.WorkdayID);
-    if (!EMPLOYEES.some(x => String(x.WorkdayID) === empId)) return;
+    const emp = EMPLOYEES.find(x => String(x.WorkdayID) === empId);
+    if (!emp) return;
     const cat = String(row['Skill Category'] || '').trim() || 'Uncategorised';
+    const comp = String(row['Competency Filter'] || '').trim()
+              || String(emp['Competency Filter'] || '').trim() || 'Others';
     if (!CAT_SKILL_PPL[cat]) CAT_SKILL_PPL[cat] = Object.create(null);
+    const keys = [];
     String(row.Skills || '').split(/[,;]/).map(s => s.trim()).filter(Boolean).forEach(s => {
       const k = s.toLowerCase();
+      keys.push(k);
       (CAT_SKILL_PPL[cat][k] || (CAT_SKILL_PPL[cat][k] = new Set())).add(empId);
+      (emp._skillCats[k] || (emp._skillCats[k] = new Set())).add(cat);
     });
+    if (!keys.length) return;
+    SKILL_ROWS.push({ id: empId, cat: cat, comp: comp, keys: keys });
+    (CAT_COMPS[cat] || (CAT_COMPS[cat] = new Set())).add(comp);
+    emp._cats.add(cat);
+    emp._comps.add(comp);
   });
+  // Category / competency membership read off the person's OWN rows. The global
+  // catsOf(k) answers "is this skill tagged there for anyone", which let a Data &
+  // Analytics person through an FDD filter on a skill the two share (Power BI).
+  function empInCats(e, sel){
+    for (const c of (e._cats || [])) if (sel.has(c)) return true;
+    return false;
+  }
+  function empHasCatSkill(e, k, sel){
+    const a = e._skillCats && e._skillCats[k];
+    if (!a) return false;
+    for (const c of a) if (sel.has(c)) return true;
+    return false;
+  }
+  function empInComps(e, sel){
+    const cs = e._comps;
+    if (cs && cs.size){ for (const c of cs) if (sel.has(c)) return true; return false; }
+    return sel.has(String(e['Competency Filter'] || ''));   // no skill rows: fall back to the HR record
+  }
   // All skill categories a skill appears in (for labels that used to show only the first).
   const SKILL_CATS = Object.create(null);
   Object.keys(CAT_SKILL_PPL).forEach(cat => { Object.keys(CAT_SKILL_PPL[cat]).forEach(k => { (SKILL_CATS[k] || (SKILL_CATS[k] = [])).push(cat); }); });
@@ -2136,8 +2197,19 @@
       +       [esc(e['Competency'] || e['Competency Group'] || ''), esc(e.Location || '')].filter(Boolean).join('<span class="sep">&middot;</span>') + '<br>'
       +       esc(e.Qualification || '') + '<span class="sep">&middot;</span>' + esc(e[EXP_TOTAL] || 0) + ' yrs exp'
       +     '</div>'
+      +     spanChip(e)
       +   '</div>'
       + '</div>';
+  }
+  // Senior Manager and above carry their span on the tile, so the org beneath a
+  // leader is readable without opening anyone.
+  function spanChip(e){
+    if (!isLeader(e)) return '';
+    const total = e._team.length, direct = e._directs.length;
+    const indirect = total - direct;
+    return '<div class="span-chip"><b>' + total + '</b> in team'
+         + '<span class="sc-split">' + direct + ' direct'
+         + (indirect ? ' &middot; ' + indirect + ' indirect' : '') + '</span></div>';
   }
 
   function renderDirectory(){
@@ -2152,7 +2224,7 @@
       if (locSel.size  && !locSel.has(String(e['Location'] || ''))) return false;
       if (terrSel.size && !terrSel.has(String(e['Territory Filter'] || ''))) return false;
       if (compSel.size && !compSel.has(String(e['Competency Filter'] || ''))) return false;
-      if (catSel.size){ let _h = false; for (const k of (e._skills || [])){ if (catsOf(k).some(c => catSel.has(c))){ _h = true; break; } } if (!_h) return false; }
+      if (catSel.size && !empInCats(e, catSel)) return false;
       if (!expFull){ const _v = parseFloat(e[EXP_TOTAL]); if (isNaN(_v) || _v < expLo || _v > expHi) return false; }
       // Skills filter — AND match (employee must have EVERY selected skill).
       if (selectedSkills.size > 0){
@@ -2248,6 +2320,61 @@
     return roleRank(a.Role) - roleRank(b.Role)
         || (parseFloat(b[EXP_TOTAL]) || 0) - (parseFloat(a[EXP_TOTAL]) || 0)
         || String(a.Name || '').localeCompare(String(b.Name || ''));
+  }
+
+  // ----- Reporting tree (RL Manager) -----------------------------------------
+  // "How many people are under this person" means the whole organisation beneath
+  // them, not just the first layer: a Director with four Senior Managers who each
+  // carry ten people leads 44, not 4. Direct reports are matched on RL Manager
+  // Email first (unique and stable) and fall back to the RL Manager name — the
+  // same rule the bio card has always used, computed once here instead.
+  const _mgrKey = s => String(s || '').trim().toLowerCase();
+  (function buildReportingTree(){
+    const byMail = Object.create(null), byName = Object.create(null);
+    EMPLOYEES.forEach(e => {
+      e._directs = [];            // first layer
+      e._team = [];               // [{ emp, depth }] — everyone underneath, any depth
+      const m = _mgrKey(e.emailid); if (m && !byMail[m]) byMail[m] = e;
+      const n = _mgrKey(e.Name);   if (n && !byName[n]) byName[n] = e;
+    });
+    EMPLOYEES.forEach(e => {
+      const mgr = byMail[_mgrKey(e['RL Manager Email'])] || byName[_mgrKey(e['RL Manager'])];
+      if (mgr && mgr !== e) mgr._directs.push(e);
+    });
+    EMPLOYEES.forEach(e => e._directs.sort(bySeniority));
+    // Breadth-first walk down from each person. `seen` records who has already
+    // been counted, so a circular RL chain in the source cannot loop forever and
+    // nobody is counted twice under the same leader.
+    EMPLOYEES.forEach(e => {
+      const seen = new Set([String(e.WorkdayID)]);
+      let frontier = e._directs.slice(), depth = 0;
+      while (frontier.length){
+        depth++;
+        const next = [];
+        frontier.forEach(p => {
+          const id = String(p.WorkdayID);
+          if (seen.has(id)) return;
+          seen.add(id);
+          e._team.push({ emp: p, depth: depth });
+          p._directs.forEach(c => next.push(c));
+        });
+        frontier = next;
+      }
+    });
+  })();
+  // Senior Manager and above — the grades where the organisation beneath is more
+  // than one layer, and the only ones the span-of-control views cover.
+  const SPAN_GRADES = ['Managing Directors', 'Directors', 'Senior Managers'];
+  function isLeader(e){
+    return !!(e && e._team && e._team.length) && SPAN_GRADES.indexOf(groupForRole(e.Role)) >= 0;
+  }
+  // "1 Senior Manager · 3 Managers · 4 Senior Associates", in hierarchy order.
+  function roleMix(people){
+    const b = {};
+    people.forEach(e => { const g = groupForRole(e.Role); b[g] = (b[g] || 0) + 1; });
+    return ROLE_GROUPS.filter(g => b[g.title])
+      .map(g => b[g.title] + ' ' + (b[g.title] === 1 && g.title !== 'Other' ? g.title.slice(0, -1) : g.title))
+      .join(' \u00b7 ');
   }
   // ----- Cross-tab filter sync -----------------------------------------
   // Competency, Role, Location and Territory exist on every tab and filter on
@@ -2707,30 +2834,50 @@
     // Team + Address appended full-width (can be long)
     const teamField = (teamRaw ? fieldHtml('Team', teamVal, { raw: true, fullWidth: true }) : '')
                     + (emp['Address'] ? fieldHtml('Address', emp['Address'], { fullWidth: true }) : '');
-    // Direct reports (employees whose RL Manager is this person)
+    // Direct reports, and the whole organisation beneath them — both precomputed
+    // by buildReportingTree, which owns the RL Manager matching rule.
     const _norm = s => String(s || '').trim().toLowerCase();
-    const _myMail = String(emp.emailid || '').trim();
-    const reports = EMPLOYEES.filter(x => {
-        if (String(x.WorkdayID) === String(emp.WorkdayID)) return false;
-        const xMail = String(x['RL Manager Email'] || '').trim();
-        // Prefer email match (unique & stable); fall back to name when an email is missing.
-        if (_myMail && xMail) return _norm(xMail) === _norm(_myMail);
-        return _norm(x['RL Manager']) === _norm(emp.Name);
-      })
-      .sort(bySeniority);
-    const reportCards = reports.map(e => {
+    const reports  = emp._directs || [];
+    const teamAll  = emp._team || [];
+    const indirect = teamAll.filter(t => t.depth > 1).map(t => t.emp);
+    const personCard = e => {
       const av = e._photo ? '<div class="adt-person-photo"><img loading="lazy" src="' + e._photo + '"></div>' : '<div class="adt-person-photo fallback">' + esc(e._initials) + '</div>';
       return '<div class="bio-report" data-id="' + esc(e.WorkdayID) + '">' + av + '<div style="min-width:0"><div class="adt-person-name">' + esc(e.Name) + '</div><div class="adt-person-meta">' + esc([e.Role, (e['Competency'] || e['Competency Group'])].filter(Boolean).join(' \u00b7 ')) + '</div></div></div>';
-    }).join('');
-    // Role mix of this RL's reports, in hierarchy order (e.g. "1 Senior Manager · 2 Senior Associates")
-    const repBuckets = {};
-    reports.forEach(e => { const g = groupForRole(e.Role); repBuckets[g] = (repBuckets[g] || 0) + 1; });
-    const repMix = ROLE_GROUPS.filter(g => repBuckets[g.title])
-      .map(g => repBuckets[g.title] + ' ' + (repBuckets[g.title] === 1 && g.title !== 'Other' ? g.title.slice(0, -1) : g.title))
-      .join(' &middot; ');
-    const reportsBlock = reports.length ? ('<div class="bio-section-title">Employees Under This RL Manager (' + reports.length + ')'
-      + (repMix ? ' <span style="font-weight:600;font-size:12px;color:var(--pwc-grey-600);text-transform:none;letter-spacing:0;margin-left:8px">&mdash; ' + repMix + '</span>' : '')
-      + '</div><div class="bio-reports">' + reportCards + '</div>') : '';
+    };
+    const reportCards = reports.map(personCard).join('');
+    const repMix = roleMix(reports);
+    // Senior Manager and above get the rolled-up view: what the whole line under
+    // them adds up to, then the first layer, then everyone else grouped by how
+    // far down they sit. Below that grade a person's direct reports ARE their
+    // team, so the plain list they have always had is still the honest picture.
+    let reportsBlock = '';
+    if (isLeader(emp)){
+      // Grouped by grade, in hierarchy order — who sits under this person reads
+      // better as "3 Managers, 5 Senior Associates" than as a count of layers.
+      const byGrade = {};
+      indirect.forEach(e => { const g = groupForRole(e.Role); (byGrade[g] = byGrade[g] || []).push(e); });
+      const tiers = ROLE_GROUPS.filter(g => byGrade[g.title]).map(g => {
+        const people = byGrade[g.title].slice().sort(bySeniority);
+        return '<div class="bio-sub-title">' + esc(g.title) + ' (' + people.length + ')</div>'
+             + '<div class="bio-reports">' + people.map(personCard).join('') + '</div>';
+      }).join('');
+      reportsBlock = '<div class="bio-section-title">Team &amp; Span of Control</div>'
+        + '<div class="bio-span">'
+        +   '<div class="sp"><div class="v">' + teamAll.length + '</div><div class="l">Total team</div></div>'
+        +   '<div class="sp t2"><div class="v">' + reports.length + '</div><div class="l">Direct reports</div></div>'
+        +   '<div class="sp t3"><div class="v">' + indirect.length + '</div><div class="l">Indirect reports</div></div>'
+        + '</div>'
+        + '<p class="bio-mix">Everyone in the reporting line beneath ' + esc(String(emp.Name || '').trim().split(/\s+/)[0] || 'them') + ': <b>' + esc(roleMix(teamAll.map(t => t.emp))) + '</b></p>'
+        + '<div class="bio-sub-title">Direct reports (' + reports.length + ')' + (repMix ? ' &mdash; ' + esc(repMix) : '') + '</div>'
+        + '<div class="bio-reports">' + reportCards + '</div>'
+        + (indirect.length
+            ? '<details class="bio-indirect"><summary>Indirect reports (' + indirect.length + ')</summary>' + tiers + '</details>'
+            : '');
+    } else if (reports.length){
+      reportsBlock = '<div class="bio-section-title">Employees Under This RL Manager (' + reports.length + ')'
+        + (repMix ? ' <span style="font-weight:600;font-size:12px;color:var(--pwc-grey-600);text-transform:none;letter-spacing:0;margin-left:8px">&mdash; ' + esc(repMix) + '</span>' : '')
+        + '</div><div class="bio-reports">' + reportCards + '</div>';
+    }
     const rlName = String(emp['RL Manager'] || '').trim();
     const rlMail = String(emp['RL Manager Email'] || '').trim();
     // Resolve the RL Manager by email first (unique), then fall back to matching on name.
@@ -2810,7 +2957,8 @@
     // Jumping to a related person (named manager link) walks the directory order.
     bioContent.querySelectorAll('a.team-link[data-id]').forEach(a => a.addEventListener('click', () => navTo(a.dataset.id, visibleOrder)));
     // Drilling into someone under THIS RL Manager: arrows walk this manager's reports.
-    const reportIds = reports.map(r => r.WorkdayID);
+    // Arrows walk the whole team the panel shows: directs first, then the layers below.
+    const reportIds = reports.concat(indirect).map(r => r.WorkdayID);
     bioContent.querySelectorAll('.bio-report[data-id]').forEach(c => c.addEventListener('click', () => navTo(c.dataset.id, reportIds)));
     const rlBox = bioContent.querySelector('.bio-rl[data-id]');
     if (rlBox) rlBox.addEventListener('click', () => navTo(rlBox.dataset.id, visibleOrder));
@@ -2854,13 +3002,13 @@
     else { CAT_COLOR[c] = CAT_PALETTE[pi % CAT_PALETTE.length]; pi++; }
   });
   // Competency colour assignment (for the By-Competency card view), ordered by COMPETENCY_ORDER.
-  const empComp = e => String(e['Competency'] || 'Other').trim() || 'Other';
   const compRank = n => { const i = COMPETENCY_ORDER.findIndex(x => x.toLowerCase() === String(n).trim().toLowerCase()); return i < 0 ? 9999 : i; };
   const COMP_COLOR = Object.create(null);
   (function(){
-    const comps = orderBy([...new Set(EMPLOYEES.map(empComp))].filter(Boolean), COMPETENCY_ORDER);
+    // Cards are competencies taken from the skill rows, so the palette follows those.
+    const comps = orderBy([...new Set(SKILL_ROWS.map(r => r.comp))].filter(Boolean), COMPETENCY_ORDER);
     let ci = 0;
-    comps.forEach(c => { COMP_COLOR[c] = (c === 'Other') ? '#9C9C9C' : CAT_PALETTE[ci++ % CAT_PALETTE.length]; });
+    comps.forEach(c => { COMP_COLOR[c] = /^others?$/i.test(c) ? '#9C9C9C' : CAT_PALETTE[ci++ % CAT_PALETTE.length]; });
   })();
 
   // Co-occurrence: how often each pair of skills appears together
@@ -2898,7 +3046,9 @@
   const aChange = () => { renderAtlas(document.getElementById('atlas-search').value); renderStaffingResults(); };
   const aRole = buildMS('atlas-role-ms', 'All roles',            orderBy(uniqueValues('Role'), ROLE_ORDER), aChange, 'role');
   const aLoc  = buildMS('atlas-loc-ms',  'All locations',        uniqueValues('Location'),                  aChange, 'loc');
-  const aComp = buildMS('atlas-comp-ms', 'All competencies',     orderCompetency(uniqueValues('Competency Filter')), aChange, 'comp');
+  // Options are the competencies the skill rows actually carry, so every entry
+  // in the list can return people once the cards group by that same competency.
+  const aComp = buildMS('atlas-comp-ms', 'All competencies',     orderCompetency([...new Set(SKILL_ROWS.map(r => r.comp))]), aChange, 'comp');
   const aTerr = buildMS('atlas-terr-ms', 'All territories',      orderTerritory(uniqueValues('Territory Filter')),           aChange, 'terr');
   const aCat  = buildMS('atlas-cat-ms',  'All skill categories', ORDERED_CATS.filter(c => c !== 'Uncategorised'), aChange);
   function atlasPoolIds(){
@@ -2906,7 +3056,7 @@
     EMPLOYEES.forEach(e => {
       if (aLoc.selected.size  && !aLoc.selected.has(String(e.Location || ''))) return;
       if (aRole.selected.size && !aRole.selected.has(String(e.Role || ''))) return;
-      if (aComp.selected.size && !aComp.selected.has(String(e['Competency Filter'] || ''))) return;
+      if (aComp.selected.size && !empInComps(e, aComp.selected)) return;
       if (aTerr.selected.size && !aTerr.selected.has(String(e['Territory Filter'] || ''))) return;
       ids.add(String(e.WorkdayID));
     });
@@ -2914,22 +3064,24 @@
   }
 
   function buildCategoryData(){
-    // Cards are grouped by the employee's COMPETENCY (FDD, Valuation, ...). The
-    // skill-category multiselect still filters which skills are counted.
+    // Cards are grouped by the competency on the skill ROW (Competency Filter on
+    // the Employee Skills sheet), so a skill counts towards the competency whose
+    // skill set it came from. Selecting a skill set therefore leaves exactly that
+    // competency on screen, instead of every competency that happens to share one
+    // of its skills.
     const ids = atlasPoolIds(), catSel = aCat.selected;
     const cats = Object.create(null);
-    EMPLOYEES.forEach(e => {
-      if (!ids.has(String(e.WorkdayID))) return;
-      const comp = empComp(e);
-      e._skills.forEach(k => {
-        if (catSel.size && !catsOf(k).some(c => catSel.has(c || 'Uncategorised'))) return;
-        if (!cats[comp]) cats[comp] = { skills: Object.create(null), people: new Set() };
-        cats[comp].people.add(e.WorkdayID);
-        cats[comp].skills[k] = (cats[comp].skills[k] || 0) + 1;
-      });
+    SKILL_ROWS.forEach(r => {
+      if (!ids.has(r.id)) return;
+      if (catSel.size && !catSel.has(r.cat)) return;
+      const c = cats[r.comp] || (cats[r.comp] = { skills: Object.create(null), people: new Set() });
+      c.people.add(r.id);
+      // Held-by counts are per person, not per row: someone holding SQL in two
+      // skill sets of the same competency is still one holder.
+      r.keys.forEach(k => (c.skills[k] || (c.skills[k] = new Set())).add(r.id));
     });
     return Object.entries(cats).map(([name, data]) => {
-      const skills = Object.entries(data.skills).map(([key, count]) => ({ key, count })).sort((a, b) => b.count - a.count);
+      const skills = Object.entries(data.skills).map(([key, who]) => ({ key, count: who.size })).sort((a, b) => b.count - a.count);
       return { name, color: COMP_COLOR[name] || '#9C9C9C', peopleCount: data.people.size, skillsCount: skills.length, skills, strength: categoryStrength(data.people.size) };
     }).sort((a, b) => compRank(a.name) - compRank(b.name) || b.peopleCount - a.peopleCount);
   }
@@ -3088,6 +3240,9 @@
     const out = [];
     Object.keys(CAT_SKILL_PPL).forEach(cat => {
       if (catSel.size && !catSel.has(cat)) return;
+      // A skill set belongs to one competency, so a competency filter hides the
+      // skill sets that sit outside it rather than just thinning their people.
+      if (aComp.selected.size && ![...(CAT_COMPS[cat] || [])].some(c => aComp.selected.has(c))) return;
       const skillMap = CAT_SKILL_PPL[cat];
       const people = new Set();
       const skills = [];
@@ -3762,7 +3917,7 @@
       if (pLoc.selected.size  && !pLoc.selected.has(String(e['Location'] || ''))) return false;
       if (pComp.selected.size && !pComp.selected.has(String(e['Competency Filter'] || ''))) return false;
       if (pTerr.selected.size && !pTerr.selected.has(String(e['Territory Filter'] || ''))) return false;
-      if (pCat.selected.size){ let has = false; for (const k of (e._skills || [])){ if (catsOf(k).some(c => pCat.selected.has(c))){ has = true; break; } } if (!has) return false; }
+      if (pCat.selected.size && !empInCats(e, pCat.selected)) return false;
       if (!q) return true;
       return ['Name','Role','Location','Territory Group','Competency Group','Qualification']
         .some(k => String(e[k] ?? '').toLowerCase().includes(q));
@@ -4125,7 +4280,7 @@
       if (pLoc.selected.size  && !pLoc.selected.has(String(e['Location'] || ''))) return false;
       if (pComp.selected.size && !pComp.selected.has(String(e['Competency Filter'] || ''))) return false;
       if (pTerr.selected.size && !pTerr.selected.has(String(e['Territory Filter'] || ''))) return false;
-      if (pCat.selected.size){ let has = false; for (const k of (e._skills || [])){ if (catsOf(k).some(c => pCat.selected.has(c))){ has = true; break; } } if (!has) return false; }
+      if (pCat.selected.size && !empInCats(e, pCat.selected)) return false;
       if (!q) return true;
       return ['Name','Role','Location','Territory Group','Competency Group','Qualification'].some(k => String(e[k] ?? '').toLowerCase().includes(q));
     });
@@ -4188,7 +4343,7 @@
     function skillStats(p){
       const catSel = crCat.selected, skillSel = crSkill.selected, map = new Map();
       p.forEach(e => e._skills.forEach(k => {
-        if (catSel.size && !catsOf(k).some(c => catSel.has(c))) return;
+        if (catSel.size && !empHasCatSkill(e, k, catSel)) return;
         if (skillSel.size && !skillSel.has(SKILL_DISPLAY[k])) return;
         let s = map.get(k); if (!s){ s = { key: k, holders: [], senior: 0, utils: [] }; map.set(k, s); }
         s.holders.push(e);
