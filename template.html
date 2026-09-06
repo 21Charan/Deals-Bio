@@ -289,6 +289,9 @@
 
   /* View toggle: Competency Cards vs full All Skills catalogue */
   .atlas-view-toggle{display:flex;border:1px solid var(--pwc-grey-300);border-radius:4px;overflow:hidden;flex-shrink:0;background:var(--white)}
+  /* display:flex above outranks the browser's own [hidden] rule, so a toggle
+     set hidden in script stays on screen without this. */
+  .atlas-view-toggle[hidden]{display:none}
   .atlas-view-toggle button{padding:9px 14px;border:none;background:transparent;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;color:var(--pwc-grey-700);transition:all .15s}
   .atlas-view-toggle button + button{border-left:1px solid var(--pwc-grey-300)}
   .atlas-view-toggle button.active{background:var(--pwc-orange);color:var(--white)}
@@ -1344,7 +1347,7 @@
     <div id="cr-scarce-view">
       <div class="cr-thresholds" id="cr-thresholds">
         <div class="cr-thr">
-          <div class="cr-thr-top"><span class="cr-thr-lbl">Scarce when</span><span class="cr-thr-val"><b id="cr-scarce-val">3</b> or fewer people</span></div>
+          <div class="cr-thr-top"><span class="cr-thr-lbl">Scarce when</span><span class="cr-thr-val"><b id="cr-scarce-val">3</b> or fewer people hold the skill</span></div>
           <input type="range" id="cr-scarce-slider" min="1" max="15" step="1" value="3">
         </div>
         <div class="cr-thr">
@@ -1486,6 +1489,11 @@
         <div class="atlas-view-toggle" id="pulse-pop-toggle" title="Whether to include people who worked in this period but have since left">
           <button data-pop="all" class="active">All contributors</button>
           <button data-pop="active">Active only</button>
+        </div>
+        <!-- Only meaningful once a manager is chosen, so it stays hidden until then. -->
+        <div class="atlas-view-toggle" id="pulse-span-toggle" title="Whether to show only the people who report to the selected manager, or their whole reporting line including skip-levels" hidden>
+          <button data-span="direct" class="active">Direct reportees</button>
+          <button data-span="all">Overall team</button>
         </div>
       </div>
       <div class="cr-thr-group">
@@ -3688,6 +3696,9 @@
   // landing page and reconciles straight to the workbook. 'Active only' narrows
   // it to today's roster.
   let pulsePop = 'all';
+  // 'direct' = only the people who report to the selected manager; 'all' = their
+  // whole reporting line, skip-levels included. Read by mgrMatcher above.
+  let pulseSpan = 'direct';
   const pulseBase = () => (pulsePop === 'all' && HAS_LEAVERS) ? EMPLOYEES.concat(LEAVERS) : EMPLOYEES;
 
   // Pre-compute per-employee: avg util, latest util, sustained risk flag
@@ -3883,8 +3894,23 @@
         if (m) mails.add(m);
       }
     });
+    // 'Overall team' walks the RL Manager column down the tree: each round adds
+    // the people managed by someone already in the set, until it stops growing.
+    // The already-in-the-set test is also what stops a circular reporting line
+    // (A manages B, B manages A) from looping forever.
+    const line = new Set(sel);
+    if (pulseSpan === 'all'){
+      const pool = EMPLOYEES.concat(HAS_LEAVERS ? LEAVERS : []);
+      for (let grew = true; grew; ){
+        grew = false;
+        pool.forEach(x => {
+          const nm = MN(x.Name);
+          if (nm && line.has(MN(x['RL Manager'])) && !line.has(nm)){ line.add(nm); grew = true; }
+        });
+      }
+    }
     const isMgr = e => sel.has(MN(e.Name)) || (e.emailid && mails.has(MN(e.emailid)));
-    return { active: true, isMgr, ok: e => sel.has(MN(e['RL Manager'])) || isMgr(e) };
+    return { active: true, isMgr, ok: e => line.has(MN(e['RL Manager'])) || isMgr(e) };
   }
 
   // Pulse only: Managing Directors have no rows here, so offering their grade
@@ -3920,6 +3946,19 @@
     const srt = document.getElementById('pulse-sort').value;
     const FY  = FY_DATA[pulseFY];
     const mgr = mgrMatcher();
+    // The direct / overall choice only means something once a manager is
+    // chosen, so the toggle appears with the selection and hides with it.
+    const spanT = document.getElementById('pulse-span-toggle');
+    if (spanT){
+      spanT.hidden = !mgr.active;
+      // Clearing the manager resets the choice, so the toggle always comes back
+      // in the state its label implies rather than remembering a hidden one.
+      if (!mgr.active && pulseSpan !== 'direct'){
+        pulseSpan = 'direct';
+        spanT.querySelectorAll('button').forEach(b =>
+          b.classList.toggle('active', b.dataset.span === 'direct'));
+      }
+    }
     const fyH  = HOURS_FYD[pulseFY];
     const fyAvg = e => utilOver(FY.months.map(m => String(e.WorkdayID) + '|' + m), fyH, FY.lookup);
 
@@ -4260,6 +4299,14 @@
       pulsePage = 0; renderPulse();
     }));
   if (!HAS_LEAVERS){ const t = document.getElementById('pulse-pop-toggle'); if (t) t.hidden = true; }
+
+  document.querySelectorAll('#pulse-span-toggle button').forEach(btn =>
+    btn.addEventListener('click', () => {
+      if (btn.dataset.span === pulseSpan) return;
+      pulseSpan = btn.dataset.span;
+      document.querySelectorAll('#pulse-span-toggle button').forEach(b => b.classList.toggle('active', b === btn));
+      pulsePage = 0; renderPulse();
+    }));
 
   document.querySelectorAll('#pulse-fy-toggle button').forEach(b => {
     if (FY_AVAILABLE[b.dataset.fy] === false){
@@ -4904,7 +4951,12 @@
       const groups = Object.create(null);
       pool.forEach(e => { const k = labelOf(e) || 'Unspecified'; (groups[k] = groups[k] || []).push(e); });
       let keys = Object.keys(groups);
-      keys = order ? order.filter(k => keys.indexOf(k) >= 0).concat(keys.filter(k => order.indexOf(k) < 0).sort()) : keys.sort();
+      // With no fixed order to honour, rank by how many people are in each
+      // group — the same order People by Territory uses, so the two cards
+      // beside each other read down in step. Ties fall back to alphabetical.
+      keys = order
+        ? order.filter(k => keys.indexOf(k) >= 0).concat(keys.filter(k => order.indexOf(k) < 0).sort())
+        : keys.sort((a, b) => groups[b].length - groups[a].length || String(a).localeCompare(String(b)));
       return keys.map(k => {
         const g = groups[k], n = g.length;
         const m = g.filter(e => gOf(e) === 'm').length, f = g.filter(e => gOf(e) === 'f').length, x = n - m - f;
@@ -4933,6 +4985,8 @@
       document.getElementById('ana-meta').innerHTML = filtersOn()
         ? '<strong>' + pool.length + '</strong> of ' + TOTAL_PEOPLE + ' people in scope &middot; filters applied'
         : 'Showing all <strong>' + pool.length + '</strong> people';
+      const fyT = document.getElementById('ana-fy-toggle');
+      if (fyT) fyT.hidden = !HAS_U || anaView === 'mix';
       const body = document.getElementById('ana-body');
       if (!pool.length){ body.innerHTML = '<div class="ana-card full"><div class="mdi-empty">No employees match the current filters.</div></div>'; return; }
       // Deployment now lives inside Utilization Trends: the trend line, then how
@@ -5182,7 +5236,8 @@
       const yrKeys = Object.keys(yrCount).map(Number).sort((a, b) => a - b).slice(-8);
       const terrCount = Object.create(null);
       pTerr.forEach(e => { const t = MIX_DIMS.terr.of(e); if (t) terrCount[t] = (terrCount[t] || 0) + 1; });
-      const terrRows = Object.keys(terrCount).sort((a, b) => terrCount[b] - terrCount[a])
+      const terrRows = Object.keys(terrCount)
+        .sort((a, b) => terrCount[b] - terrCount[a] || String(a).localeCompare(String(b)))
         .map(t => [esc(t), terrCount[t], terrCount[t], t]);
       const hint = ' Click a bar to filter this view; selections combine.';
 

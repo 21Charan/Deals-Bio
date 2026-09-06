@@ -470,6 +470,12 @@
     <p id="tm-sub">Headline figures for the team, and how it breaks down. Tap a bar to filter.</p>
   </div>
   <div class="stats-row" id="tm-kpis"></div>
+  <!-- Scopes every utilization figure on this view. The tiles above it describe
+       today's team and do not move with it. -->
+  <div class="seg" id="tm-fy">
+    <button data-fy="jj" class="active">FY Jul&ndash;Jun</button>
+    <button data-fy="am">PY May&ndash;Apr</button>
+  </div>
   <div class="stats-row" id="tm-kpis2"></div>
   <div class="achips-host" id="tm-chips"></div>
   <div id="tm-slice"></div>
@@ -671,6 +677,15 @@ function pristineSource(){
 const EMPLOYEES = __EMPLOYEES_JSON__;
 const SKILLS    = __SKILLS_JSON__;
 const UTIL      = __UTIL_JSON__;
+// People who worked in the period but are no longer on the roster. The
+// desktop Pulse strip counts their hours by default ('All contributors');
+// leaving them out here is what made this build report 73% where the
+// desktop reported 74% on the same data.
+const LEAVERS   = __LEAVERS_JSON__;
+// The Performance Year rows. UTIL above is the FY Jul-Jun set, which stays
+// the default everywhere; this second set backs the FY / PY toggle on the
+// Team Analytics view, the same two windows the desktop build offers.
+const UTIL_AM   = __UTIL_AM_JSON__;
 const EXP_TOTAL = "__EXP_TOTAL__";
 const EXP_PWC   = "__EXP_PWC__";
 const SHARE_MODE = __SHARE_MODE__;
@@ -761,8 +776,37 @@ Object.keys(HOURS).forEach(k => {
   const h = HOURS[k];
   if (h.n > 1 && h.std > 0) UTIL_LOOKUP[k] = h.ch / h.std * 100;   // recompute a split month
 });
+// Mirrors the global build above for any other set of utilization rows, so a
+// second fiscal window is measured exactly the way the first one is.
+function buildWindow(rows){
+  const hours = Object.create(null), lookup = Object.create(null);
+  (rows || []).forEach(u => {
+    const std = _mnum(u['Standard Hours']), ch = _mnum(u['Chargeable Hours']), tr = _mnum(u['Training Hours']);
+    const k = normId(u.WorkdayID) + '|' + monthKey(u['Month Year']);
+    if (std !== undefined || ch !== undefined || tr !== undefined){
+      const cur = hours[k] || (hours[k] = { ch: 0, std: 0, tr: 0, n: 0 });
+      cur.ch += ch || 0; cur.std += std || 0; cur.tr += tr || 0; cur.n++;
+    }
+    const v = utilVal(u.Utilization);
+    if (v !== undefined) lookup[k] = v;
+  });
+  Object.keys(hours).forEach(k => {
+    const h = hours[k];
+    if (h.n > 1 && h.std > 0) lookup[k] = h.ch / h.std * 100;      // recompute a split month
+  });
+  const months = [...new Set((rows || []).map(u => monthKey(u['Month Year'])))].sort().filter(Boolean);
+  return { months, last: months[months.length - 1] || '', lookup, hours };
+}
+// A fiscal year with fewer than two months is a stub, not a dataset — the
+// desktop build disables its button for the same reason.
+const FY_WINDOWS = {
+  jj: { months: ALL_MONTHS, last: LATEST_MONTH, lookup: UTIL_LOOKUP, hours: HOURS },
+  am: buildWindow(UTIL_AM)
+};
+const FY_AVAILABLE = { jj: ALL_MONTHS.length > 0, am: FY_WINDOWS.am.months.length >= 2 };
+
 const HAS_UTIL = ALL_MONTHS.length > 0 && !SHARE_MODE;
-EMPLOYEES.forEach(e => { e._latestUtil = UTIL_LOOKUP[normId(e.WorkdayID) + '|' + LATEST_MONTH]; });
+EMPLOYEES.concat(LEAVERS).forEach(e => { e._latestUtil = UTIL_LOOKUP[normId(e.WorkdayID) + '|' + LATEST_MONTH]; });
 // Shared / no-utilization builds: Skill Radar has nothing to show — remove the
 // whole tab (same pattern as the desktop build removing its Pulse tab).
 // Take the hub entry away with the view. Left behind, tapping it deactivated
@@ -1663,8 +1707,8 @@ function quad(supply, demand, th){
   if (supply <= th.scarce && demand <= th.hot) return { key: 'niche',  label: 'Niche / watch',      col: '#FFB600' };
   return { key: 'ok', label: 'Healthy depth', col: '#A6A6A6' };
 }
-function filterPool(){
-  return EMPLOYEES.filter(e => {
+function filterPool(base){
+  return (base || EMPLOYEES).filter(e => {
     if (sel.role.size && !sel.role.has(String(e['Role'] || ''))) return false;
     if (sel.loc.size  && !sel.loc.has(String(e['Location'] || ''))) return false;
     if (sel.terr.size && !sel.terr.has(String(e['Territory Filter'] || ''))) return false;
@@ -2283,6 +2327,32 @@ renderFinderResults();
   // filter chips were still painted above these figures, so a "Mumbai" chip sat
   // over company-wide numbers.
   const scoped = () => filterPool();
+  // Two pools, the same split the desktop makes: head count, gender, leverage
+  // and experience describe today's team; utilization describes the period, so
+  // it counts everyone who worked in it, leavers included.
+  const scopedUtil = () => filterPool(EMPLOYEES.concat(LEAVERS));
+  // Which fiscal window this view is reporting. Everything utilization-related
+  // below reads it, so one tap moves the rate, the bands and the trend together.
+  let anaFY = 'jj';
+  const W = () => FY_WINDOWS[anaFY];
+  const utilOverW = keys => {
+    const w = W(); let ch = 0, std = 0, sum = 0, n = 0;
+    for (const k of keys){
+      const h = w.hours[k];
+      if (h && h.std > 0){ ch += h.ch; std += h.std; }
+      const v = w.lookup[k];
+      if (typeof v === 'number'){ sum += v; n++; }
+    }
+    if (std > 0) return ch / std * 100;
+    return n ? sum / n : null;
+  };
+  // Per-person latest-month value in the selected window; Managing Directors
+  // stay out of the individual bands, as everywhere else.
+  const uIndivW = e => {
+    if (!e || isUtilExcluded(e.Role)) return undefined;
+    const w = W(), v = w.lookup[normId(e.WorkdayID) + '|' + w.last];
+    return typeof v === 'number' ? v : undefined;
+  };
 
   const NOW = new Date();
   const tenureOf = e => { const d = new Date(String(e['Join Date'] || '')); return isNaN(d) ? null : (NOW - d) / 3.15576e10; };
@@ -2304,6 +2374,7 @@ renderFinderResults();
   const DIM = k => DIMS.find(d => d.key === k);
   let meas = 'count', sel = null;                 // sel = { dim, val }
   const pool = () => sel ? scoped().filter(e => String(DIM(sel.dim).of(e)) === sel.val) : scoped();
+  const poolUtil = () => sel ? scopedUtil().filter(e => String(DIM(sel.dim).of(e)) === sel.val) : scopedUtil();
   // MDs are excluded from utilization everywhere else, so do the same here.
   // "2026-05" -> "May '26". Used by the KPI labels and the trend chart, so it
   // lives at module scope rather than inside the chart block.
@@ -2331,7 +2402,7 @@ renderFinderResults();
       if (meas === 'util'){
         // Hours-weighted over the whole group, matching the headline rate above
         // rather than averaging percentages, and counting Managing Directors.
-        const a = utilOver(g.flatMap(e => ALL_MONTHS.map(mo => normId(e.WorkdayID) + '|' + mo)));
+        const a = utilOverW(g.flatMap(e => W().months.map(mo => normId(e.WorkdayID) + '|' + mo)));
         return { k, n: a === null ? 0 : a, txt: a === null ? '—' : Math.round(a) + '%',
                  col: a === null ? '#DEDEDE' : utilColor(a).bg, has: a !== null };
       }
@@ -2353,19 +2424,19 @@ renderFinderResults();
   }
 
   function render(){
-    const p = pool(), up = noMD(p);
+    const p = pool(), pu = poolUtil(), up = noMD(pu);
     // Band counts describe individuals, so they leave Managing Directors out;
     // the rate below is an aggregate, so it counts everyone's hours.
-    const us = HAS_UTIL ? up.map(uIndiv).filter(v => typeof v === 'number') : [];
+    const us = HAS_UTIL ? up.map(uIndivW).filter(v => typeof v === 'number') : [];
     // Across the whole period, matching the trend chart directly beneath it.
     // Bench / Healthy / Stretched stay point-in-time and are labelled with the
     // month, so one card cannot be read as the other's basis.
-    const uW = HAS_UTIL ? utilOver(p.flatMap(e => ALL_MONTHS.map(mo => normId(e.WorkdayID) + '|' + mo))) : null;
+    const uW = HAS_UTIL ? utilOverW(pu.flatMap(e => W().months.map(mo => normId(e.WorkdayID) + '|' + mo))) : null;
     // Latest-month average — the cut-off the Low utilized tile counts against,
     // and the same rule the desktop Pulse page uses.
-    const uLast = (HAS_UTIL && LATEST_MONTH)
-      ? utilOver(p.map(e => normId(e.WorkdayID) + '|' + LATEST_MONTH)) : null;
-    const lastLbl = LATEST_MONTH ? lbl(LATEST_MONTH) : '';
+    const uLast = (HAS_UTIL && W().last)
+      ? utilOverW(pu.map(e => normId(e.WorkdayID) + '|' + W().last)) : null;
+    const lastLbl = W().last ? lbl(W().last) : '';
     const m = p.filter(e => String(e.Gender || '').trim().toLowerCase() === 'male').length;
     const f = p.filter(e => String(e.Gender || '').trim().toLowerCase() === 'female').length;
     const srs = p.filter(e => isManagerRole(e.Role));
@@ -2377,9 +2448,9 @@ renderFinderResults();
         stat(p.length, sel ? 'In slice' : 'People')
       + stat((m + f) ? m + ' : ' + f : '—', 'Male : female')
       + stat(srs.length ? ((p.length - srs.length) / srs.length).toFixed(1) + '×' : '—', 'Leverage')
-      + stat(exps.length ? avg(exps).toFixed(1) : '—', 'Avg experience');
+      + stat(exps.length ? avg(exps).toFixed(1) : '—', 'Avg total experience');
     $('tm-kpis2').innerHTML = HAS_UTIL
-      ? stat(uW === null ? '—' : Math.round(uW) + '%', 'Avg util · ' + (ALL_MONTHS.length ? lbl(ALL_MONTHS[0]) + '–' + lastLbl : 'period'))
+      ? stat(uW === null ? '—' : Math.round(uW) + '%', 'Avg util · ' + (W().months.length ? lbl(W().months[0]) + '–' + lastLbl : 'period'))
         + stat(uLast === null ? '—' : us.filter(v => v < uLast).length,
                uLast === null ? 'Low utilized · ' + lastLbl
                               : 'Low utilized <' + Math.round(uLast) + '% · ' + lastLbl)
@@ -2397,12 +2468,13 @@ renderFinderResults();
 
     // Trend: monthly average across the current slice, drawn narrow for a phone.
     const tc = $('tm-trend-card');
-    if (!HAS_UTIL || ALL_MONTHS.length < 2){ tc.style.display = 'none'; }
+    if (!HAS_UTIL || W().months.length < 2){ tc.style.display = 'none'; }
     else {
       tc.style.display = '';
       // Hours-weighted, like every other utilization figure.
-      const series = ALL_MONTHS.map(mo =>
-        utilOver(up.map(e => normId(e.WorkdayID) + '|' + mo)));
+      const months = W().months;
+      const series = months.map(mo =>
+        utilOverW(up.map(e => normId(e.WorkdayID) + '|' + mo)));
       const pts = series.map((v, i) => ({ v, i })).filter(x => x.v !== null);
       if (pts.length < 2){ tc.style.display = 'none'; }
       else {
@@ -2436,6 +2508,18 @@ renderFinderResults();
 
   // Utilization has nothing to measure in a build with the data stripped.
   if (!HAS_UTIL){ const seg = $('tm-measure'); if (seg) seg.style.display = 'none'; }
+  if (!HAS_UTIL){ const fy = $('tm-fy'); if (fy) fy.style.display = 'none'; }
+  root.querySelectorAll('#tm-fy button').forEach(b => {
+    if (FY_AVAILABLE[b.dataset.fy] === false){
+      b.disabled = true; b.style.opacity = '0.45';
+      b.title = 'No utilization data supplied for this fiscal year';
+    }
+    b.addEventListener('click', () => {
+      if (b.disabled || b.dataset.fy === anaFY) return;
+      root.querySelectorAll('#tm-fy button').forEach(x => x.classList.toggle('active', x === b));
+      anaFY = b.dataset.fy; render();
+    });
+  });
   root.querySelectorAll('#tm-measure button').forEach(b => b.addEventListener('click', () => {
     if (b.dataset.meas === meas) return;
     root.querySelectorAll('#tm-measure button').forEach(x => x.classList.remove('active'));
