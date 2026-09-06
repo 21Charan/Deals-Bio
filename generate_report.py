@@ -739,6 +739,19 @@ def main():
     except ImportError:
         print("[note] build_static.py not found - skipping the no-JavaScript build.")
 
+    # Data quality companion: an Excel list of what is missing or inconsistent
+    # in this month's extract - blank fields, people with no photo, utilization
+    # holes, values that disagree with each other. Optional in the same way as
+    # the static build: a failure here must never cost you the dashboards.
+    try:
+        import data_quality
+        data_quality.build(workbook_path=INPUT_FILE, images_dir=IMAGES_DIR,
+                           out_path=OUTPUT_DIR / "Data_Quality_Report.xlsx")
+    except ImportError:
+        print("[note] data_quality.py not found - skipping the data quality report.")
+    except Exception as exc:                       # noqa: BLE001 - never fatal
+        print(f"[warn] Data quality report failed ({exc}) - the builds above are unaffected.")
+
 
 if __name__ == "__main__":
     main()

@@ -942,7 +942,7 @@
   .insight-card{background:var(--white);border-radius:6px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
   .insight-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;border-bottom:1px solid var(--pwc-grey-100);padding-bottom:10px}
   .insight-pill{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:0.5px;color:var(--white)}
-  .insight-pill.bench{background:var(--pwc-tangerine)}
+  .insight-pill.low{background:var(--pwc-tangerine)}
   .insight-pill.watch{background:var(--pwc-rose)}
   .insight-pill.new{background:var(--pwc-pink)}
   .insight-sub{font-size:11px;color:var(--pwc-grey-600)}
@@ -959,7 +959,7 @@
   .insight-row-meta{font-size:11px;color:var(--pwc-grey-600)}
   .insight-row-stat{margin-left:auto;font-size:13px;font-weight:700;color:var(--pwc-orange);font-variant-numeric:tabular-nums}
   .insight-row-stat.watch{color:var(--pwc-rose)}
-  .insight-row-stat.bench{color:var(--pwc-tangerine)}
+  .insight-row-stat.low{color:var(--pwc-tangerine)}
   .insight-empty{padding:20px;text-align:center;color:var(--pwc-grey-600);font-size:12px;font-style:italic}
 
   footer{text-align:center;color:var(--pwc-grey-600);font-size:12px;padding:24px}
@@ -1432,7 +1432,7 @@
   <!-- ===== PORTABLE MODULE START: Pulse (HTML). Needs SHARED foundation — see INTEGRATION_GUIDE.md ===== -->
   <section class="tab-panel" id="tab-pulse">
     <h1>Workforce Pulse</h1>
-    <p class="subtitle">Monthly utilization per person &mdash; warmer cells are busier. <strong>On bench</strong> &lt;40% &middot; <strong>Healthy</strong> 80&ndash;100% &middot; <strong>Stretched</strong> &gt;100% &middot; <strong>Burnout watch</strong> = 3-month avg &gt;100%. Filter the team, then click any cell to open the bio.</p>
+    <p class="subtitle">Monthly utilization per person &mdash; warmer cells are busier. <strong>Low utilized</strong> = below the latest-month team average &middot; <strong>Healthy</strong> 80&ndash;100% &middot; <strong>Stretched</strong> &gt;100% &middot; <strong>Burnout watch</strong> = 3-month avg &gt;100%. Filter the team, then click any cell to open the bio.</p>
 
     <!-- Two rows: rates first, then the hours those rates are made of. Every
          figure follows the FY / PY toggle below, so the whole strip is always
@@ -1440,7 +1440,7 @@
     <section class="stats" id="pulse-kpis">
       <div class="stat-card"><div class="value" id="pl-fyavg">-</div><div class="label" id="pl-fyavg-lbl">Avg Utilization</div><div class="stat-note" id="pl-avg-note" hidden></div></div>
       <div class="stat-card t2"><div class="value" id="pl-avg">-</div><div class="label" id="pl-avg-lbl">Latest Month Avg</div></div>
-      <div class="stat-card t3" data-jump="insight-bench" title="Jump to the On the Bench list"><div class="value" id="pl-bench">-</div><div class="label">On the Bench (&lt;40%)</div></div>
+      <div class="stat-card t3" data-jump="insight-low" title="Jump to the Low Utilized list"><div class="value" id="pl-lowutil">-</div><div class="label" id="pl-lowutil-lbl">Low Utilized</div></div>
       <div class="stat-card t4"><div class="value" id="pl-healthy">-</div><div class="label">Healthy (80&ndash;100%)</div></div>
       <div class="stat-card t5"><div class="value" id="pl-stretched">-</div><div class="label">Stretched (&gt;100%)</div></div>
       <div class="stat-card t6" data-jump="insight-watch" title="Jump to the Burnout Watchlist"><div class="value" id="pl-burnout">-</div><div class="label">Burnout Watch (3-mo &gt;100%)</div></div>
@@ -1517,10 +1517,10 @@
     <div class="pulse-insights">
       <div class="insight-card">
         <div class="insight-head">
-          <span class="insight-pill bench">On the Bench</span>
-          <span class="insight-sub">Lowest util this month</span>
+          <span class="insight-pill low">Low Utilized</span>
+          <span class="insight-sub" id="insight-low-sub">Below the team average this month</span>
         </div>
-        <div id="insight-bench" class="insight-list"></div>
+        <div id="insight-low" class="insight-list"></div>
       </div>
       <div class="insight-card">
         <div class="insight-head">
@@ -1558,6 +1558,10 @@
         <button data-view="trend" class="active">Utilization Trends</button>
         <button data-view="mgr">Manager Scorecard</button>
         <button data-view="mix">Workforce Mix</button>
+      </div>
+      <div class="atlas-view-toggle" id="ana-fy-toggle" title="Switch fiscal-year window">
+        <button data-fy="jj" class="active">FY Jul&ndash;Jun</button>
+        <button data-fy="am" title="Performance Year May to April">PY May&ndash;Apr</button>
       </div>
       <span class="ana-meta" id="ana-meta"></span>
     </div>
@@ -2263,11 +2267,15 @@
       .filter(g => buckets[g.title] && buckets[g.title].length)
       .map(g => {
         const cards = buckets[g.title].map(cardHtml).join('');
+        // One person under a plural heading reads as a miscount, so the
+        // heading drops its 's' — same rule the span-of-control line uses.
+        const heading = (buckets[g.title].length === 1 && g.title !== 'Other')
+          ? g.title.slice(0, -1) : g.title;
         return ''
           + '<section class="role-section">'
           +   '<div class="role-header">'
           +     '<span class="role-accent"></span>'
-          +     '<span class="role-title">' + esc(g.title) + '</span>'
+          +     '<span class="role-title">' + esc(heading) + '</span>'
           +     '<span class="role-count">' + buckets[g.title].length + '</span>'
           +   '</div>'
           +   '<div class="dir-grid">' + cards + '</div>'
@@ -3709,6 +3717,11 @@
     return { bg: '#E0301E', dark: false };               // stretched (100%+)
   }
 
+  // The Low Utilized cut-off: the latest-month average shown on the KPI
+  // strip. setPulseKpis writes it and always runs before renderInsights, so
+  // the card, the list and the average above them are one figure.
+  let pulseLowThr = null;
+
   // KPIs (against latest month)
   function setPulseKpis(list, agg, universe){
     list = list || EMPLOYEES;
@@ -3736,14 +3749,17 @@
     // --- row 1: rates -----------------------------------------------------
     set('pl-fyavg', pct(utilOver(keys(agg, MS), HRS, FY.lookup)));
     set('pl-fyavg-lbl', 'Avg Utilization \u00b7 ' + win);
-    set('pl-avg',   pct(last ? utilOver(keys(agg, [last]), HRS, FY.lookup) : null));
+    const lastAvg = last ? utilOver(keys(agg, [last]), HRS, FY.lookup) : null;
+    pulseLowThr = lastAvg;
+    set('pl-avg',   pct(lastAvg));
     set('pl-avg-lbl', 'Latest Month Avg' + (last ? ' \u00b7 ' + fmtMonth(last) : ''));
 
     // Band counts read the same window, so they cannot drift from the average
     // above them when the toggle changes.
     const at = (e, m) => FY.lookup[String(e.WorkdayID) + '|' + m];
     const lv = list.map(e => at(e, last)).filter(v => typeof v === 'number');
-    set('pl-bench',     lv.filter(v => v < 40).length);
+    set('pl-lowutil',   lastAvg === null ? '-' : lv.filter(v => v < lastAvg).length);
+    set('pl-lowutil-lbl', 'Low Utilized' + (lastAvg === null ? '' : ' (< ' + Math.round(lastAvg) + '%)'));
     set('pl-healthy',   lv.filter(v => v >= 80 && v <= 100).length);
     set('pl-stretched', lv.filter(v => v > 100).length);
     // Sustained load over the last three months of this window, needing at
@@ -4119,14 +4135,19 @@
         + '</b>. Export to Excel for the full list.</div>'
       : '';
 
-    // On the bench — lowest latest-month util
-    const benchAll = list
-      .filter(e => typeof latestOf(e) === 'number' && latestOf(e) < 40)
+    // Low utilized — below the latest-month team average, lowest first
+    const lowThr = pulseLowThr;
+    const lowAll = lowThr === null ? [] : list
+      .filter(e => typeof latestOf(e) === 'number' && latestOf(e) < lowThr)
       .sort((a,b) => latestOf(a) - latestOf(b));
-    const bench = benchAll.slice(0, LIST_CAP);
-    document.getElementById('insight-bench').innerHTML = bench.length
-      ? bench.map(e => rowHtml(e, Math.round(latestOf(e)) + '%', 'bench')).join('')
-        + capNote(bench.length, benchAll.length)
+    const low = lowAll.slice(0, LIST_CAP);
+    const lowSub = document.getElementById('insight-low-sub');
+    if (lowSub) lowSub.textContent = lowThr === null
+      ? 'Below the team average this month'
+      : 'Below the ' + Math.round(lowThr) + '% team average this month';
+    document.getElementById('insight-low').innerHTML = low.length
+      ? low.map(e => rowHtml(e, Math.round(latestOf(e)) + '%', 'low')).join('')
+        + capNote(low.length, lowAll.length)
       : '<div class="insight-empty">No utilization data yet.</div>';
 
     // Watch list — sustained 3-month avg > 100, ranked by intensity
@@ -4167,7 +4188,7 @@
       document.querySelectorAll('#' + containerId + ' .insight-row').forEach(r =>
         r.addEventListener('click', () => showBio(r.dataset.id, false, ids)));
     }
-    wireList('insight-bench', bench);
+    wireList('insight-low', low);
     wireList('insight-watch', watch);
     wireList('insight-new', joiners);
   }
@@ -4753,6 +4774,24 @@
     const now = new Date();
     const tenureYrs = e => { const d = new Date(String(e['Join Date'] || '')); return isNaN(d) ? null : (now - d) / 3.15576e10; };
     const HAS_U = !SHARE_MODE && typeof LATEST_MONTH !== 'undefined' && !!LATEST_MONTH;
+    // Fiscal-year window for every utilization figure on this tab — the same
+    // two windows Pulse offers, so a number here reads against a number there.
+    // One toggle for the whole tab: the Scorecard and the Trend view must not
+    // sit on the same page reporting two different latest months.
+    let anaFY = 'jj';
+    const anaWin    = () => FY_DATA[anaFY];
+    const anaMonths = () => anaWin().months;
+    const anaLast   = () => { const m = anaMonths(); return m.length ? m[m.length - 1] : null; };
+    const anaWinLbl = () => anaFY === 'am' ? 'PY May\u2013Apr' : 'FY Jul\u2013Jun';
+    // Sustained load over the last three months OF THE SELECTED WINDOW. The
+    // precomputed _sustained3 is pinned to the full data range and would sit
+    // still while everything around it moved with the toggle.
+    const sus3 = e => {
+      const l3 = anaMonths().slice(-3);
+      const vs = l3.map(m => uAt(e, m)).filter(v => typeof v === 'number');
+      return vs.length >= Math.min(2, l3.length)
+        ? vs.reduce((a, b) => a + b, 0) / vs.length : null;
+    };
     const GRADE_ORDER_T = ROLE_GROUPS.map(g => g.title);
     // Utilization band index (matches the Distribution histogram bins below).
     const utilBandIdx = v => (typeof v !== 'number') ? -1
@@ -4777,6 +4816,22 @@
       document.querySelectorAll('#ana-view-toggle button').forEach(x => x.classList.remove('active'));
       b.classList.add('active'); anaView = b.dataset.view; renderAnalytics();
     }));
+    // A fiscal year with no usable sheet is shown but not selectable, for the
+    // same reason as on Pulse: an empty view under a real label reads as a bug.
+    document.querySelectorAll('#ana-fy-toggle button').forEach(b => {
+      if (FY_AVAILABLE[b.dataset.fy] === false){
+        b.disabled = true;
+        b.style.opacity = '0.45';
+        b.style.cursor = 'not-allowed';
+        b.title = 'No utilization data supplied for this fiscal year';
+      }
+    });
+    document.querySelectorAll('#ana-fy-toggle button').forEach(b => b.addEventListener('click', () => {
+      if (b.disabled || b.dataset.fy === anaFY) return;
+      document.querySelectorAll('#ana-fy-toggle button').forEach(x => x.classList.toggle('active', x === b));
+      anaFY = b.dataset.fy; renderAnalytics();
+    }));
+    if (!HAS_U){ const t = document.getElementById('ana-fy-toggle'); if (t) t.hidden = true; }
 
     function poolA(){
       return EMPLOYEES.filter(e => {
@@ -4907,7 +4962,7 @@
         body.querySelectorAll('.ana-subrow').forEach(x => x.remove());
         if (wasOpen) return;
         const g = (_mgrTeams && _mgrTeams[tr.dataset.mg]) || [];
-        const last = HAS_U && ALL_MONTHS.length ? ALL_MONTHS[ALL_MONTHS.length - 1] : null;
+        const last = HAS_U ? anaLast() : null;
         const chips = g.slice().sort(bySeniority).map(e => {
           const u = (last && !isUtilExcluded(e.Role)) ? uAt(e, last) : undefined;
           return '<span class="ana-chip ana-emp" data-wid="' + esc(String(e.WorkdayID)) + '"><b>' + esc(e.Name) + '</b>'
@@ -4939,9 +4994,9 @@
     }
 
     // -- monthly utilization helpers --
-    const uAt = (e, m) => UTIL_LOOKUP[String(e.WorkdayID) + '|' + m];
+    const uAt = (e, m) => anaWin().lookup[String(e.WorkdayID) + '|' + m];
     // Hours-weighted; falls back to the mean of percentages without Standard Hours.
-    function avgAt(pool, m){ return utilOver(pool.map(e => String(e.WorkdayID) + '|' + m), HOURS, UTIL_LOOKUP); }
+    function avgAt(pool, m){ return utilOver(pool.map(e => String(e.WorkdayID) + '|' + m), HOURS_FYD[anaFY], anaWin().lookup); }
     const insights = items => '<ul class="ana-insights">' + items.filter(Boolean).map(t => '<li>' + t + '</li>').join('') + '</ul>';
     // Utilization data usually lands a month or two in arrears, so never call the
     // latest data month "this month". Labels below derive from the data itself.
@@ -4961,15 +5016,15 @@
 
     // ---- View 1: Utilization Trends — monthly line chart + auto-insights + movers ----
     function renderTrend(pool){
-      if (!HAS_U || !ALL_MONTHS.length) return card('Utilization Trends', 'Utilization data is not included in this build, so this view cannot be shown.', '<div class="mdi-empty">No utilization available.</div>', true);
+      if (!HAS_U || !anaMonths().length) return card('Utilization Trends', 'Utilization data is not included in this build, so this view cannot be shown.', '<div class="mdi-empty">No utilization available.</div>', true);
       const upool = noMD(pool);       // per-person figures: no MD rows or chips
       const apool = pool;               // rates: every grade, so they tie to the workbook
-      const months = ALL_MONTHS;
+      const months = anaMonths();
       const last = months[months.length - 1], prev = months.length > 1 ? months[months.length - 2] : null;
       const curAvg = avgAt(apool, last), prevAvg = prev ? avgAt(apool, prev) : null;
       const lastU = upool.map(e => uAt(e, last)).filter(v => typeof v === 'number');
       const benchN = lastU.filter(v => v < 40).length, hotN = lastU.filter(v => v > 100).length;
-      const burnN = upool.filter(e => typeof e._sustained3 === 'number' && e._sustained3 > 100).length;
+      const burnN = upool.filter(e => { const v = sus3(e); return v !== null && v > 100; }).length;
       const deltas = prev ? upool.map(e => ({ e, a: uAt(e, prev), b: uAt(e, last) }))
         .filter(r => typeof r.a === 'number' && typeof r.b === 'number')
         .map(r => ({ e: r.e, a: r.a, b: r.b, d: r.b - r.a })).sort((x, y) => y.d - x.d) : [];
@@ -4986,7 +5041,7 @@
         '<b>' + benchN + '</b> ' + (benchN === 1 ? 'person is' : 'people are') + ' on the bench (&lt;40%) and <b>' + hotN + '</b> running above 100% ' + inMonth(last) + '.',
         burnN ? '<b>' + burnN + '</b> on burnout watch &mdash; averaging above 100% for three straight months.' : 'No one on burnout watch (3-month average above 100%).'
       ]);
-      return card('Utilization Trend', 'Monthly average utilization for this slice (thick orange) with each grade behind it. Shaded band = healthy 80&ndash;100%; dashed line = 100%.', trendSVG(apool, upool, months), true)
+      return card('Utilization Trend', 'Monthly average utilization for this slice (thick orange) with each grade behind it, over ' + esc(anaWinLbl()) + '. Shaded band = healthy 80&ndash;100%; dashed line = 100%.', trendSVG(apool, upool, months), true)
         + card(monthsBehind(last) <= 0 ? 'This Month in Numbers' : 'Latest Month &mdash; ' + esc(fmtMonth(last)),
             'Auto-computed for ' + esc(fmtMonth(last)) + '.', ins + staleNote(last))
         + card('Biggest Movers', 'Utilization from ' + (prev ? esc(fmtMonth(prev)) : '&mdash;') + ' to ' + esc(fmtMonth(last)) + ' &mdash; who got busier, and who freed up.',
@@ -5033,7 +5088,7 @@
       // People with no RL Manager are deliberately not bucketed, so the table can
       // cover fewer people than the "in scope" count. Say so, or the two disagree.
       const unassigned = pool.filter(e => !String(e['RL Manager'] || '').trim());
-      const last = HAS_U && ALL_MONTHS.length ? ALL_MONTHS[ALL_MONTHS.length - 1] : null;
+      const last = HAS_U ? anaLast() : null;
       const rows = Object.keys(by).map(mg => {
         const g = by[mg], gu = noMD(g);
         // Average over the whole team; the bench / stretched / burnout counts
@@ -5041,12 +5096,12 @@
         const us  = last ? gu.map(e => uAt(e, last)).filter(v => typeof v === 'number') : [];
         const usA = last ? g.map(e => uAt(e, last)).filter(v => typeof v === 'number') : [];
         const exps = g.map(e => parseFloat(e[EXP_TOTAL])).filter(v => !isNaN(v));
-        const s3 = gu.map(e => e._sustained3).filter(v => typeof v === 'number');
+        const s3 = gu.map(sus3).filter(v => v !== null);
         return { mg, n: g.length,
           mf: g.filter(e => gOf(e) === 'm').length + ' : ' + g.filter(e => gOf(e) === 'f').length,
           exp: avgOf(exps), a: avgOf(usA), a3: avgOf(s3),
           bench: us.filter(v => v < 40).length, hot: us.filter(v => v > 100).length,
-          burn: gu.filter(e => typeof e._sustained3 === 'number' && e._sustained3 > 100).length };
+          burn: gu.filter(e => { const v = sus3(e); return v !== null && v > 100; }).length };
       }).sort((x, y) => y.n - x.n);
       const ubar = v => v === null ? '&mdash;'
         : '<div style="display:flex;align-items:center;gap:8px"><div class="ana-bar" style="width:90px;flex:0 0 90px"><div class="ana-seg" style="width:' + Math.min(100, Math.round(v / 120 * 100)) + '%;background:' + (v < 40 ? '#FCC288' : v > 100 ? '#E0301E' : ORANGE) + '"></div></div><b>' + Math.round(v) + '%</b></div>';
@@ -5063,7 +5118,7 @@
               + unassigned.slice(0, 5).map(e => esc(e.Name)).join(', ')
               + (unassigned.length > 5 ? ' + ' + (unassigned.length - 5) + ' more' : '') + '.</div>'
             : '');
-      return card('Manager Scorecard', 'Each RL manager&rsquo;s team within the current slice' + (last ? ', measured on ' + esc(fmtMonth(last)) : '') + '. Bench &lt;40% &middot; Stretched &gt;100% &middot; Burnout = 3-month average &gt;100%. <b>Click a row to see the team</b>; click a name for the bio.', tbl, true);
+      return card('Manager Scorecard', 'Each RL manager&rsquo;s team within the current slice, on ' + esc(anaWinLbl()) + (last ? ', measured on ' + esc(fmtMonth(last)) : '') + '. Bench &lt;40% &middot; Stretched &gt;100% &middot; Burnout = 3-month average &gt;100%. <b>Click a row to see the team</b>; click a name for the bio.', tbl, true);
     }
 
     // ---- View 3: Workforce Mix — auto-highlights + gender & tenure cuts ----
@@ -5144,7 +5199,7 @@
     function deployCards(pool){
       if (!HAS_U) return '';          // the trend card above already says why
       pool = noMD(pool);   // MDs excluded from all utilization views
-      const last = ALL_MONTHS[ALL_MONTHS.length - 1];
+      const last = anaLast();
       const us = pool.map(e => uAt(e, last)).filter(v => typeof v === 'number');
       const hb = [['0&ndash;20%', v => v < 20, '#FFE8D6'], ['20&ndash;40%', v => v >= 20 && v < 40, '#FCC288'],
                   ['40&ndash;60%', v => v >= 40 && v < 60, YELLOW], ['60&ndash;80%', v => v >= 60 && v < 80, TANGERINE],
@@ -5166,7 +5221,7 @@
     }
 
     function scatterSVG(pool){
-      const pts = pool.map(e => ({ e, x: parseFloat(e[EXP_TOTAL]), y: e._latestUtil })).filter(p => !isNaN(p.x) && typeof p.y === 'number');
+      const pts = pool.map(e => ({ e, x: parseFloat(e[EXP_TOTAL]), y: uAt(e, anaLast()) })).filter(p => !isNaN(p.x) && typeof p.y === 'number');
       if (!pts.length) return '<div class="mdi-empty">No utilization data in this slice.</div>';
       const grades = GRADE_ORDER_T.filter(t => pts.some(p => groupForRole(p.e.Role) === t));
       const W = 1160, H = 340, L = 46, R = 14, T = 14, B = 36;

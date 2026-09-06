@@ -1199,7 +1199,10 @@ function renderDirectory(){
   host.innerHTML = ROLE_GROUPS
     .filter(g => buckets[g.title] && buckets[g.title].length)
     .map(g =>
-      '<div class="role-header"><span class="role-accent"></span><span class="role-title">' + esc(g.title) + '</span><span class="role-count">' + buckets[g.title].length + '</span></div>'
+      // One person under a plural heading reads as a miscount. Same rule as desktop.
+      '<div class="role-header"><span class="role-accent"></span><span class="role-title">'
+      + esc((buckets[g.title].length === 1 && g.title !== 'Other') ? g.title.slice(0, -1) : g.title)
+      + '</span><span class="role-count">' + buckets[g.title].length + '</span></div>'
       + '<div class="plist">' + buckets[g.title].map(personRow).join('') + '</div>')
     .join('');
   visibleOrder = ROLE_GROUPS
@@ -2358,6 +2361,10 @@ renderFinderResults();
     // Bench / Healthy / Stretched stay point-in-time and are labelled with the
     // month, so one card cannot be read as the other's basis.
     const uW = HAS_UTIL ? utilOver(p.flatMap(e => ALL_MONTHS.map(mo => normId(e.WorkdayID) + '|' + mo))) : null;
+    // Latest-month average — the cut-off the Low utilized tile counts against,
+    // and the same rule the desktop Pulse page uses.
+    const uLast = (HAS_UTIL && LATEST_MONTH)
+      ? utilOver(p.map(e => normId(e.WorkdayID) + '|' + LATEST_MONTH)) : null;
     const lastLbl = LATEST_MONTH ? lbl(LATEST_MONTH) : '';
     const m = p.filter(e => String(e.Gender || '').trim().toLowerCase() === 'male').length;
     const f = p.filter(e => String(e.Gender || '').trim().toLowerCase() === 'female').length;
@@ -2373,7 +2380,9 @@ renderFinderResults();
       + stat(exps.length ? avg(exps).toFixed(1) : '—', 'Avg experience');
     $('tm-kpis2').innerHTML = HAS_UTIL
       ? stat(uW === null ? '—' : Math.round(uW) + '%', 'Avg util · ' + (ALL_MONTHS.length ? lbl(ALL_MONTHS[0]) + '–' + lastLbl : 'period'))
-        + stat(us.filter(v => v < 40).length, 'Bench · ' + lastLbl)
+        + stat(uLast === null ? '—' : us.filter(v => v < uLast).length,
+               uLast === null ? 'Low utilized · ' + lastLbl
+                              : 'Low utilized <' + Math.round(uLast) + '% · ' + lastLbl)
         + stat(us.filter(v => v >= 80 && v <= 100).length, 'Healthy · ' + lastLbl)
         + stat(us.filter(v => v > 100).length, 'Stretched · ' + lastLbl)
       : '';
