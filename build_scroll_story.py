@@ -5,13 +5,13 @@ Deals Scroll Story — a single-page, scroll-driven showcase of the practice.
 Reads the same workbook as the main dashboard and writes ONE self-contained
 HTML file (logo + photos embedded, no network, no libraries):
 
-    reads   ../../03_Output files/Employee Details.xlsx
+    reads   ../03_Output files/Employee Details.xlsx
               Employee Details          roster, competencies, experience, join dates
               Utilization Full_Jul_Jun  hours for the FY Jul-Jun delivery figures
-            ../../01_Source/Images/<Employee ID or WorkdayID>.png
-            ../../01_Source/PwC Logo.jpg
+            ../01_Source/Images/<Employee ID or WorkdayID>.png
+            ../01_Source/PwC Logo.jpg
             ../01_Source/Skill Images/<Skill name>.svg|png   (floating skill orbs)
-    writes  ../../03_Output files/Deals_Scroll_Story.html   (beside Employee_Dashboard.html)
+    writes  ../03_Output files/Deals_Scroll_Story.html   (beside Employee_Dashboard.html)
 
 That one HTML file is the only thing written.
 
@@ -62,15 +62,34 @@ from build_dark_dashboard import dark_html
 WORKBOOK = Path(r"C:\02_Claude\Deals Skills and Bio\03_Output files\Employee Details.xlsx")
 IMAGES_DIR = Path(r"C:\02_Claude\Deals Skills and Bio\01_Source\Images")
 LOGO = Path(r"C:\02_Claude\Deals Skills and Bio\01_Source\PwC Logo.jpg")
-SKILL_IMG_DIR = Path(r"C:\02_Claude\Deals Skills and Bio\08_Scroll Story\01_Source\Skill Images")
+SKILL_IMG_DIR = Path(r"C:\02_Claude\Deals Skills and Bio\01_Source\Skill Images")
 # written beside the root dashboard and workbook, so every output lives in one folder
 OUT = Path(r"C:\02_Claude\Deals Skills and Bio\03_Output files\Deals_Scroll_Story.html")
 UTIL_SHEET = "Utilization Full_Jul_Jun"
 RATES_SHEET = "Hourly Rates"
-SKILLS_SHEET = "Employee Skills"
+# the dashboard's skills sheet, under any of the names generate_report.py accepts for it
+SKILLS_SHEETS = ("Employee Skills", "Skill Mapping", "Employee Skills Hierarchy")
 RATE_ROLE = {"MD": "Managing Director", "Director": "Director", "SM": "Senior Manager", "M": "Manager",
-             "SA3": "Senior Associate", "SA2": "Senior Associate", "SA1": "Senior Associate",
-             "A2": "Associate 2", "A1": "Associate"}
+             "SA": "Senior Associate", "A2": "Associate 2", "A1": "Associate"}
+# Role as written in the workbook -> the grade key used throughout this script. The workbook may
+# carry full names ("Senior Manager") or grade codes ("SM"); both land on the same key, grouped
+# exactly as generate_report.py's ROLE_RENAME groups them for the dashboard (every Senior
+# Associate level is one grade; A1 is "Associate", A2 "Associate 2"). Anything else is kept as
+# written and sorts after the known grades.
+ROLE_KEY = {
+    "md": "MD", "managing director": "MD",
+    "d": "Director", "director": "Director",
+    "sm": "SM", "sr manager": "SM", "senior manager": "SM",
+    "m": "M", "manager": "M",
+    "sa": "SA", "sa1": "SA", "sa2": "SA", "sa3": "SA", "senior associate": "SA",
+    "a2": "A2", "associate 2": "A2",
+    "a1": "A1", "a": "A1", "a3": "A1", "associate": "A1",
+}
+
+
+def grade_key(v):
+    s = str(v or "").strip()
+    return ROLE_KEY.get(s.lower(), s)
 
 # The dashboard (Directory, Skill Atlas, Capability Risk, Pulse, Team Analytics, Rate Analysis)
 # is built by build_dark_dashboard.dark_html() and embedded in this same file — see dash_panel().
@@ -78,13 +97,14 @@ LIGHT_DASHBOARD_HREF = "../../03_Output files/Employee_Dashboard.html"   # the o
 NO_STORE_META = ('<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">'
                  '<meta http-equiv="Pragma" content="no-cache">')
 TEAM_NAME = "Deals"
-OTHER = "Other"          # the bucket for a blank or "Other..." competency or territory
+OTHER = "Other"
+TERR_SHORT = {"United States of America": "USA"}   # grid headers only; the full name shows on hover          # the bucket for a blank or "Other..." competency or territory
 # The hero mark: the practice stacked, one slab per grade, bottom tier first. Each slab is as
 # wide as the people standing on it, so the widest tier is wherever the bench actually is — the
 # shape is read, not labelled. Group grades together by listing them in one tier; empty ones drop.
 HERO_TIERS = [
     (("A1", "A2"), "#FFB600"),
-    (("SA1", "SA2", "SA3"), "#EB8C00"),
+    (("SA",), "#EB8C00"),
     (("M",), "#FD5108"),
     (("SM",), "#E0301E"),
     (("Director",), "#E669A2"),
@@ -106,8 +126,7 @@ COMPETENCY_CODE = {"Financial Due Diligence": "FDD", "Valuations": "VAL",
                    "Data & Analytics": "D&amp;A", "Business Restructuring Services": "BRS"}
 GRADES = [  # most senior first
     ("MD", "Managing Director"), ("Director", "Director"), ("SM", "Senior Manager"),
-    ("M", "Manager"), ("SA3", "Senior Associate 3"), ("SA2", "Senior Associate 2"),
-    ("SA1", "Senior Associate 1"), ("A2", "Associate 2"), ("A1", "Associate 1"),
+    ("M", "Manager"), ("SA", "Senior Associate"), ("A2", "Associate 2"), ("A1", "Associate"),
 ]
 GRADE_RANK = {g: i for i, (g, _) in enumerate(GRADES)}
 GRADE_LABEL = dict(GRADES)
@@ -201,10 +220,9 @@ def read_workbook():
         if not str(rec.get("Name") or "").strip():
             continue
         rec["Name"] = str(rec["Name"]).strip()
-        rec["Role"] = str(rec.get("Role") or "").strip()
+        rec["Role"] = grade_key(rec.get("Role"))
         rec["_id"] = norm_id(rec.get("WorkdayID"))
         rec["_comp"] = comp_of(rec.get("Competency Filter"))
-        rec["_skills"] = [s.strip() for s in str(rec.get("Skills") or "").split(",") if s.strip()]
         rec["_exp"] = num(rec.get("Experience"))
         jd = rec.get("Join Date")
         if isinstance(jd, str):
@@ -226,8 +244,25 @@ def read_workbook():
                      "ch": num(pick(r, "Chargeable Hours")) or 0.0, "tr": num(pick(r, "Training Hours")) or 0.0,
                      "pct": num(pick(r, "Utilisation%", "Utilization")), "comp": comp_of(pick(r, "Competency Filter")),
                      "terr": str(pick(r, "Territory") or "").strip(),
-                     "role": str(pick(r, "EMP Designation", "Role") or "").strip()})
-    return people, util, sheet_rows(wb, RATES_SHEET), sheet_rows(wb, SKILLS_SHEET)
+                     "role": grade_key(pick(r, "EMP Designation", "Role"))})
+    # Skills the way the dashboard reads them: the skills sheet, one or more rows per person, each
+    # cell split on "," and ";", matched case-insensitively and shown as first written. Only when
+    # the workbook has no skills sheet does the Skills column on Employee Details stand in.
+    sheet = next((n for n in SKILLS_SHEETS if n in wb.sheetnames), None)
+    skill_rows = sheet_rows(wb, sheet) if sheet else []
+    split = lambda v: [s.strip() for s in re.split(r"[,;]", str(v or "")) if s.strip()]
+    held = defaultdict(list)
+    for r in skill_rows:
+        held[norm_id(pick(r, "WorkdayID", "Workday ID"))].extend(split(r.get("Skills")))
+    shown = {}
+    for rec in people:
+        mine = []
+        for s in (held.get(rec["_id"], []) if sheet else split(rec.get("Skills"))):
+            d = shown.setdefault(s.lower(), s)
+            if d not in mine:
+                mine.append(d)
+        rec["_skills"] = mine
+    return people, util, sheet_rows(wb, RATES_SHEET), skill_rows
 
 
 class Delivery:
@@ -459,13 +494,19 @@ def nav(logo_uri):
 </header>"""
 
 
+MARQUEE_MAX_CHARS = 15   # skills this long or longer stay out of the scrolling strip (the tabs list them all)
+MARQUEE_SEC_PER_CHIP = 3.2  # the strip's pace; its duration grows with the number of chips so speed stays even
+
+
 def marquee(skill_counts):
-    items = ranked(skill_counts)
+    items = [(s, c) for s, c in ranked(skill_counts) if len(s) < MARQUEE_MAX_CHARS]
     half = (len(items) + 1) // 2
     rows = []
     for i, chunk in enumerate((items[:half], items[half:])):
         chips = "".join(f'<span class="chip">{e(s)}<sup>{c}</sup></span>' for s, c in chunk)
-        rows.append(f'<div class="mq-row{" rev" if i else ""}"><div class="mq-track">{chips}<span class="dup" aria-hidden="true">{chips}</span></div></div>')
+        dur = max(40, len(chunk) * MARQUEE_SEC_PER_CHIP) * (1.15 if i else 1)
+        rows.append(f'<div class="mq-row{" rev" if i else ""}"><div class="mq-track" style="animation-duration:{dur:.0f}s">'
+                    f'{chips}<span class="dup" aria-hidden="true">{chips}</span></div></div>')
     return f"""
 <section class="marquee" id="skills" aria-label="Skills across the team">
   <p class="mq-label">Skills on the team &middot; number of people who hold each</p>
@@ -546,7 +587,7 @@ def delivery_strip(f):
 LEVELS = [  # grade rows, most senior first. Group grades together by listing them in one row.
     ("Dir", "Directors & MDs", ("MD", "Director")),
     ("SM", "Senior Managers", ("SM",)), ("M", "Managers", ("M",)),
-    ("SA", "Senior Associates", ("SA1", "SA2", "SA3")), ("A", "Associates", ("A1", "A2")),
+    ("SA", "Senior Associates", ("SA",)), ("A", "Associates", ("A1", "A2")),
 ]
 
 # Team shape reads at a finer grain than the competency cards: same groups, with the two
@@ -554,8 +595,8 @@ LEVELS = [  # grade rows, most senior first. Group grades together by listing th
 SHAPE_LEVELS = [
     ("Dir", "Directors & MDs", ("MD", "Director")),
     ("SM", "Senior Managers", ("SM",)), ("M", "Managers", ("M",)),
-    ("SA", "Senior Associates", ("SA1", "SA2", "SA3")),
-    ("A2", "Associate 2", ("A2",)), ("A1", "Associate 1", ("A1",)),
+    ("SA", "Senior Associates", ("SA",)),
+    ("A2", "Associate 2", ("A2",)), ("A1", "Associate", ("A1",)),
 ]
 
 
@@ -604,7 +645,6 @@ def group_card(i, anchor, name, members, f, deliv, lead_html, meta):
 def competencies(comps, deliv, comp_leads, people):
     """Competency cards, with a toggle to the same cards cut by client territory."""
     fy = f" &middot; FY {month_label(deliv.months[0])} &ndash; {month_label(deliv.latest)}" if deliv else ""
-    avg_txt = lambda ms: f"{mean(m['_exp'] for m in ms):.1f} yrs" if mean(m["_exp"] for m in ms) is not None else "—"
     places = lambda ms: e(", ".join(sorted({str(m.get("Location") or "").strip() for m in ms} - {""})))
 
     comp_cards = []
@@ -614,7 +654,7 @@ def competencies(comps, deliv, comp_leads, people):
                 if leads else "Guided directly by the Managing Director")
         terrs = e(", ".join(sorted({str(m.get("Territory") or "").strip() for m in members} - {""})))
         comp_cards.append(group_card(i, f"c{i}", name, members, deliv.figures({name}) if deliv else None, deliv, lead,
-                                     [("Offices", places(members)), ("Client territories", terrs), ("Avg. experience", avg_txt(members))]))
+                                     [("Offices", places(members)), ("Client territories", terrs)]))
 
     by_terr = defaultdict(list)
     for p in people:
@@ -628,7 +668,7 @@ def competencies(comps, deliv, comp_leads, people):
         lead = f"Largest: <b>{e(mix[0][0])}</b>" if mix else "No mapped competency"
         codes = " &middot; ".join(f"{comp_code(c)} {n}" for c, n in mix) or "—"
         terr_cards.append(group_card(i, f"t{i}", name, members, deliv.figures({name}, "terr") if deliv else None, deliv, lead,
-                                     [("Offices", places(members)), ("Competencies", codes), ("Avg. experience", avg_txt(members))]))
+                                     [("Offices", places(members)), ("Competencies", codes)]))
 
     n_c, n_t = len(comps), len(terrs)
     return f"""
@@ -1069,7 +1109,7 @@ def shape(people, children):
         f'<b>{len(m)}</b><span class="pr-s">{len(m) / total_all * 100:.0f}%</span></button>'
         for i, (k, label, m) in enumerate(groups))
 
-    junior = sum(1 for p in people if p["Role"] in ("A1", "A2", "SA1", "SA2", "SA3"))
+    junior = sum(1 for p in people if p["Role"] in ("A1", "A2", "SA"))
     senior = sum(1 for p in people if p["Role"] in ("M", "SM", "Director", "MD"))
     lev = (f'<p class="lev">Leverage <b>{junior / senior:.1f}&times;</b> &mdash; {junior} people below Manager '
            f'for every {senior} at Manager and above.</p>' if senior else "")
@@ -1105,7 +1145,7 @@ def shape(people, children):
     # competency x client territory — every header and every cell is a filter
     cell = Counter(cell_of(p) for p in people)
     top = max((cell[(c, t)] for c in comps for t in terrs), default=0) or 1
-    head = "".join(f'<th><button type="button" class="hm-h" data-ts="t:{i}">{e(t)}</button></th>'
+    head = "".join(f'<th><button type="button" class="hm-h" data-ts="t:{i}" title="{e(t)}">{e(TERR_SHORT.get(t, t))}</button></th>'
                    for i, t in enumerate(terrs))
     body = ""
     for ci, c in enumerate(comps):
@@ -1834,7 +1874,7 @@ h1,h2,h3{font-family:var(--serif);font-weight:400;letter-spacing:-.02em;margin:0
 .tr-h b{color:var(--tx)}
 .trend .spark{margin-top:6px}
 .comp .k{margin-top:20px}
-.meta{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:auto 0 0;padding-top:20px;border-top:1px solid var(--line)}
+.meta{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin:auto 0 0;padding-top:20px;border-top:1px solid var(--line)}
 .comp .chips{margin-bottom:22px}
 .meta dt{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu2)}
 .meta dd{margin:6px 0 0;font-size:13px}

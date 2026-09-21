@@ -3,14 +3,15 @@
 Dark dashboard — the full Employee dashboard (Directory, Skill Atlas, Capability Risk,
 Pulse, Team Analytics, Rate Analysis) re-skinned to match the Scroll Story landing page.
 
-    reads   ../../03_Output files/Employee_Dashboard.html   (built by the root generator)
+    reads   ../03_Output files/Employee_Dashboard.html   (built by the root generator)
     returns the re-skinned HTML as a string — it writes nothing
 
 This is a module, not a script: build_scroll_story.py calls dark_html() and embeds the result,
 so the whole practice site is one file. The root dashboard is only ever read.
 
-    cd "02_Scripts & ETL" && python generate_report.py          # the usual monthly build
-    cd "../08_Scroll Story/02_Scripts & ETL" && python build_scroll_story.py
+    cd "02_Scripts & ETL"
+    python generate_report.py          # the usual monthly build
+    python build_scroll_story.py       # then the dark site, from the same folder
 
 What it changes, and nothing else:
   1. A dark PwC skin appended after the dashboard's own <style>. Colours stay inside the
