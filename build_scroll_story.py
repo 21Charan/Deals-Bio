@@ -58,15 +58,13 @@ import openpyxl
 
 from build_dark_dashboard import dark_html
 
-HERE = Path(__file__).resolve().parent            # 08_Scroll Story/02_Scripts & ETL
-EXPERIMENT = HERE.parent                          # 08_Scroll Story
-ROOT = EXPERIMENT.parent                          # Deals Skills and Bio
-WORKBOOK = ROOT / "03_Output files" / "Employee Details.xlsx"
-IMAGES_DIR = ROOT / "01_Source" / "Images"
-LOGO = ROOT / "01_Source" / "PwC Logo.jpg"
-SKILL_IMG_DIR = EXPERIMENT / "01_Source" / "Skill Images"
+# Full paths, so the script finds its files wherever it is run from. Edit here if a folder moves.
+WORKBOOK = Path(r"C:\02_Claude\Deals Skills and Bio\03_Output files\Employee Details.xlsx")
+IMAGES_DIR = Path(r"C:\02_Claude\Deals Skills and Bio\01_Source\Images")
+LOGO = Path(r"C:\02_Claude\Deals Skills and Bio\01_Source\PwC Logo.jpg")
+SKILL_IMG_DIR = Path(r"C:\02_Claude\Deals Skills and Bio\08_Scroll Story\01_Source\Skill Images")
 # written beside the root dashboard and workbook, so every output lives in one folder
-OUT = ROOT / "03_Output files" / "Deals_Scroll_Story.html"
+OUT = Path(r"C:\02_Claude\Deals Skills and Bio\03_Output files\Deals_Scroll_Story.html")
 UTIL_SHEET = "Utilization Full_Jul_Jun"
 RATES_SHEET = "Hourly Rates"
 SKILLS_SHEET = "Employee Skills"
@@ -195,7 +193,7 @@ def month_label(key):
 
 def read_workbook():
     if not WORKBOOK.exists():
-        raise SystemExit(f"Could not find the workbook at {WORKBOOK}. It is read from the root 03_Output files folder, the same one generate_report.py uses.")
+        raise SystemExit(f"Could not find the workbook at {WORKBOOK}. Check the paths at the top of this script.")
     wb = openpyxl.load_workbook(WORKBOOK, read_only=True, data_only=True)
     today = date.today()
     people = []

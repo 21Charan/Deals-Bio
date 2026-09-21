@@ -25,10 +25,8 @@ What it changes, and nothing else:
 import re
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
-EXPERIMENT = HERE.parent
-ROOT = EXPERIMENT.parent
-SOURCE = ROOT / "03_Output files" / "Employee_Dashboard.html"
+# full path to the root dashboard, the same output folder build_scroll_story.py reads and writes
+SOURCE = Path(r"C:\02_Claude\Deals Skills and Bio\03_Output files\Employee_Dashboard.html")
 # The dashboard is embedded in the landing page, so "Overview" closes the panel rather than
 # navigating anywhere. If it is ever opened on its own the button simply does nothing.
 BACK_BTN = ('<button type="button" class="ds-back" '
