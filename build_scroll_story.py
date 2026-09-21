@@ -51,7 +51,7 @@ import json
 import math
 import re
 from collections import Counter, defaultdict
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import openpyxl
@@ -100,23 +100,30 @@ LIGHT_DASHBOARD_HREF = "../../03_Output files/Employee_Dashboard.html"   # the o
 NO_STORE_META = ('<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">'
                  '<meta http-equiv="Pragma" content="no-cache">')
 TEAM_NAME = "Deals"
-OTHER = "Other"
-TERR_SHORT = {"United States of America": "USA"}   # grid headers only; the full name shows on hover          # the bucket for a blank or "Other..." competency or territory
+OTHER = "Other"          # the bucket for a blank or "Other..." competency or territory
+TERR_SHORT = {"United States of America": "USA"}   # grid headers only; the full name shows on hover
 # The hero mark: the practice stacked, one slab per grade, bottom tier first. Each slab is as
 # wide as the people standing on it, so the widest tier is wherever the bench actually is — the
 # shape is read, not labelled. Group grades together by listing them in one tier; empty ones drop.
+# The Managing Director is not a slab: a small star floats above the top one (STAR_GRADE).
 HERO_TIERS = [
-    (("A1", "A2"), "#FFB600"),
+    (("A1",), "#FFD26A"),
+    (("A2",), "#FFB600"),
     (("SA",), "#EB8C00"),
     (("M",), "#FD5108"),
     (("SM",), "#E0301E"),
     (("Director",), "#E669A2"),
-    (("MD",), "#F5F5F4"),
 ]
-STACK_S = 46.0        # units-per-slab-half-width on screen
-STACK_TILT = 0.46     # how far the stack leans back; 0 is edge-on, 1 is straight down
-STACK_H = 17.0        # slab thickness
-STACK_RY = -32.0      # the angle it rests at, and the one the SVG below is drawn at
+STAR_GRADE = "MD"
+STACK_S = 46.0        # units per slab half-width
+STACK_H = 13.0        # slab thickness
+STACK_GAP = 3.0       # air between slabs, so each grade reads as its own layer
+STACK_RY = -32.0      # the turn it rests at (degrees), and the one the SVG below is drawn at
+STACK_RX = 27.0       # the tilt it rests at: how far you look down on it; a drag returns here
+SPARK_LABEL_GAP = 20.0   # a month's figure is written above its dot only when months are this far apart (SVG units)
+STAR_R = 8.0          # the star's outer radius
+STAR_LIFT = 20.0      # how high the star floats above the top slab, so it clears it at the resting tilt
+LIGHT = (-0.35, 0.8, 0.5)   # where the light comes from, in view space: above, left, towards you
 ORB_COUNT = 6          # skill orbs on the opening screen; they swap every 2–5 s (see BODY_JS)
 
 COMPETENCY_NAMES = {   # Competency Filter value -> display name. Anything else is "Other".
@@ -182,7 +189,11 @@ def sheet_rows(wb, name):
     if name not in wb.sheetnames:
         return []
     rows = wb[name].iter_rows(values_only=True)
-    header = [str(h).strip() if h is not None else "" for h in next(rows)]
+    header, seen = [], Counter()
+    for h in next(rows):            # repeated names made unique, the way generate_report.py does it
+        h = str(h).strip() if h is not None else ""
+        seen[h] += 1
+        header.append(h if seen[h] == 1 or not h else ("PwC Experience" if h == "Experience" else f"{h} ({seen[h]})"))
     return [dict(zip(header, r)) for r in rows if any(c not in (None, "") for c in r)]
 
 
@@ -213,6 +224,33 @@ def month_label(key):
     return f"{MONTHS[int(m) - 1]} '{y[2:]}"
 
 
+DATE_FORMATS = ("%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%m/%d/%Y", "%Y/%m/%d", "%d.%m.%Y",
+                "%d-%b-%Y", "%d-%b-%y", "%d %b %Y", "%d %B %Y", "%b %d, %Y", "%B %d, %Y")
+
+
+def to_date(v):
+    """A date cell as a date: a real date, an Excel serial number, or text in a common format
+    (day-first before month-first, as dates are written here). None when it cannot be read."""
+    if isinstance(v, datetime):
+        return v.date()
+    if isinstance(v, date):
+        return v
+    try:
+        serial = float(v)
+    except (TypeError, ValueError):
+        serial = None
+    if serial is not None and 20000 < serial < 80000:        # Excel's day count from 1899-12-30
+        return (datetime(1899, 12, 30) + timedelta(days=serial)).date()
+    text = str(v or "").strip()
+    for t in (text, text.split(" ")[0], text.split("T")[0]):
+        for fmt in DATE_FORMATS:
+            try:
+                return datetime.strptime(t, fmt).date()
+            except ValueError:
+                pass
+    return None
+
+
 def read_workbook():
     if not WORKBOOK.exists():
         raise SystemExit(f"Could not find the workbook at {WORKBOOK}. Check the paths at the top of this script.")
@@ -227,14 +265,9 @@ def read_workbook():
         rec["_id"] = norm_id(rec.get("WorkdayID"))
         rec["_comp"] = comp_of(rec.get("Competency Filter"))
         rec["_exp"] = num(rec.get("Experience"))
-        jd = rec.get("Join Date")
-        if isinstance(jd, str):
-            try:
-                jd = datetime.strptime(jd[:10], "%Y-%m-%d")
-            except ValueError:
-                jd = None
-        rec["_pwc"] = (today - (jd.date() if isinstance(jd, datetime) else jd)).days / 365.25 \
-            if isinstance(jd, (datetime, date)) else None
+        jd = to_date(rec.get("Join Date"))
+        # time at PwC from the join date; without a readable one, the "PwC Experience" column
+        rec["_pwc"] = (today - jd).days / 365.25 if jd else num(rec.get("PwC Experience"))
         people.append(rec)
 
     util = []   # one entry per hours row
@@ -285,9 +318,10 @@ class Delivery:
     def __bool__(self):
         return bool(self.util)
 
-    def figures(self, keys=None, field="comp"):
-        """Figures over the hours rows whose `field` ("comp" or "terr") is in `keys`; everything when keys is None."""
-        rows = [u for u in self.util if keys is None or u[field] in keys]
+    def figures(self, keys=None, field="comp", ids=None):
+        """Figures over the hours rows whose `field` ("comp" or "terr") is in `keys`; everything when keys is None.
+        With `ids`, only those people's rows (a Director's reporting line)."""
+        rows = [u for u in self.util if (keys is None or u[field] in keys) and (ids is None or u["id"] in ids)]
         std = sum(u["std"] or 0 for u in rows)
         ch = sum(u["ch"] for u in rows)
         pcts = [u["pct"] for u in rows if u["pct"] is not None]
@@ -541,17 +575,24 @@ def kpi(value, label, note="", dec=0, suffix="", count=True):
             + (f'<small>{e(note)}</small>' if note else "") + "</div>")
 
 
+def stagger(tiles, step=110):
+    """Each tile arrives a beat after the one before it, left to right."""
+    return "".join(t.replace('class="kp rv"', f'class="kp rv" style="--d:{i * step}ms"', 1) for i, t in enumerate(tiles))
+
+
 def kpis(row1, row2):
     return f"""
 <section class="kpis-sec" id="numbers">
   <div class="wrap">
-    <div class="kp-row"><p class="kp-h rv">Our people</p><div class="kp-grid">{''.join(row1)}</div></div>
-    <div class="kp-row"><p class="kp-h rv">How we deliver</p><div class="kp-grid">{''.join(row2)}</div></div>
+    <div class="kp-row"><p class="kp-h rv">Our people</p><div class="kp-grid">{stagger(row1)}</div></div>
+    <div class="kp-row"><p class="kp-h rv">How we deliver</p><div class="kp-grid">{stagger(row2)}</div></div>
   </div>
 </section>"""
 
 
-def sparkline(series, months, col, w=320, h=70, caption=True):
+def sparkline(series, months, col, w=320, h=70, caption=True, labels=True):
+    """Monthly utilization as a line with a dot on every month, and each month's figure above its
+    dot when the months sit far enough apart to be read (SPARK_LABEL_GAP)."""
     pts = [(i, v) for i, v in enumerate(series) if v is not None]
     if len(pts) < 2:
         return ""
@@ -561,15 +602,25 @@ def sparkline(series, months, col, w=320, h=70, caption=True):
     else:                            # card: fitted to the data so the shape reads in a small space
         pad = max(4, (max(vals) - min(vals)) * 0.15)
         lo, hi = min(vals) - pad, max(vals) + pad
-    X = lambda i: 4 + i / max(len(series) - 1, 1) * (w - 8)
-    Y = lambda v: h - 4 - (v - lo) / (hi - lo) * (h - 8)
+    step = (w - 8) / max(len(series) - 1, 1)
+    labels = labels and step >= SPARK_LABEL_GAP
+    head = 13 if labels else 4       # room above the line for the figures
+    X = lambda i: 4 + i * step
+    Y = lambda v: h - 4 - (v - lo) / (hi - lo) * (h - 4 - head)
     line = " ".join(f"{X(i):.1f},{Y(v):.1f}" for i, v in pts)
     last_i, last_v = pts[-1]
+    dots = "".join(f'<circle cx="{X(i):.1f}" cy="{Y(v):.1f}" r="{3.5 if i == last_i else 2.2}" fill="{col}"/>' for i, v in pts)
+    text = ""
+    if labels:
+        for i, v in pts:
+            anchor = "start" if i == 0 else "end" if i == len(series) - 1 else "middle"
+            text += (f'<text x="{X(i) - (2 if anchor == "end" else 0):.1f}" y="{Y(v) - 6:.1f}" text-anchor="{anchor}" '
+                     f'class="sp-lb{" last" if i == last_i else ""}">{v:.0f}%</text>')
     svg = (f'<svg class="spark" viewBox="0 0 {w} {h}" role="img" '
             f'aria-label="Monthly utilization {month_label(months[0])} to {month_label(months[-1])}">'
             + (f'<line x1="0" x2="{w}" y1="{Y(100):.1f}" y2="{Y(100):.1f}" class="sp-ref"/>' if lo <= 100 <= hi else "") +
-            f'<polyline points="{line}" fill="none" stroke="{col}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'
-            f'<circle cx="{X(last_i):.1f}" cy="{Y(last_v):.1f}" r="3.5" fill="{col}"/></svg>')
+            f'<polyline points="{line}" fill="none" stroke="{col}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>'
+            f'{dots}{text}</svg>')
     if not caption:
         return svg
     return (svg + f'<div class="sp-t"><span>{month_label(months[0])}</span><span>dashed line = 100%</span>'
@@ -625,7 +676,7 @@ def group_card(i, anchor, name, members, f, deliv, lead_html, meta):
     chips = "".join(f'<span class="chip">{e(s)}<sup>{c}</sup></span>' for s, c in sk)
     trend = ""
     if f:
-        spark = sparkline(f["series"], deliv.months, col, w=300, h=34, caption=False)
+        spark = sparkline(f["series"], deliv.months, col, w=300, h=52, caption=False)
         last = next((v for v in reversed(f["series"]) if v is not None), None)
         if spark and last is not None:
             trend = (f'<div class="trend"><div class="tr-h"><span class="k">Utilization trend</span>'
@@ -708,6 +759,11 @@ def stat_tiles(items, cols=4):
         for i, (v, label, note) in enumerate(items)) + "</div>"
 
 
+def fits(text, column, font=12):
+    """Whether a label is narrow enough to sit over its bar without touching the next one."""
+    return len(text) * font * 0.62 <= column * 0.9
+
+
 def capacity(deliv, people):
     """Practice-level Pulse: the monthly picture and where people sit in the latest month."""
     if not deliv:
@@ -735,11 +791,26 @@ def capacity(deliv, people):
     pts = [(i, r["util"]) for i, r in enumerate(rows) if r["util"] is not None]
     line = " ".join(f"{X(i):.1f},{Yu(v):.1f}" for i, v in pts)
     dots = "".join(f'<circle class="cdot" cx="{X(i):.1f}" cy="{Yu(v):.1f}" r="4"/>' for i, v in pts)
+    # figures on the chart where there is room: chargeable hours just above each bar, and each
+    # month's utilization under its dot (over it if the dot has risen above its bar, so the two
+    # figures never share the same space)
+    col = (W - L - R) / max(n, 1)
+    dl = ""
+    for i, r in enumerate(rows):
+        hrs = f"{r['ch']:,.0f}"
+        top = Yh(r["ch"] + r["tr"])
+        if fits(hrs, col):
+            dl += f'<text class="dl dl-h" x="{X(i):.1f}" y="{top - 6:.1f}" text-anchor="middle">{hrs}</text>'
+        if r["util"] is not None and fits(f"{r['util']:.0f}%", col):
+            y = Yu(r["util"])
+            y = y - 10 if y < top + 8 else y + 20
+            dl += f'<text class="dl dl-u" x="{X(i):.1f}" y="{y:.1f}" text-anchor="middle">{r["util"]:.0f}%</text>'
+
     labels = "".join(
         f'<text class="cy{" alt" if i % 2 else ""}" x="{X(i):.1f}" y="{H - 12}" text-anchor="middle">{month_label(r["m"])}</text>'
         for i, r in enumerate(rows) if n <= 12 or i % 2 == 0)
     chart = (f'<svg class="chart rv" viewBox="0 0 {W} {H}" role="img" aria-label="Chargeable and training hours by month with average utilization">'
-             f'{grid}{bars}<polyline class="cline" points="{line}" fill="none"/>{dots}{labels}</svg>')
+             f'{grid}{bars}<polyline class="cline" points="{line}" fill="none"/>{dots}{dl}{labels}</svg>')
     lm = month_label(deliv.latest)
     tiles = [(f"{t['util']:.0f}%" if t["util"] is not None else "—", "Average utilization", f"FY {month_label(deliv.months[0])} – {lm}"),
              (f"{band['latest']:.0f}%" if band["latest"] is not None else "—", "Latest month", lm),
@@ -803,6 +874,10 @@ def value_section(deliv, rate_of, people):
     mlabels = "".join(
         f'<text class="cy{" alt" if i % 2 else ""}" x="{X(i):.1f}" y="{H - 8}" text-anchor="middle">{month_label(m)}</text>'
         for i, m in enumerate(months))
+    col = (W - 8) / max(len(months), 1)
+    mlabels += "".join(                      # each month's value over its bar, where it fits
+        f'<text class="dl dl-v" x="{X(i):.1f}" y="{Y(x) - 6:.1f}" text-anchor="middle">{money(x)}</text>'
+        for i, x in enumerate(v["by_month"]) if x and fits(money(x), col, 11))
     chart = (f'<svg class="chart rv" viewBox="0 0 {W} {H}" role="img" aria-label="Billable value by month">'
              f'<line class="cx" x1="0" x2="{W}" y1="{H - B:.1f}" y2="{H - B:.1f}"/>{mbars}{mlabels}</svg>')
     return f"""
@@ -839,14 +914,38 @@ def bars(counter, order=None):
         for k, v in items) + "</ul>"
 
 
-def leadership(mds, directors, comps, comp_color, comp_leads, children, photos, deliv, skill_cls, mark):
-    """MD at the centre, Directors on one ring with their competencies under their names,
-    and the competencies no Director leads on an outer layer."""
+SENIOR = ("MD", "Director", "SM")   # "Senior Manager and above", for the leadership orbit
+
+
+def line_of(name, children):
+    """Everyone under a person through the reporting lines, direct and indirect, nearest first."""
+    seen, out, queue = {name}, [], list(children.get(name, []))
+    while queue:
+        n = queue.pop(0)
+        if n not in seen:
+            seen.add(n)
+            out.append(n)
+            queue.extend(children.get(n, []))
+    return out
+
+
+def leadership(mds, directors, comps, comp_color, comp_leads, children, photos, deliv, skill_cls, mark, people):
+    """MD at the centre, Directors on one ring with their competencies under their names, and on an
+    outer layer the competencies no Director leads, with their Senior Managers circling them.
+    The panel on the left is about each Director's own team: everyone in their reporting line."""
     if not directors and not mds:
         return ""
     members = dict(comps)
+    by_name = {p["Name"]: p for p in people}
     n_dir = len(directors)
     d_ang = {d["Name"]: -90 + i * 360 / max(n_dir, 1) for i, d in enumerate(directors)}
+
+    def team_of(d):
+        """(everyone in their line, delivery figures over that line)"""
+        names = line_of(d["Name"], children)
+        team = [by_name[n] for n in names if n in by_name]
+        f = deliv.figures(ids={p["_id"] for p in team}) if deliv and team else None
+        return team, f
 
     # Inner ring: Directors only, each with the competencies they lead written under their name.
     lines, nodes = [], []
@@ -866,63 +965,74 @@ def leadership(mds, directors, comps, comp_color, comp_leads, children, photos, 
             f'<span class="cl-full">{full}</span><span class="cl-code">{short}</span>'
             f'<em>{hc} people</em></span></a>')
 
-    # Outer layer: the remaining competencies, which no Director leads, guided directly by the MD.
-    rest = [(j, n, m) for j, (n, m) in enumerate(comps) if not comp_leads.get(n)]
+    # Outer layer: competencies no Director leads, shown only when they have a Senior Manager or
+    # above, with those Senior Managers circling the competency. Teams with no one that senior
+    # (support functions and the like) are left off the leadership picture.
+    rest = []
+    for j, (n, m) in enumerate(comps):
+        sms = sorted((p for p in m if p["Role"] in SENIOR), key=lambda p: (rank(p), p["Name"]))
+        if not comp_leads.get(n) and sms:
+            rest.append((j, n, m, sms))
     k = len(rest)
-    for q, (j, name, mem) in enumerate(rest):
+    for q, (j, name, mem, sms) in enumerate(rest):
         # in the gaps between Directors while they fit, otherwise evenly round the ring
         if n_dir and k <= n_dir:
-            slot = round(q * n_dir / k)          # spread across the gaps between Directors
+            slot = round(q * n_dir / k)
             a = -90 + 180 / n_dir + slot * 360 / n_dir
         else:
             a = -90 + 180 / k + q * 360 / k
         x, y = polar(47, a)
-        f = deliv.figures({name}) if deliv else None
-        util = f' &middot; {f["util"]:.0f}%' if f and f["util"] is not None else ""
         lines.append(f'<line class="ln dot" data-k="md" x1="500" y1="500" x2="{x*10:.1f}" y2="{y*10:.1f}"/>')
+        sats = "".join(f'<span class="cn-sat" style="--a:{s * 360 / len(sms):.1f}deg" title="{e(p["Name"])} &middot; '
+                       f'{e(GRADE_LABEL.get(p["Role"], p["Role"]))}">{avatar(p, photos)}</span>'
+                       for s, p in enumerate(sms))
+        n_sm = sum(1 for p in sms if p["Role"] == "SM")
+        who = f'{n_sm} Senior Manager{"s" if n_sm != 1 else ""}' if n_sm == len(sms) else f'{len(sms)} senior leaders'
         nodes.append(
-            f'<a class="cn" href="#c{j}" data-k="md" title="{e(name)} · {len(mem)} people" '
+            f'<a class="cn" href="#c{j}" data-k="md" title="{e(name)} &middot; {e(", ".join(p["Name"] for p in sms))}" '
             f'style="--x:{x:.2f}%;--y:{y:.2f}%;--c:{comp_color[name]};--d:{400 + q*90}ms" aria-label="{e(name)}">'
-            f'<span class="cn-b">{comp_code(name)}</span><span class="cn-n">{len(mem)}{util}</span></a>')
+            f'<span class="cn-orb" style="--spin:{22 + q * 4}s">{sats}</span>'
+            f'<span class="cn-b">{comp_code(name)}</span>'
+            f'<span class="cn-n"><b>{who}</b>{len(mem)} people</span></a>')
     legend = ""
     if rest:
-        legend = ('<div class="orbit-legend"><p class="k">Outer ring &middot; guided directly by the Managing Director</p><div class="chips">'
+        legend = ('<div class="orbit-legend"><p class="k">Outer ring &middot; led by Senior Managers, guided by the Managing Director</p><div class="chips">'
                   + "".join(f'<a class="chip" href="#c{j}"><i class="dot" style="background:{comp_color[n]}"></i><b>{comp_code(n)}</b>&nbsp;{e(n)}<sup>{len(m)}</sup></a>'
-                            for j, n, m in rest) + "</div></div>")
+                            for j, n, m, _ in rest) + "</div></div>")
 
     hub_av = "".join(avatar(m, photos) for m in mds[:3])
     md_names = " &amp; ".join(e(m["Name"]) for m in mds[:3])
     hub = (f'<a class="hub md" href="#lead-all" data-go="all" aria-label="Leadership overview">'
            f'<span class="md-avs">{hub_av}</span>'
-           f'<span class="pl"><b>{md_names}</b>Managing Director{"s" if len(mds) > 1 else ""}</span></a>') if mds else \
+           f'<span class="pl"><b class="md-name">{md_names}</b>Managing Director{"s" if len(mds) > 1 else ""}</span></a>') if mds else \
           f'<div class="hub">{mark}</div>'
 
-    # ---- panels
+    # ---- panels: each Director's own team
+    teams = [team_of(d) for d in directors]
     picks = []
     for i, d in enumerate(directors):
+        team, f = teams[i]
         led = [n for n, _ in comps if d in (comp_leads.get(n) or [])]
-        hc = sum(len(members[n]) for n in led)
-        f = deliv.figures(set(led)) if deliv and led else None
-        util_txt = f" &middot; {f['util']:.0f}%" if f and f["util"] is not None else ""
+        util = f"{f['util']:.0f}%" if f and f["util"] is not None else "—"
         picks.append(
             f'<a class="pick" href="#lead-d{i}" data-go="d{i}" style="--c:{comp_color.get(d["_comp"], ACCENTS[0])}">{avatar(d, photos)}'
-            f'<span><b>{e(d["Name"])}</b><span class="s">{e(", ".join(led) or "No competency mapped")}</span></span>'
-            f'<span class="n">{hc}<small>people{util_txt}</small></span></a>')
+            f'<span class="pn"><b>{e(d["Name"])}</b><span class="s">{e(", ".join(led) or "No competency mapped")}</span></span>'
+            f'<span class="ps"><b>{len(team)}</b><small>in team</small><i>{f"{util} util." if team else "no reports"}</i></span></a>')
     md_line = (f"{md_names} guide{'s' if len(mds) == 1 else ''} the practice" if mds else "The practice")
     views = [f"""
       <div class="tm-view on" id="lead-all" data-view="all">
         <p class="eyebrow">Leadership</p>
         <h2>{md_line}.<br>{count_word(n_dir)} Director{"s" if n_dir != 1 else ""} run{"" if n_dir != 1 else "s"} the competencies.</h2>
         <p class="sub">The Managing Director sits at the centre, with each Director's competencies written under their name.
-        The outer ring holds the competencies the Managing Director guides directly. Click a Director to see how their competency is staffed and deployed.</p>
+        The outer ring holds the competencies led by Senior Managers, who circle them. Below, each Director's own team:
+        everyone in their reporting line, directly or through their managers, and that team's utilization. Click one to open it.</p>
         <div class="picks">{''.join(picks)}</div>
       </div>"""]
 
     for i, d in enumerate(directors):
         col = comp_color.get(d["_comp"], ACCENTS[0])
         led = [n for n, _ in comps if d in (comp_leads.get(n) or [])]
-        team = [p for n in led for p in members[n]]
-        f = deliv.figures(set(led)) if deliv and led else None
+        team, f = teams[i]
         desc = str(d.get("Employee Description") or "").strip()
         sk = ranked(Counter(s for p in team for s in set(p["_skills"])), 10)
 
@@ -934,14 +1044,16 @@ def leadership(mds, directors, comps, comp_color, comp_leads, children, photos, 
         if team:
             util = f"{f['util']:.0f}%" if f and f["util"] is not None else "—"
             exp_avg, pwc_avg = mean(p["_exp"] for p in team), mean(p["_pwc"] for p in team)
-            tiles = [(len(team), "Employees"), (util, "Avg utilization"),
-                     (fmt(f["ch"]) if f else "—", "Chargeable hrs"), (f"{f['spare']:.1f}" if f else "—", f"Spare FTE · {month_label(deliv.latest)}" if f else "Spare FTE"),
+            tiles = [(len(team), "In their team"), (util, "Team utilization"),
+                     (fmt(f["ch"]) if f else "—", "Chargeable hrs"),
+                     (f"{f['spare']:.1f}" if f else "—", f"Spare FTE · {month_label(deliv.latest)}" if f else "Spare FTE"),
                      (f"{exp_avg:.1f}" if exp_avg is not None else "—", "Avg experience"),
                      (f"{pwc_avg:.1f}" if pwc_avg is not None else "—", "Avg yrs at PwC"),
-                     (fmt(f["tr"]) if f else "—", "Training hrs"), (team_size(d["Name"], children), "Reporting line")]
+                     (fmt(f["tr"]) if f else "—", "Training hrs")]
             body = f"""
+        <p class="k">Their team &middot; everyone who reports to {e(d["Name"].split()[0])}, directly or through their managers</p>
         <div class="kpis">{''.join(f'<div><b>{v}</b><span>{l}</span></div>' for v, l in tiles)}</div>
-        {f'<p class="k">Monthly utilization</p>{sparkline(f["series"], deliv.months, col)}' if f else ""}
+        {f'<p class="k">Monthly utilization &middot; their team</p>{sparkline(f["series"], deliv.months, col, h=84)}' if f else ""}
         <div class="an">
           <div><p class="k">Grade mix</p>{bars(Counter(p["Role"] for p in team), [g for g, _ in GRADES] + sorted({p["Role"] for p in team} - set(GRADE_RANK)))}</div>
           <div><p class="k">Offices</p>{bars(Counter(str(p.get("Location") or "Unassigned") for p in team))}</div>
@@ -949,7 +1061,7 @@ def leadership(mds, directors, comps, comp_color, comp_leads, children, photos, 
           <div><p class="k">Top skills</p><div class="chips">{''.join(chip(s, c) for s, c in sk)}</div></div>
         </div>"""
         else:
-            body = f'<p class="sub">{e(d["Name"])} has no competency mapped in the workbook, so there is nothing to summarise here.</p>'
+            body = f'<p class="sub">No one reports to {e(d["Name"])} in the workbook, so there is no team to summarise here.</p>'
         views.append(f"""
       <div class="tm-view" id="lead-d{i}" data-view="d{i}" style="--c:{col}">
         <a class="back" href="#lead-all" data-go="all">&larr; Leadership overview</a>
@@ -992,8 +1104,9 @@ def load_skill_images(skill_counts):
 
 
 def stack_geom(people):
-    """Everything the hero mark needs, worked out once: the slabs, and the box they sit in.
-    grade_stack() draws the resting frame from this and STACK_JS re-draws it as it turns."""
+    """Everything the hero mark needs, worked out once: the slabs, the star, and the box they sit in.
+    grade_stack() draws the resting frame from this and STACK_JS re-draws it as it turns. Heights
+    are centred on the middle of the stack, so it turns about its own centre."""
     counts = Counter(str(p.get("Role") or "").strip() for p in people)
     slabs = []
     for grades, colour in HERO_TIERS:
@@ -1004,49 +1117,99 @@ def stack_geom(people):
         return None
     top = max(s["n"] for s in slabs)
     for i, s in enumerate(slabs):
-        s["w"] = round(0.30 + s["n"] / top * 0.62, 4)
-        s["y0"] = i * STACK_H
-        s["y1"] = (i + 1) * STACK_H
-    wmax = max(s["w"] for s in slabs)
-    pad_x = wmax * STACK_S * 1.42 + 3        # the widest slab swings out this far as it turns
-    pad_y = wmax * STACK_S * STACK_TILT + 3  # and its far corner drops this far below the base
-    tall = len(slabs) * STACK_H
-    return {"cx": round(pad_x, 2), "cy": round(tall + pad_y, 2), "s": STACK_S, "tilt": STACK_TILT,
-            "ry": STACK_RY, "vw": round(pad_x * 2, 2), "vh": round(tall + pad_y * 2, 2), "t": slabs}
+        s["w"] = round((0.30 + s["n"] / top * 0.62) * STACK_S, 2)
+        s["y0"] = i * (STACK_H + STACK_GAP)
+        s["y1"] = s["y0"] + STACK_H
+    height = slabs[-1]["y1"]
+    star = None
+    if counts.get(STAR_GRADE):
+        star = {"y": height + STAR_LIFT + STAR_R, "r": STAR_R, "n": counts[STAR_GRADE]}
+        height = star["y"] + STAR_R
+    mid = height / 2
+    for s in slabs:
+        s["y0"] = round(s["y0"] - mid, 2)
+        s["y1"] = round(s["y1"] - mid, 2)
+    if star:
+        star["y"] = round(star["y"] - mid, 2)
+    g = {"ry": STACK_RY, "rx": STACK_RX, "light": LIGHT, "t": slabs, "star": star}
+    # the box is the resting frame's own outline; the SVG overflows it while it is being turned
+    xs, ys = [], []
+    for poly, _ in stack_polys(g, STACK_RY, STACK_RX):
+        xs += [p[0] for p in poly]
+        ys += [p[1] for p in poly]
+    pad = 4
+    g["box"] = [round(min(xs) - pad, 1), round(min(ys) - pad, 1),
+                round(max(xs) - min(xs) + 2 * pad, 1), round(max(ys) - min(ys) + 2 * pad, 1)]
+    return g
+
+
+def shade(hex_colour, k):
+    r, g_, b = (int(hex_colour[i:i + 2], 16) for i in (1, 3, 5))
+    return "#%02x%02x%02x" % tuple(max(0, min(255, round(c * k))) for c in (r, g_, b))
+
+
+def stack_polys(g, ry, rx):
+    """The visible faces at one turn (ry) and tilt (rx), in the order they are painted, each as
+    (screen points, fill). STACK_JS runs the same maths in the page."""
+    th, ph = math.radians(ry), math.radians(rx)
+    ct, st, cp, sp = math.cos(th), math.sin(th), math.cos(ph), math.sin(ph)
+    lx, ly, lz = g["light"]
+    ll = math.sqrt(lx * lx + ly * ly + lz * lz)
+
+    def P(x, y, z):
+        x1, z1 = x * ct + z * st, -x * st + z * ct
+        return (x1, -(y * cp - z1 * sp))
+
+    def lit(n, colour, top):
+        nx, ny, nz = n
+        x1, z1 = nx * ct + nz * st, -nx * st + nz * ct
+        v = (x1, ny * cp - z1 * sp, ny * sp + z1 * cp)          # the normal, in view space
+        if v[2] <= 1e-6:
+            return None                                           # facing away: not drawn
+        d = max(0.0, (v[0] * lx + v[1] * ly + v[2] * lz) / ll)
+        return shade(colour, (0.62 if top else 0.5) + 0.5 * d)
+
+    out = []
+    layers = list(range(len(g["t"]) + (1 if g["star"] else 0)))
+    if sp < 0:
+        layers.reverse()                  # seen from below: the top of the stack is nearest
+    for i in layers:
+        if i == len(g["t"]):
+            cx, cy = P(0, g["star"]["y"], 0)
+            r = g["star"]["r"]
+            pts = [(cx + (r if k % 2 == 0 else r * 0.42) * math.sin(k * math.pi / 5),
+                    cy - (r if k % 2 == 0 else r * 0.42) * math.cos(k * math.pi / 5)) for k in range(10)]
+            out.append((pts, "star"))
+            continue
+        s = g["t"][i]
+        w, y0, y1 = s["w"], s["y0"], s["y1"]
+        q = [(-w, -w), (w, -w), (w, w), (-w, w)]
+        normals = [(0, 0, -1), (1, 0, 0), (0, 0, 1), (-1, 0, 0)]
+        for f in range(4):
+            fill = lit(normals[f], s["c"], False)
+            if fill:
+                a, b = q[f], q[(f + 1) % 4]
+                out.append(([P(a[0], y0, a[1]), P(b[0], y0, b[1]), P(b[0], y1, b[1]), P(a[0], y1, a[1])], fill))
+        for n, y in (((0, 1, 0), y1), ((0, -1, 0), y0)):
+            fill = lit(n, s["c"], True)
+            if fill:
+                out.append(([P(x, y, z) for x, z in q], fill))
+    return out
 
 
 def grade_stack(g, extra=""):
     """The hero mark as SVG, drawn at its resting angle so it still reads with JavaScript off."""
     if not g:
         return ""
-    th = math.radians(g["ry"])
-    cs, sn = math.cos(th), math.sin(th)
-
-    def P(x, z, y):
-        return (g["cx"] + (x * cs + z * sn) * g["s"],
-                g["cy"] - y + (-x * sn + z * cs) * g["s"] * g["tilt"])
-
-    faces = []
-    for i, s in enumerate(g["t"]):
-        w = s["w"]
-        corners = [(-w, -w), (w, -w), (w, w), (-w, w)]
-        for f in range(4):
-            a, b = corners[f], corners[(f + 1) % 4]
-            pts = [P(*a, s["y0"]), P(*b, s["y0"]), P(*b, s["y1"]), P(*a, s["y1"])]
-            depth = (-a[0] * sn + a[1] * cs) + (-b[0] * sn + b[1] * cs)
-            faces.append((depth, i, f, pts, s["c"], 0.62 if depth > 0 else 0.26))
-        top = [P(*c, s["y1"]) for c in corners]
-        faces.append((1e4 + s["y1"], i, 4, top, s["c"], 0.95))
-
-    faces.sort(key=lambda f: f[0])           # painter's order: furthest away first
     paths = "".join(
-        '<path data-t="{}" data-f="{}" d="M{}Z" fill="{}" opacity="{}" '
-        'stroke="rgba(0,0,0,.35)" stroke-width=".6"/>'.format(
-            i, f, "L".join(f"{x:.1f},{y:.1f}" for x, y in pts), colour, op)
-        for _, i, f, pts, colour, op in faces)
+        (f'<path class="stack-star" d="M{"L".join(f"{x:.1f},{y:.1f}" for x, y in pts)}Z">'
+         f'<title>Managing Director{"s" if g["star"]["n"] > 1 else ""}</title></path>') if fill == "star" else
+        f'<path d="M{"L".join(f"{x:.1f},{y:.1f}" for x, y in pts)}Z" fill="{fill}"/>'
+        for pts, fill in stack_polys(g, g["ry"], g["rx"]))
     return (f'<div class="stack-stage {extra}" title="Drag to turn">'
-            f'<svg viewBox="0 0 {g["vw"]} {g["vh"]}" role="img" '
-            f'aria-label="The practice by grade, one slab per grade">{paths}</svg>'
+            f'<svg viewBox="{" ".join(str(v) for v in g["box"])}" role="img" '
+            f'aria-label="The practice by grade, one slab per grade, the Managing Director as a star on top">'
+            f'<g class="stack-g">{paths}</g></svg>'
             f'<span class="stack-glow"></span></div>')
 
 
@@ -1827,7 +1990,7 @@ h1,h2,h3{font-family:var(--serif);font-weight:400;letter-spacing:-.02em;margin:0
 .kp-grid{display:grid;grid-template-columns:repeat(5,1fr)}
 .kp{padding:24px 22px 6px;border-left:1px solid var(--line)}
 .kp:first-child{border-left:0;padding-left:0}
-.kp b{display:block;font-family:var(--serif);font-weight:400;font-size:clamp(40px,4.4vw,66px);line-height:1;letter-spacing:-.03em;white-space:nowrap}
+.kp b{display:block;font-family:var(--serif);font-weight:400;font-size:clamp(40px,4.4vw,66px);line-height:1;letter-spacing:-.03em;white-space:nowrap;font-variant-numeric:tabular-nums lining-nums}
 .kp span{display:block;margin-top:12px;color:var(--mu);font-size:13px;text-transform:uppercase;letter-spacing:.1em}
 .kp small{display:block;margin-top:4px;color:var(--mu2);font-size:12px}
 
@@ -1891,7 +2054,9 @@ h1,h2,h3{font-family:var(--serif);font-weight:400;letter-spacing:-.02em;margin:0
 .stack-stage.grabbing{cursor:grabbing}
 /* the slabs are drawn at their resting angle by the builder, so this reads without JavaScript;
    STACK_JS redraws them frame by frame once it loads, so a drag can take the turn over */
-.stack-stage svg{display:block;height:var(--sh);width:auto;filter:drop-shadow(0 18px 34px rgba(0,0,0,.55))}
+.stack-stage svg{display:block;height:var(--sh);width:auto;overflow:visible;filter:drop-shadow(0 18px 34px rgba(0,0,0,.55))}
+.stack-g path{stroke:rgba(0,0,0,.18);stroke-width:.5;stroke-linejoin:round}
+.stack-g .stack-star{fill:#FFF6DC;stroke:none;filter:drop-shadow(0 0 3px rgba(255,182,0,.95)) drop-shadow(0 0 9px rgba(253,81,8,.55))}
 .stack-glow{position:absolute;left:50%;bottom:-8%;width:160%;height:36%;transform:translateX(-50%);background:radial-gradient(ellipse,rgba(253,81,8,.38),transparent 70%);filter:blur(9px);pointer-events:none;z-index:-1}
 .orbs{position:absolute;inset:0;z-index:1;pointer-events:none}
 .orb{position:absolute;width:112px;height:112px;margin:-56px 0 0 -56px;animation:bob var(--fd,7s) ease-in-out var(--dl,0s) infinite alternate}
@@ -1929,7 +2094,17 @@ h1,h2,h3{font-family:var(--serif);font-weight:400;letter-spacing:-.02em;margin:0
 .dn:hover .av,.dn:focus-visible .av,.dn.sel .av{transform:scale(1.08)}
 @keyframes ping{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--c) 50%,transparent)}70%,100%{box-shadow:0 0 0 20px transparent}}
 .cn{width:60px;height:60px}
-.cn-n{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:5px;font-size:11px;color:var(--mu);white-space:nowrap}
+.cn-n{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:34px;font-size:11px;color:var(--mu);white-space:nowrap;text-align:center}
+.cn-n b{display:block;color:var(--tx);font-weight:600;font-size:11.5px}
+/* a competency's Senior Managers, circling it and staying upright as they go */
+.cn-orb{position:absolute;inset:0;animation:spin var(--spin,24s) linear infinite;pointer-events:none}
+.cn-sat{position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;pointer-events:auto;
+  transform:rotate(var(--a)) translateX(50px) rotate(calc(-1 * var(--a)))}
+.cn-sat .av{width:100%;height:100%;font-size:11px;font-family:var(--sans);font-weight:600;border:1.5px solid var(--c);
+  animation:spin var(--spin,24s) linear infinite reverse}
+.cn:hover .cn-orb,.cn:hover .cn-sat .av{animation-play-state:paused}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hub.md .pl .md-name{color:var(--or);font-size:18px;letter-spacing:.01em;text-shadow:0 0 18px rgba(253,81,8,.45)}
 .pl i,.pl em{display:block;font-style:normal;font-size:11px;line-height:1.35}
 .pl i{color:#cfcfd4}
 .pl em{color:var(--mu2);margin-top:2px}
@@ -1957,8 +2132,13 @@ h1,h2,h3{font-family:var(--serif);font-weight:400;letter-spacing:-.02em;margin:0
 .pick .av{width:48px;height:48px;font-size:17px;border:2px solid var(--c)}
 .pick b{display:block;font-weight:600}
 .pick .s{display:block;font-size:13px;color:var(--mu)}
-.pick .n{margin-left:auto;font-family:var(--serif);font-size:28px;text-align:right;line-height:1}
-.pick .n small{display:block;font-family:var(--sans);font-size:11px;color:var(--mu2);margin-top:4px}
+.pick .pn{min-width:0;flex:1}
+/* three labelled figures, each in its own column, so a count never runs into a percentage */
+/* the team, large, with its utilization small underneath: one figure per line, nothing side by side */
+.pick .ps{margin-left:auto;text-align:right;white-space:nowrap}
+.pick .ps b{display:inline;font-family:var(--serif);font-weight:400;font-size:30px;line-height:1}
+.pick .ps small{margin-left:5px;font-size:11px;color:var(--mu2);letter-spacing:.06em;text-transform:uppercase}
+.pick .ps i{display:block;font-style:normal;margin-top:5px;font-size:12px;color:var(--mu)}
 .back{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--mu);border:1px solid var(--line2);border-radius:999px;padding:8px 15px;margin-bottom:26px;transition:color .2s,border-color .2s}
 .back:hover{color:var(--tx);border-color:var(--c)}
 .tm-head{display:flex;gap:18px;align-items:center}
@@ -1970,9 +2150,12 @@ blockquote{margin:24px 0 0;padding-left:20px;border-left:2px solid var(--c);font
 .chip .ci{width:14px;height:14px;align-self:center;background-size:contain;background-repeat:no-repeat;background-position:center}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin:26px 0 6px}
 .kpis div{background:var(--card);padding:14px}
+.kpis div:last-child:nth-child(4n+3){grid-column:span 2}
 .kpis b{display:block;font-family:var(--serif);font-weight:400;font-size:28px;line-height:1}
 .kpis span{display:block;margin-top:8px;font-size:12px;color:var(--mu2)}
 .spark{display:block;width:100%;height:auto;overflow:visible}
+.spark .sp-lb{font-size:7px;fill:var(--mu);font-family:var(--sans)}
+.spark .sp-lb.last{fill:var(--tx);font-weight:700}
 .sp-ref{stroke:var(--line2);stroke-dasharray:4 5}
 .sp-t{display:flex;justify-content:space-between;font-size:11px;color:var(--mu2);margin-top:6px}
 .sp-t b{color:var(--tx)}
@@ -2086,6 +2269,10 @@ button.hm.is-on{box-shadow:0 0 0 2px var(--yl) inset}
 .btr{fill:var(--tg);opacity:.85}
 .cline{stroke:#fff;stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
 .cdot{fill:#fff}
+.dl{font-size:12px;font-weight:600;font-family:var(--sans)}
+.dl-h{fill:var(--mu)}
+.dl-u{fill:#fff;paint-order:stroke;stroke:#0B0B0D;stroke-width:3.5px;stroke-linejoin:round}
+.dl-v{fill:var(--mu);font-size:11px}
 .lgd{display:flex;gap:20px;flex-wrap:wrap;font-size:12px;color:var(--mu2)}
 .lg{display:inline-flex;align-items:center;gap:7px;color:var(--mu2)}
 .lg::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--dot,var(--or))}
@@ -2145,7 +2332,7 @@ button.hm.is-on{box-shadow:0 0 0 2px var(--yl) inset}
   .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
   .tile b{font-size:28px}
   .cy{font-size:26px}
-  .chart .alt{display:none}
+  .chart .alt,.chart .dl{display:none}
   .mix-rows{grid-template-columns:1fr}
   .hm-t{font-size:12px}
   .statement{padding:14vh 0}
@@ -2176,7 +2363,7 @@ button.hm.is-on{box-shadow:0 0 0 2px var(--yl) inset}
 }
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  .g,.mq-track,.cue span,.orb,.ln.dash,.dn .av{animation:none}
+  .g,.mq-track,.cue span,.orb,.ln.dash,.dn .av,.cn-orb,.cn-sat .av{animation:none}
 }
 
 /* the full dashboard, embedded in this same file — see dash_panel() */
@@ -2208,77 +2395,112 @@ STACK_JS = r"""
   var D = window.__STACK, stages = [].slice.call(document.querySelectorAll('.stack-stage'));
   if (!D || !D.t || !stages.length) return;
   var motion = /\bmotion\b/.test(document.documentElement.className);
+  var L = D.light, LL = Math.sqrt(L[0]*L[0] + L[1]*L[1] + L[2]*L[2]);
+  var NORM = [[0,0,-1],[1,0,0],[0,0,1],[-1,0,0]];
+
+  function shade(hex, k){
+    return '#' + [1,3,5].map(function(i){
+      var c = Math.max(0, Math.min(255, Math.round(parseInt(hex.substr(i, 2), 16) * k)));
+      return (c < 16 ? '0' : '') + c.toString(16);
+    }).join('');
+  }
+  function path(pts){ return 'M' + pts.map(function(p){ return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join('L') + 'Z'; }
+
+  /* the same maths as stack_polys() in the builder: every visible face, in painting order */
+  function polys(ry, rx){
+    var th = ry * Math.PI / 180, ph = rx * Math.PI / 180,
+        ct = Math.cos(th), st = Math.sin(th), cp = Math.cos(ph), sp = Math.sin(ph), out = [];
+    function P(x, y, z){ var z1 = -x * st + z * ct; return [x * ct + z * st, -(y * cp - z1 * sp)]; }
+    function lit(n, c, top){
+      var x1 = n[0] * ct + n[2] * st, z1 = -n[0] * st + n[2] * ct,
+          vx = x1, vy = n[1] * cp - z1 * sp, vz = n[1] * sp + z1 * cp;
+      if (vz <= 1e-6) return null;
+      var d = Math.max(0, (vx * L[0] + vy * L[1] + vz * L[2]) / LL);
+      return shade(c, (top ? 0.62 : 0.5) + 0.5 * d);
+    }
+    var layers = [], i, n = D.t.length + (D.star ? 1 : 0);
+    for (i = 0; i < n; i++) layers.push(i);
+    if (sp < 0) layers.reverse();
+    layers.forEach(function(i){
+      if (i === D.t.length){
+        var c = P(0, D.star.y, 0), r = D.star.r, pts = [];
+        for (var k = 0; k < 10; k++){
+          var rr = k % 2 ? r * 0.42 : r;
+          pts.push([c[0] + rr * Math.sin(k * Math.PI / 5), c[1] - rr * Math.cos(k * Math.PI / 5)]);
+        }
+        out.push([pts, 'star']);
+        return;
+      }
+      var s = D.t[i], w = s.w, q = [[-w,-w],[w,-w],[w,w],[-w,w]], f, fill;
+      for (f = 0; f < 4; f++){
+        fill = lit(NORM[f], s.c, false);
+        if (fill){
+          var a = q[f], b = q[(f + 1) % 4];
+          out.push([[P(a[0], s.y0, a[1]), P(b[0], s.y0, b[1]), P(b[0], s.y1, b[1]), P(a[0], s.y1, a[1])], fill]);
+        }
+      }
+      [[[0,1,0], s.y1], [[0,-1,0], s.y0]].forEach(function(t){
+        fill = lit(t[0], s.c, true);
+        if (fill) out.push([q.map(function(c){ return P(c[0], t[1], c[1]); }), fill]);
+      });
+    });
+    return out;
+  }
+
+  function norm(a){ return ((a % 360) + 540) % 360 - 180; }   /* -180..180 */
 
   stages.forEach(function(stage){
-    var svg = stage.querySelector('svg');
-    if (!svg) return;
-    var faces = [].slice.call(svg.querySelectorAll('path'));
-    if (!faces.length) return;
-    faces.forEach(function(el){
-      el.slab = D.t[+el.getAttribute('data-t')];
-      el.side = +el.getAttribute('data-f');          /* 0-3 are the sides, 4 is the top */
-    });
-    /* the angle the SVG was drawn at, so nothing jumps when this takes over */
-    var ry = D.ry, spin = 20 / 1000, vy = 0, drag = null, last = 0, order = '';
+    var g = stage.querySelector('.stack-g');
+    if (!g) return;
+    var title = (g.querySelector('.stack-star title') || {}).textContent || '';
+    /* the angles the SVG was drawn at, so nothing jumps when this takes over */
+    var ry = D.ry, rx = D.rx, spin = 20 / 1000, vy = 0, drag = null, last = 0;
 
     function apply(){
-      var th = ry * Math.PI / 180, cs = Math.cos(th), sn = Math.sin(th);
-      function P(x, z, y){
-        return [D.cx + (x * cs + z * sn) * D.s, D.cy - y + (-x * sn + z * cs) * D.s * D.tilt];
-      }
-      faces.forEach(function(el){
-        var s = el.slab, w = s.w, q = [[-w,-w],[w,-w],[w,w],[-w,w]], pts, depth;
-        if (el.side === 4){
-          pts = q.map(function(c){ return P(c[0], c[1], s.y1); });
-          depth = 1e4 + s.y1;                        /* tops always paint over the sides */
-          el.setAttribute('opacity', 0.95);
-        } else {
-          var a = q[el.side], b = q[(el.side + 1) % 4];
-          pts = [P(a[0],a[1],s.y0), P(b[0],b[1],s.y0), P(b[0],b[1],s.y1), P(a[0],a[1],s.y1)];
-          depth = (-a[0]*sn + a[1]*cs) + (-b[0]*sn + b[1]*cs);
-          el.setAttribute('opacity', depth > 0 ? 0.62 : 0.26);   /* the far sides sit back */
-        }
-        el.setAttribute('d', 'M' + pts.map(function(c){ return c[0].toFixed(1) + ',' + c[1].toFixed(1); }).join('L') + 'Z');
-        el.depth = depth;
-      });
-      /* painter's order, furthest away first — but only move nodes when it actually changed */
-      var sorted = faces.slice().sort(function(a, b){ return a.depth - b.depth; });
-      var key = sorted.map(function(el){ return el.getAttribute('data-t') + el.side; }).join('');
-      if (key !== order){
-        order = key;
-        sorted.forEach(function(el){ svg.appendChild(el); });
-      }
+      g.innerHTML = polys(ry, rx).map(function(p){
+        return p[1] === 'star'
+          ? '<path class="stack-star" d="' + path(p[0]) + '"><title>' + title + '</title></path>'
+          : '<path d="' + path(p[0]) + '" fill="' + p[1] + '"/>';
+      }).join('');
     }
 
     function frame(t){
-      var dt = last ? Math.min(t - last, 64) : 0;
+      var dt = last ? Math.min(t - last, 64) : 0, moved = false;
       last = t;
       if (!drag){
-        if (Math.abs(vy) > 0.001){          /* the throw you gave it, easing back to the idle turn */
+        if (Math.abs(vy) > 0.001){            /* the throw you gave it, easing back to the idle turn */
           ry += vy * dt;
           vy *= Math.pow(0.9, dt / 16);
-          apply();
+          moved = true;
         } else if (motion){
           ry += spin * dt;
-          apply();
+          moved = true;
         }
+        var off = norm(D.rx - rx);            /* tipped over: settle back to the resting tilt, the short way */
+        if (Math.abs(off) > 0.05){
+          rx += off * (1 - Math.pow(0.9, dt / 16));
+          moved = true;
+        } else if (off){ rx = D.rx; moved = true; }
       }
+      if (moved) apply();
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
 
     stage.addEventListener('pointerdown', function(ev){
-      drag = {x: ev.clientX, t: ev.timeStamp, dx: 0};
+      /* a mouse or pen turns it both ways; a finger only turns it, so a vertical swipe still scrolls */
+      drag = {x: ev.clientX, y: ev.clientY, t: ev.timeStamp, dx: 0, tilt: ev.pointerType !== 'touch'};
       vy = 0;
       stage.classList.add('grabbing');
       if (stage.setPointerCapture) { try { stage.setPointerCapture(ev.pointerId); } catch (e) {} }
     });
     stage.addEventListener('pointermove', function(ev){
       if (!drag) return;
-      var dx = ev.clientX - drag.x, dt = Math.max(ev.timeStamp - drag.t, 1);
+      var dx = ev.clientX - drag.x, dy = ev.clientY - drag.y, dt = Math.max(ev.timeStamp - drag.t, 1);
       ry += dx * 0.45;
+      if (drag.tilt) rx += dy * 0.45;
       drag.dx = dx / dt * 0.45;                 /* degrees per ms, for the release */
-      drag.x = ev.clientX; drag.t = ev.timeStamp;
+      drag.x = ev.clientX; drag.y = ev.clientY; drag.t = ev.timeStamp;
       apply();
       if (ev.cancelable) ev.preventDefault();   /* pan-y still lets the page scroll vertically */
     });
@@ -2292,6 +2514,35 @@ STACK_JS = r"""
     stage.addEventListener('pointercancel', release);
     stage.addEventListener('lostpointercapture', release);
   });
+})();
+"""
+
+PACK_JS = r"""
+(function(){
+  /* Skill chips keep their rank order, but a chip too wide for the rest of a line no longer leaves
+     that space empty: the next chip that does fit moves up into it (first fit, row by row). */
+  var boxes = [].slice.call(document.querySelectorAll('.comp .chips, .tm-view .chips'));
+  if (!boxes.length || !window.ResizeObserver) return;
+  function pack(box){
+    var W = box.clientWidth;
+    if (!W) return;                                   /* hidden (the other toggle view): packed when shown */
+    var gap = parseFloat(getComputedStyle(box).columnGap) || 0, n = 0;
+    var left = [].slice.call(box.children).map(function(el, i){
+      if (el._rank == null) el._rank = i;
+      return {el: el, w: el.getBoundingClientRect().width};
+    }).sort(function(a, b){ return a.el._rank - b.el._rank; });
+    while (left.length){
+      var used = 0;
+      left = left.filter(function(c){
+        var need = used ? used + gap + c.w : c.w;
+        if (used && need > W + 0.5) return true;          /* does not fit this line: try it on the next */
+        used = need; c.el.style.order = n++;
+        return false;
+      });
+    }
+  }
+  var ro = new ResizeObserver(function(es){ es.forEach(function(en){ pack(en.target); }); });
+  boxes.forEach(function(b){ ro.observe(b); });
 })();
 """
 
@@ -2555,18 +2806,23 @@ BODY_JS = r"""
     window.addEventListener('pageshow', function(){ if (window.pageYOffset > 4) settleAbove(); });
     window.addEventListener('load', function(){ if (window.pageYOffset > 4) settleAbove(); });
 
+    var COUNT_MIN = 50;
     function countIn(scope){
       var els = scope.matches && scope.matches('[data-count]') ? [scope] : [];
       els = els.concat([].slice.call(scope.querySelectorAll('[data-count]')));
       els.forEach(function(el){
         if (el._done) return; el._done = true;
-        var to = parseFloat(el.getAttribute('data-count')), t0 = null, dur = 1400;
+        var to = parseFloat(el.getAttribute('data-count')), t0 = null, dur = 1300;
         var dec = +(el.getAttribute('data-dec') || 0), suf = el.getAttribute('data-suffix') || '';
-        if (!isFinite(to)) return;
-        var show = function(x){ el.textContent = x.toLocaleString('en-US', {minimumFractionDigits:dec, maximumFractionDigits:dec}) + suf; };
-        function step(t){ if(t0===null) t0=t; var p=Math.min(1,(t-t0)/dur), v=1-Math.pow(1-p,3);
+        /* Only whole figures big enough to be worth watching climb (hours, utilization). Small
+           counts and averages (4 competencies, 8.4 years) just arrive with their tile's fade:
+           ticking 1-2-3-4 or 0.0-8.4 is what made the row look busy. */
+        if (!isFinite(to) || dec || Math.abs(to) < COUNT_MIN) return;
+        var tile = el.closest('.rv'), wait = tile ? (parseFloat(getComputedStyle(tile).transitionDelay) || 0) * 1000 : 0;
+        var show = function(x){ el.textContent = Math.round(x).toLocaleString('en-US') + suf; };
+        function step(t){ if(t0===null) t0=t; var p=Math.min(1,(t-t0)/dur), v=1-Math.pow(2,-10*p);
           show(p < 1 ? to*v : to); if(p<1) requestAnimationFrame(step); }
-        show(0); requestAnimationFrame(step);
+        show(0); setTimeout(function(){ requestAnimationFrame(step); }, wait);
       });
     }
 
@@ -2717,6 +2973,12 @@ def build():
 
     # photos only for the people the page shows by name (MDs + Directors), each embedded once
     photos, img_css = {}, []
+    for p in [q for q in people if q["Role"] == "SM"]:
+        uri = thumb_uri(p, 96)
+        if uri:
+            pid = p["_id"] or slug(p["Name"])
+            photos[p["Name"]] = pid
+            img_css.append(f'.ph-{pid}{{background-image:url("{uri}")}}')
     for p in mds + directors:
         uri = photo_for(p)
         if uri:
@@ -2752,9 +3014,7 @@ def build():
 
     stack = stack_geom(people)
     # the same geometry grade_stack() drew the resting frame from, so STACK_JS carries on from it
-    stack_js = json.dumps(dict(
-        {k: stack[k] for k in ("cx", "cy", "s", "tilt", "ry")},
-        t=[{"w": t["w"], "y0": t["y0"], "y1": t["y1"]} for t in stack["t"]])) if stack else "null"
+    stack_js = json.dumps({k: stack[k] for k in ("ry", "rx", "light", "t", "star")}) if stack else "null"
     body = "".join([
         nav(logo_uri),
         "<main>",
@@ -2764,7 +3024,7 @@ def build():
         kpis(row1, row2),
         competencies(comps, deliv, comp_leads, people),
         leadership(mds, directors, comps, comp_color, comp_leads, children, photos, deliv, skill_cls,
-                   grade_stack(stack, "hub-stack")),
+                   grade_stack(stack, "hub-stack"), people),
         capacity(deliv, people),
         # Skills & depth and the Directory are the dark dashboard's own tabs (Skill Atlas,
         # Capability Risk, Directory), reached from the button in the nav.
@@ -2793,6 +3053,7 @@ def build():
 <script>window.__STACK={stack_js};</script>
 <script>{DASH_JS}</script>
 <script>{STACK_JS}</script>
+<script>{PACK_JS}</script>
 <script>{SHAPE_JS}</script>
 <script>{BODY_JS}</script>
 </body>
