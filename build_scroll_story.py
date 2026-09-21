@@ -120,6 +120,7 @@ STACK_H = 13.0        # slab thickness
 STACK_GAP = 3.0       # air between slabs, so each grade reads as its own layer
 STACK_RY = -32.0      # the turn it rests at (degrees), and the one the SVG below is drawn at
 STACK_RX = 27.0       # the tilt it rests at: how far you look down on it; a drag returns here
+UTIL_HEADROOM = 1.6     # the Capacity chart's utilization scale tops out at least this far above the busiest month
 SPARK_LABEL_GAP = 20.0   # a month's figure is written above its dot only when months are this far apart (SVG units)
 STAR_R = 8.0          # the star's outer radius
 STAR_LIFT = 20.0      # how high the star floats above the top slab, so it clears it at the resting tilt
@@ -639,7 +640,7 @@ def delivery_strip(f):
 
 
 LEVELS = [  # grade rows, most senior first. Group grades together by listing them in one row.
-    ("Dir", "Directors & MDs", ("MD", "Director")),
+    ("Dir", "MD & Directors", ("MD", "Director")),
     ("SM", "Senior Managers", ("SM",)), ("M", "Managers", ("M",)),
     ("SA", "Senior Associates", ("SA",)), ("A", "Associates", ("A1", "A2")),
 ]
@@ -647,7 +648,7 @@ LEVELS = [  # grade rows, most senior first. Group grades together by listing th
 # Team shape reads at a finer grain than the competency cards: same groups, with the two
 # Associate grades on their own rows. Both lists must cover every grade in GRADES.
 SHAPE_LEVELS = [
-    ("Dir", "Directors & MDs", ("MD", "Director")),
+    ("Dir", "MD & Directors", ("MD", "Director")),
     ("SM", "Senior Managers", ("SM",)), ("M", "Managers", ("M",)),
     ("SA", "Senior Associates", ("SA",)),
     ("A2", "Associate 2", ("A2",)), ("A1", "Associate", ("A1",)),
@@ -677,10 +678,12 @@ def group_card(i, anchor, name, members, f, deliv, lead_html, meta):
     trend = ""
     if f:
         spark = sparkline(f["series"], deliv.months, col, w=300, h=52, caption=False)
-        last = next((v for v in reversed(f["series"]) if v is not None), None)
-        if spark and last is not None:
+        # the header figure is the whole period's average for this competency or territory (total
+        # chargeable over total standard hours, the same figure as the utilization tile), not the
+        # last month: that one is already the last point on the line
+        if spark and f["util"] is not None:
             trend = (f'<div class="trend"><div class="tr-h"><span class="k">Utilization trend</span>'
-                     f'<span>{month_label(deliv.months[0])} &rarr; {month_label(deliv.latest)} &middot; <b>{last:.0f}%</b></span></div>{spark}</div>')
+                     f'<span>{month_label(deliv.months[0])} &rarr; {month_label(deliv.latest)} &middot; avg <b>{f["util"]:.0f}%</b></span></div>{spark}</div>')
     meta_html = "".join(f"<div><dt>{e(k)}</dt><dd>{v}</dd></div>" for k, v in meta)
     return f"""
       <article class="comp rv" id="{anchor}" style="--c:{col};--d:{(i % 2) * 110}ms">
@@ -771,46 +774,55 @@ def capacity(deliv, people):
     rows = deliv.by_month()
     band = deliv.bands([p["_id"] for p in people if p["Role"] != "MD"])   # counts name individuals, so MDs are out
     t = deliv.figures()
-    W, H, L, R, T, B = 1000, 300, 62, 78, 18, 40
-    hmax = max((r["ch"] + r["tr"] for r in rows), default=1) or 1
-    hmax = math.ceil(hmax / 500) * 500
+    # Each bar is the month's standard hours: chargeable at the bottom, non-chargeable (everything
+    # else, training included) on top. Utilization is the chargeable share of that bar, so it is
+    # written once, above the bar, rather than as a second line on its own scale.
+    W, H, L, R, T, B = 1000, 300, 62, 62, 30, 40
+    for r in rows:
+        r["nc"] = max(0.0, (r["std"] or 0) - r["ch"])
+    top_v = max((r["ch"] + r["nc"] for r in rows), default=1) or 1
+    step = next(s_ for s_ in (250, 500, 1000, 2000, 2500, 5000, 10000, 20000, 25000, 50000, 100000)
+                if top_v / s_ <= 4) if top_v <= 400000 else 10 ** len(str(int(top_v // 4)))
+    hmax = math.ceil(top_v / step) * step
+    ticks = [step * k for k in range(int(hmax / step) + 1)]
+    tick = lambda v: f"{v / 1000:g}k" if v >= 1000 else f"{v:g}"
     n = len(rows)
-    bw = (W - L - R) / max(n, 1) * 0.52
-    X = lambda i: L + (i + 0.5) / max(n, 1) * (W - L - R)
+    col = (W - L - R) / max(n, 1)
+    bw = col * 0.56
+    X = lambda i: L + (i + 0.5) * col
     Yh = lambda v: H - B - v / hmax * (H - T - B)
-    Yu = lambda v: H - B - v / 120 * (H - T - B)
+    # Utilization trend on its own light scale at the right. Its ticks sit on the same gridlines as
+    # the hours, and the scale is roomy enough (UTIL_HEADROOM) that the line runs through the orange
+    # part of the bars, clear of the hour figures, rather than over the grey segment's numbers.
+    k = max(len(ticks) - 1, 1)
+    u_top = max((r["util"] for r in rows if r["util"] is not None), default=100)
+    u_step = next((s_ for s_ in (20, 25, 30, 40, 50, 60, 75, 100) if s_ * k >= u_top * UTIL_HEADROOM), 100)
+    umax = u_step * k
+    Yu = lambda v: H - B - v / umax * (H - T - B)
     grid = "".join(
         f'<line class="cx" x1="{L}" y1="{Yh(v):.1f}" x2="{W - R}" y2="{Yh(v):.1f}"/>'
-        f'<text class="cy" x="{L - 8}" y="{Yh(v) + 4:.1f}" text-anchor="end">{v / 1000:.0f}k</text>'
-        f'<text class="cy" x="{W - R + 8}" y="{Yu(p) + 4:.1f}">{p}%</text>'
-        for v, p in zip([0, hmax / 2, hmax], [0, 60, 120]))
-    bars = "".join(
-        f'<rect class="bch" x="{X(i) - bw / 2:.1f}" y="{Yh(r["ch"]):.1f}" width="{bw:.1f}" height="{max(H - B - Yh(r["ch"]), 0):.1f}" rx="3"/>'
-        f'<rect class="btr" x="{X(i) - bw / 2:.1f}" y="{Yh(r["ch"] + r["tr"]):.1f}" width="{bw:.1f}" height="{max(Yh(r["ch"]) - Yh(r["ch"] + r["tr"]), 0):.1f}" rx="3"/>'
-        for i, r in enumerate(rows))
-    pts = [(i, r["util"]) for i, r in enumerate(rows) if r["util"] is not None]
-    line = " ".join(f"{X(i):.1f},{Yu(v):.1f}" for i, v in pts)
-    dots = "".join(f'<circle class="cdot" cx="{X(i):.1f}" cy="{Yu(v):.1f}" r="4"/>' for i, v in pts)
-    # figures on the chart where there is room: chargeable hours just above each bar, and each
-    # month's utilization under its dot (over it if the dot has risen above its bar, so the two
-    # figures never share the same space)
-    col = (W - L - R) / max(n, 1)
-    dl = ""
+        f'<text class="cy" x="{L - 8}" y="{Yh(v) + 4:.1f}" text-anchor="end">{tick(v)}</text>'
+        f'<text class="cy cy-u" x="{W - R + 8}" y="{Yh(v) + 4:.1f}">{u_step * j:g}%</text>' for j, v in enumerate(ticks))
+    bars, dl = "", ""
     for i, r in enumerate(rows):
-        hrs = f"{r['ch']:,.0f}"
-        top = Yh(r["ch"] + r["tr"])
-        if fits(hrs, col):
-            dl += f'<text class="dl dl-h" x="{X(i):.1f}" y="{top - 6:.1f}" text-anchor="middle">{hrs}</text>'
-        if r["util"] is not None and fits(f"{r['util']:.0f}%", col):
-            y = Yu(r["util"])
-            y = y - 10 if y < top + 8 else y + 20
-            dl += f'<text class="dl dl-u" x="{X(i):.1f}" y="{y:.1f}" text-anchor="middle">{r["util"]:.0f}%</text>'
-
+        x0, y_ch, y_top = X(i) - bw / 2, Yh(r["ch"]), Yh(r["ch"] + r["nc"])
+        bars += (f'<rect class="bch" x="{x0:.1f}" y="{y_ch:.1f}" width="{bw:.1f}" height="{max(H - B - y_ch, 0):.1f}" rx="3"/>'
+                 f'<rect class="bnc" x="{x0:.1f}" y="{y_top:.1f}" width="{bw:.1f}" height="{max(y_ch - y_top - 2, 0):.1f}" rx="3"/>')
+        # each segment's hours inside it when the segment is tall and wide enough; utilization on top
+        for v, y0, y1, cls in ((r["ch"], y_ch, H - B, "dl-ch"), (r["nc"], y_top, y_ch, "dl-nc")):
+            txt = f"{v:,.0f}"
+            if v and y1 - y0 >= 20 and fits(txt, col, 11):
+                dl += f'<text class="dl {cls}" x="{X(i):.1f}" y="{(y0 + y1) / 2 + 4:.1f}" text-anchor="middle">{txt}</text>'
+        if r["util"] is not None and fits(f"{r['util']:.0f}%", col, 13):
+            dl += f'<text class="dl dl-u" x="{X(i):.1f}" y="{y_top - 8:.1f}" text-anchor="middle">{r["util"]:.0f}%</text>'
     labels = "".join(
         f'<text class="cy{" alt" if i % 2 else ""}" x="{X(i):.1f}" y="{H - 12}" text-anchor="middle">{month_label(r["m"])}</text>'
         for i, r in enumerate(rows) if n <= 12 or i % 2 == 0)
-    chart = (f'<svg class="chart rv" viewBox="0 0 {W} {H}" role="img" aria-label="Chargeable and training hours by month with average utilization">'
-             f'{grid}{bars}<polyline class="cline" points="{line}" fill="none"/>{dots}{dl}{labels}</svg>')
+    pts = [(X(i), Yu(r["util"])) for i, r in enumerate(rows) if r["util"] is not None]
+    trend = (f'<g class="ut"><polyline class="ut-l" points="{" ".join(f"{x:.1f},{y:.1f}" for x, y in pts)}" fill="none"/>'
+             + "".join(f'<circle class="ut-d" cx="{x:.1f}" cy="{y:.1f}" r="3.6"/>' for x, y in pts) + "</g>") if len(pts) > 1 else ""
+    chart = (f'<svg class="chart rv" viewBox="0 0 {W} {H}" role="img" aria-label="Chargeable and non-chargeable hours by month, with utilization">'
+             f'{grid}{bars}{trend}{dl}{labels}</svg>')
     lm = month_label(deliv.latest)
     tiles = [(f"{t['util']:.0f}%" if t["util"] is not None else "—", "Average utilization", f"FY {month_label(deliv.months[0])} – {lm}"),
              (f"{band['latest']:.0f}%" if band["latest"] is not None else "—", "Latest month", lm),
@@ -826,10 +838,10 @@ def capacity(deliv, people):
     <div class="sec-head">
       <p class="eyebrow rv">Capacity</p>
       <h2 class="rv">How busy the practice is.</h2>
-      <p class="sub rv">Chargeable and training hours month by month, with average utilization over the top. Band counts are people in {e(lm)}, Managing Directors excluded.</p>
+      <p class="sub rv">Each month's standard hours, split into chargeable and non-chargeable (training included), with utilization on top. Band counts are people in {e(lm)}, Managing Directors excluded.</p>
     </div>
     <div class="sh-card">
-      <div class="lgd"><span class="lg lg-ch">Chargeable hours</span><span class="lg lg-tr">Training hours</span><span class="lg lg-u">Average utilization</span></div>
+      <div class="lgd"><span class="lg lg-ch">Chargeable hours</span><span class="lg lg-nc">Non-chargeable hours</span><span class="lg lg-ut">Utilization trend (right scale)</span><span class="lg lg-pct"><b>%</b> utilization, the chargeable share</span></div>
       {chart}
     </div>
     {stat_tiles(tiles)}
@@ -2042,6 +2054,19 @@ h1,h2,h3{font-family:var(--serif);font-weight:400;letter-spacing:-.02em;margin:0
 .comp .k{margin-top:20px}
 .meta{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin:auto 0 0;padding-top:20px;border-top:1px solid var(--line)}
 .comp .chips{margin-bottom:22px}
+/* Cards side by side share their rows, so each part (header, figures, trend, skills, offices)
+   starts at the same height in both cards however tall the other card's header or chips run.
+   Each part is pinned to its row, so a card without a part (no hours sheet) keeps the rest in line.
+   Browsers without subgrid keep the plain column layout above. */
+@supports (grid-template-rows:subgrid){
+  .comp{display:grid;grid-row:span 6;grid-template-rows:subgrid;row-gap:0;align-content:start}
+  .comp>.comp-head{grid-row:1}
+  .comp>.dstrip{grid-row:2;align-self:start}
+  .comp>.trend{grid-row:3;align-self:start}
+  .comp>.k{grid-row:4;align-self:end}
+  .comp>.chips{grid-row:5;align-self:start}
+  .comp>.meta{grid-row:6;align-self:end}
+}
 .meta dt{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu2)}
 .meta dd{margin:6px 0 0;font-size:13px}
 
@@ -2266,22 +2291,27 @@ button.hm.is-on{box-shadow:0 0 0 2px var(--yl) inset}
 .cx{stroke:var(--line)}
 .cy{fill:var(--mu2);font-size:12px}
 .bch{fill:var(--or);opacity:.9}
-.btr{fill:var(--tg);opacity:.85}
-.cline{stroke:#fff;stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
-.cdot{fill:#fff}
 .dl{font-size:12px;font-weight:600;font-family:var(--sans)}
-.dl-h{fill:var(--mu)}
-.dl-u{fill:#fff;paint-order:stroke;stroke:#0B0B0D;stroke-width:3.5px;stroke-linejoin:round}
+.dl-ch{fill:rgba(255,255,255,.92);font-size:11px}
+.dl-nc{fill:var(--mu);font-size:11px}
+.dl-u{fill:#fff;font-size:13px;font-weight:700}
 .dl-v{fill:var(--mu);font-size:11px}
 .lgd{display:flex;gap:20px;flex-wrap:wrap;font-size:12px;color:var(--mu2)}
 .lg{display:inline-flex;align-items:center;gap:7px;color:var(--mu2)}
 .lg::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--dot,var(--or))}
 .lg-ch{--dot:var(--or)}
-.lg-tr{--dot:var(--tg)}
-.lg-u{--dot:#fff}
-.lg-u::before{border-radius:50%}
-.motion .chart .bch,.motion .chart .btr{transform:scaleY(0);transform-origin:50% 100%}
-.motion .chart.in .bch,.motion .chart.in .btr{transform:none;transition:transform .9s var(--ease)}
+.lg-nc{--dot:#4a4a52}
+.lg-pct::before{display:none}
+.lg-ut::before{height:2px!important;width:16px!important;border-radius:1px!important;background:rgba(255,255,255,.85)!important}
+.cy-u{fill:var(--mu2);opacity:.75}
+.ut-l{stroke:rgba(255,255,255,.85);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.ut-d{fill:#16161A;stroke:#fff;stroke-width:1.8}
+.motion .chart .ut{opacity:0;transition:opacity .8s var(--ease) .7s}
+.motion .chart.in .ut{opacity:1}
+.lg-pct b{color:#fff;font-weight:700}
+.bnc{fill:#3a3a42}
+.motion .chart .bch,.motion .chart .bnc{transform:scaleY(0);transform-origin:50% 100%}
+.motion .chart.in .bch,.motion .chart.in .bnc{transform:none;transition:transform .9s var(--ease)}
 
 .mix-rows{display:grid;grid-template-columns:repeat(2,1fr);gap:14px 18px;margin-top:4px}
 .mx b{display:block;font-family:var(--serif);font-weight:400;font-size:26px;line-height:1}
@@ -2963,6 +2993,9 @@ def build():
 
     by_exp = lambda p: (-(p["_exp"] or 0), p["Name"])
     mds = sorted((p for p in people if p["Role"] == "MD"), key=by_exp)
+    # the top grade group reads most senior first, "MD & Directors", or "MDs & Directors" when there are several
+    for levels in (LEVELS, SHAPE_LEVELS):
+        levels[0] = (levels[0][0], ("MDs" if len(mds) > 1 else "MD") + " & Directors", levels[0][2])
     directors = sorted((p for p in people if p["Role"] == "Director"), key=by_exp)
     comp_leads = {name: [d for d in directors if d["_comp"] == name] for name, _ in comps}
 
