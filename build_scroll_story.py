@@ -11,9 +11,9 @@ HTML file (logo + photos embedded, no network, no libraries):
             ../../01_Source/Images/<Employee ID or WorkdayID>.png
             ../../01_Source/PwC Logo.jpg
             ../01_Source/Skill Images/<Skill name>.svg|png   (floating skill orbs)
-    writes  ../03_Output files/Deals_Scroll_Story.html
+    writes  ../../03_Output files/Deals_Scroll_Story.html   (beside Employee_Dashboard.html)
 
-Nothing outside this experiment folder is written to.
+That one HTML file is the only thing written.
 
 The page is deliberately overall-level: headline KPIs, competencies, and the
 leadership structure (Managing Director -> Directors -> competencies). It never
@@ -65,7 +65,8 @@ WORKBOOK = ROOT / "03_Output files" / "Employee Details.xlsx"
 IMAGES_DIR = ROOT / "01_Source" / "Images"
 LOGO = ROOT / "01_Source" / "PwC Logo.jpg"
 SKILL_IMG_DIR = EXPERIMENT / "01_Source" / "Skill Images"
-OUT = EXPERIMENT / "03_Output files" / "Deals_Scroll_Story.html"
+# written beside the root dashboard and workbook, so every output lives in one folder
+OUT = ROOT / "03_Output files" / "Deals_Scroll_Story.html"
 UTIL_SHEET = "Utilization Full_Jul_Jun"
 RATES_SHEET = "Hourly Rates"
 SKILLS_SHEET = "Employee Skills"
@@ -193,6 +194,8 @@ def month_label(key):
 
 
 def read_workbook():
+    if not WORKBOOK.exists():
+        raise SystemExit(f"Could not find the workbook at {WORKBOOK}. It is read from the root 03_Output files folder, the same one generate_report.py uses.")
     wb = openpyxl.load_workbook(WORKBOOK, read_only=True, data_only=True)
     today = date.today()
     people = []
@@ -1224,89 +1227,81 @@ def thumb_uri(rec, px=208):
 def competency_teams(people, comps, comp_color, comp_leads, deliv):
     """The "Competency Teams" view added to the dashboard's Team Analytics tab.
 
-    Each competency is emitted as its reporting tree: the Director who leads it at the root, then
-    whoever reports to them, and so on down. The view walks one level at a time — the person in
-    focus, their direct reports around them, and each report's own people as dots orbiting them —
-    so you can drill Director, Senior Manager, Manager, people. Built from the roster rather than
-    from the dashboard's own tables, so it needs no hooks into the dashboard's code.
+    Each competency starts from its top-level people: everyone whose RL manager sits outside it
+    (its Directors, and anyone who reports into another team), shown side by side. Picking one
+    opens their team as a top-down org chart, one branch at a time; a person with no one below
+    them opens their bio. Built from the roster, so it needs no hooks into the dashboard's code.
     """
     if not comps:
         return "", "", "{}"
 
-    by_name = {p["Name"]: p for p in people}
     css, out = [], []
     s_ = lambda v: str(v or "").strip()
+    order = lambda q: (rank(q), q["Name"])
 
     def node(p):
-        return {"n": p["Name"], "r": GRADE_LABEL.get(p["Role"], p["Role"]),
-                "o": str(p.get("Location") or "").strip(), "i": initials(p["Name"])}
+        return {"n": p["Name"], "r": GRADE_LABEL.get(p["Role"], p["Role"]), "o": s_(p.get("Location")),
+                "i": initials(p["Name"]), "w": p["_id"]}
 
     for idx, (name, members) in enumerate(comps):
         leads = comp_leads.get(name) or []
-        lead = leads[0] if leads else None
         names = {p["Name"] for p in members}
 
         reports = defaultdict(list)                  # only inside this competency
         for p in members:
-            mgr = str(p.get("RL Manager") or "").strip()
+            mgr = s_(p.get("RL Manager"))
             if mgr in names and mgr != p["Name"]:
                 reports[mgr].append(p)
 
         seen = set()
 
         def subtree(person):
-            """The person and everyone under them, deepest grade first at each level."""
+            """The person and everyone under them, most senior first at each level."""
             seen.add(person["Name"])
-            kids = [k for k in sorted(reports.get(person["Name"], []), key=lambda q: (rank(q), q["Name"]))
-                    if k["Name"] not in seen]
+            kids = [k for k in sorted(reports.get(person["Name"], []), key=order) if k["Name"] not in seen]
             for k in kids:
                 seen.add(k["Name"])
             out_node = node(person)
             out_node["k"] = [subtree(k) for k in kids]
             return out_node
 
-        root = subtree(lead) if lead else None
-        # Anyone the lead's line does not reach reports to someone outside this competency. They
-        # still belong to it, so they hang off the root in the diagram (marked "x") and the side
-        # panel lists them separately. Without a Director the competency itself becomes the root,
-        # so the view is never an empty circle.
-        orphans = [p for p in members if p["Name"] not in seen]
-        rest = [node(p) for p in sorted(orphans, key=lambda p: (rank(p), p["Name"]))]
-        if root is None:
-            root = {"n": name, "r": "Competency", "o": "", "i": COMPETENCY_CODE.get(name, name[:2].upper()),
-                    "k": [], "comp": 1}
-            for p in sorted(members, key=lambda q: (rank(q), q["Name"])):
-                root["k"].append(subtree(p)) if p["Name"] not in seen else None
-        else:
-            for p in sorted(orphans, key=lambda q: (rank(q), q["Name"])):
-                if p["Name"] not in seen:
-                    root["k"].append(dict(subtree(p), x=1))
-            root["k"].sort(key=lambda kid: (0 if not kid.get("x") else 1, -len(kid.get("k", [])), kid["n"]))
+        # Top level: whoever reports outside this competency, most senior first. Then anyone a
+        # reporting loop kept out of every line, so no member is ever left off the chart.
+        tops = [p for p in sorted(members, key=order)
+                if s_(p.get("RL Manager")) not in names or s_(p.get("RL Manager")) == p["Name"]]
+        heads = []
+        for p in tops + sorted(members, key=order):
+            if p["Name"] in seen:
+                continue
+            h = subtree(p)
+            h["mg"] = s_(p.get("RL Manager"))
+            photo = thumb_uri(p)
+            if photo:
+                cls = f"ct-ph{idx}-{len(heads)}"
+                css.append(f".{cls}{{background-image:url({photo})}}")
+                h["ph"] = cls
+            heads.append(h)
 
         f = deliv.figures({name}) if deliv else None
         pp = deliv.per_person({name}) if deliv else {}
         exps = [p["_exp"] for p in members if p["_exp"] is not None]
         grades = Counter(GRADE_LABEL.get(p["Role"], p["Role"]) for p in members)
-        photo = thumb_uri(lead) if lead else ""
-        if photo:
-            cls = f"ct-ph{idx}"
-            css.append(f".{cls}{{background-image:url({photo})}}")
-            root["ph"] = cls
 
         out.append({
-            "n": name, "col": comp_color.get(name, "#FD5108"), "root": root, "rest": rest,
+            "n": name, "col": comp_color.get(name, "#FD5108"), "lead": leads[0]["Name"] if leads else "",
+            "h": heads,
             "st": {"people": len(members),
                    "leads": sum(1 for p in members if reports.get(p["Name"])),
                    "util": (round(f["util"]) if f and f["util"] is not None else None),
                    "ch": (round(f["ch"]) if f else None),
                    "fte": (round(f["spare"], 1) if f else None),
                    "exp": (round(sum(exps) / len(exps), 1) if exps else None),
-                   "off": len({str(p.get("Location") or "").strip() for p in members if str(p.get("Location") or "").strip()}),
-                   "terr": len({str(p.get("Territory") or "").strip() for p in members
-                                if str(p.get("Territory") or "").strip() and not is_other_territory(str(p.get("Territory")))}),
+                   "off": len({s_(p.get("Location")) for p in members if s_(p.get("Location"))}),
+                   "terr": len({s_(p.get("Territory")) for p in members
+                                if s_(p.get("Territory")) and not is_other_territory(s_(p.get("Territory")))}),
                    "g": [[g, c] for g, c in sorted(grades.items(), key=lambda kv: GRADE_RANK.get(
                        next((k for k, v in GRADE_LABEL.items() if v == kv[0]), ""), 99))]},
-            # one row per member, so the Team Analytics filters can re-add the tiles in the page:
+            # one row per member, so the tiles can be re-added in the page for a slice or a line:
             # name, grade, experience, office, territory (blank if "other"), has a team,
             # standard hrs, chargeable hrs, spare FTE. The filters themselves are matched against
             # the dashboard's own EMPLOYEES records, which carry the root build's renamed values.
@@ -1325,13 +1320,12 @@ def competency_teams(people, comps, comp_color, comp_leads, deliv):
     # the same card as the tab's other views, so switching views keeps the content where it was
     html = f"""<div class="ct-wrap ana-card full" id="ct-wrap" hidden>
   <h3 class="ana-h">Competency Teams</h3>
-  <p class="ana-sub ct-intro">Every competency as its reporting line: the Director who leads it, the people who report to them, and the size of each of those teams as dots orbiting them. Click anyone with a team to go a level deeper. The filters above narrow who is counted: the tiles and grade mix cover only the people in the slice, and anyone outside it stays in the diagram, dimmed, so the reporting line still reads.</p>
+  <p class="ana-sub ct-intro">Each competency starts from its top-level people. Pick one to open their team as an org chart, then click anyone with a team to go a level down, one branch at a time. Click someone with no one below them to open their bio. The filters above narrow who is counted; anyone outside the slice stays in the chart, dimmed, so the reporting line still reads.</p>
   <div class="ct-picker" id="ct-picker">{chips}</div>
+  <div class="ct-sum" id="ct-sum"></div>
   <nav class="ct-crumbs" id="ct-crumbs" aria-label="Reporting line"></nav>
-  <div class="ct-stage">
-    <div class="ct-diagram" id="ct-diagram"></div>
-    <aside class="ct-side" id="ct-side"></aside>
-  </div>
+  <div class="ct-heads" id="ct-heads"></div>
+  <div class="ct-tree" id="ct-tree"></div>
 </div>"""
     lm = month_label(deliv.latest) if deliv and deliv.latest else ""
     return html, "\n".join(css), json.dumps({"c": out, "lm": lm}, separators=(",", ":"))
@@ -1340,80 +1334,102 @@ def competency_teams(people, comps, comp_color, comp_leads, deliv):
 CT_CSS = r"""
 /* ===== Competency Teams — a Team Analytics view added by build_scroll_story.py ===== */
 .ct-wrap[hidden]{display:none}
-.ct-intro{max-width:820px}
-.ct-picker{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
+.ct-intro{max-width:860px}
+.ct-picker{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
 .ct-chip{display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,.04);border:1px solid var(--ds-line);
   border-radius:999px;padding:9px 16px;color:var(--ds-mu);font:inherit;font-size:13px;cursor:pointer;transition:all .18s}
 .ct-chip:hover{color:var(--ds-tx);background:rgba(255,255,255,.08)}
 .ct-chip.is-on{color:var(--ds-tx);border-color:rgba(253,81,8,.6);background:rgba(253,81,8,.12)}
+.ct-chip[hidden]{display:none}
 .ct-chip b{font-weight:600}
 .ct-chip .ct-n{color:var(--ds-mu2)}
 .ct-dot{width:9px;height:9px;border-radius:50%;flex:none}
-.ct-stage{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:28px;align-items:start}
-.ct-diagram{position:relative;width:100%;aspect-ratio:1;max-width:560px;margin:0 auto}
-.ct-diagram svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.ct-node{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:7px;
-  background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:center;width:112px}
-.ct-av{width:56px;height:56px;border-radius:50%;background:#1b1b21 center/cover no-repeat;border:2px solid var(--ds-line2);
-  display:grid;place-items:center;font-weight:600;font-size:15px;color:var(--ds-tx);transition:transform .2s,border-color .2s,box-shadow .2s}
-.ct-node:hover .ct-av{transform:scale(1.06)}
-.ct-node.is-on .ct-av{box-shadow:0 0 0 3px rgba(253,81,8,.35)}
-.ct-node.has-team .ct-av{border-color:rgba(253,81,8,.45)}
 
-/* each person's own reports, orbiting them: one dot each, up to ten */
-.ct-av{position:relative}
-.ct-orb{position:absolute;inset:0;pointer-events:none;animation:ct-spin var(--spin,20s) linear infinite}
-/* the dots ride outside the circle: avatar radius plus a gap, so they never sit on the rim */
-.ct-orb i{position:absolute;left:50%;top:50%;width:6px;height:6px;border-radius:50%;
-  background:var(--pwc-tangerine,#EB8C00);box-shadow:0 0 6px rgba(235,140,0,.5);
-  transform:translate(-50%,-50%) rotate(var(--a)) translateX(38px)}
-.ct-lead .ct-orb i{width:7px;height:7px;transform:translate(-50%,-50%) rotate(var(--a)) translateX(60px)}
-@keyframes ct-spin{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.ct-orb{animation:none}}
+/* summary strip: who is in focus, then their tiles */
+.ct-sum{display:grid;grid-template-columns:minmax(210px,280px) minmax(0,1fr);gap:20px;align-items:center;
+  border:1px solid var(--ds-line);border-radius:14px;padding:16px 18px;margin:0 0 16px;background:rgba(255,255,255,.02)}
+.ct-sum h4{margin:0 0 3px;font-family:var(--serif);font-size:19px;font-weight:400;color:var(--ds-tx)}
+.ct-sum .ct-meta{margin:0 0 9px;color:var(--ds-mu);font-size:12.5px}
+.ct-gm{display:flex;flex-wrap:wrap;gap:5px}
+.ct-gm span{font-size:11px;color:var(--ds-mu);border:1px solid var(--ds-line);border-radius:999px;padding:2px 8px}
+.ct-gm b{color:var(--ds-tx);font-weight:600}
+.ct-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:10px}
+.ct-tile{border:1px solid var(--ds-line);border-radius:12px;padding:10px 12px}
+.ct-tile b{display:block;font-family:var(--serif);font-size:20px;color:var(--ds-tx);line-height:1.1}
+.ct-tile span{font-size:11px;color:var(--ds-mu2)}
 
-/* the reporting line you have drilled into */
-.ct-crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 16px;font-size:13px}
+/* the reporting line you have opened */
+.ct-crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 14px;font-size:13px;min-height:22px}
 .ct-crumb{background:none;border:0;padding:2px 4px;font:inherit;color:var(--pwc-orange);cursor:pointer;border-radius:6px}
 .ct-crumb:hover{background:rgba(255,255,255,.07)}
 .ct-crumb.is-on{color:var(--ds-tx);cursor:default;font-weight:600}
 .ct-sep{color:var(--ds-mu2)}
-.ct-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;width:100%;background:none;border:0;
-  padding:7px 6px;margin:0 -6px;font:inherit;font-size:13px;color:inherit;text-align:left;cursor:pointer;border-radius:8px}
-.ct-row:hover{background:rgba(255,255,255,.05)}
-.ct-list li{padding:0}
-.ct-lead .ct-av{width:92px;height:92px;font-size:24px;font-family:var(--serif)}
-.ct-lead{width:190px}
-.ct-nm{font-size:12.5px;font-weight:600;color:var(--ds-tx);line-height:1.25}
-.ct-sub{font-size:11.5px;color:var(--ds-mu)}
-.ct-cnt{font-size:11px;color:var(--ds-mu2)}
-.ct-node.dim{opacity:.32}
-.ct-side{border:1px solid var(--ds-line);border-radius:16px;padding:20px 22px;background:var(--ds-card);min-width:0}
-.ct-side h3{margin:0 0 4px;font-size:19px}
-.ct-side .ct-meta{color:var(--ds-mu);font-size:13px;margin:0 0 16px}
-.ct-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:10px;margin-bottom:18px}
-.ct-tile{border:1px solid var(--ds-line);border-radius:12px;padding:11px 12px}
-.ct-tile b{display:block;font-family:var(--serif);font-size:21px;color:var(--ds-tx);line-height:1.1}
-.ct-tile span{font-size:11px;color:var(--ds-mu2)}
-.ct-k{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ds-mu2);margin:18px 0 9px;font-weight:600}
-.ct-bar{display:grid;grid-template-columns:minmax(0,1fr) 46px;align-items:center;gap:10px;font-size:13px;color:var(--ds-mu);padding:3px 0}
-.ct-bar u{display:block;height:6px;border-radius:4px;background:rgba(255,255,255,.06);text-decoration:none}
-.ct-bar i{display:block;height:6px;border-radius:4px;background:var(--pwc-tangerine,#EB8C00)}
-.ct-bar u{display:block;height:6px;border-radius:4px;background:rgba(255,255,255,.06);text-decoration:none}
-.ct-bar b{color:var(--ds-tx);text-align:right}
-.ct-list{max-height:320px;overflow:auto;margin:0;padding:0;list-style:none}
-.ct-list li{display:block;border-top:1px solid var(--ds-line);font-size:13px}
-.ct-list li:not(:has(.ct-row)){display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:7px 0}
-.ct-list li:first-child{border-top:0}
-.ct-list .who{color:var(--ds-tx);font-weight:500}
-.ct-list .where{color:var(--ds-mu2);font-size:12px}
-.ct-list li.dim{opacity:.4}
-.ct-chip[hidden]{display:none}
+
+/* avatars */
+.ct-av{flex:none;width:38px;height:38px;border-radius:50%;background:#24242b center/cover no-repeat;border:1.5px solid var(--ds-line2);
+  display:grid;place-items:center;overflow:hidden;font-weight:600;font-size:12.5px;color:var(--ds-tx)}
+.ct-av img{width:100%;height:100%;object-fit:cover}
+
+/* top-level people, side by side */
+.ct-heads{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin:0 0 8px}
+.ct-head{display:flex;align-items:center;gap:13px;padding:14px 16px;background:#1b1b21;border:1px solid var(--ds-line2);
+  border-radius:16px;color:inherit;font:inherit;text-align:left;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s}
+.ct-head:hover{border-color:rgba(253,81,8,.55);transform:translateY(-2px)}
+.ct-head.is-on{border-color:var(--pwc-orange);box-shadow:0 0 0 3px rgba(253,81,8,.18)}
+.ct-head .ct-av{width:54px;height:54px;font-size:16px;font-family:var(--serif)}
+.ct-head .ct-txt b{font-size:14px}
+.ct-head .ct-cnt{display:block;margin-top:5px;font-size:11.5px;color:#FFB08A}
+.ct-head .ct-out{display:block;font-size:11px;color:var(--ds-mu2)}
+.ct-heads.compact{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:22px}
+.ct-heads.compact .ct-head{padding:8px 12px;border-radius:12px}
+.ct-heads.compact .ct-head .ct-av{width:34px;height:34px;font-size:12px}
+.ct-heads.compact .ct-cnt,.ct-heads.compact .ct-out{display:none}
+.ct-hint{color:var(--ds-mu);font-size:13px;margin:14px 0 4px}
+
+/* person card, used in the chart */
+.ct-card{display:flex;align-items:center;gap:10px;width:228px;padding:9px 12px 9px 9px;background:#1b1b21;
+  border:1px solid var(--ds-line2);border-radius:14px;color:inherit;font:inherit;text-align:left;cursor:pointer;
+  transition:border-color .2s,transform .2s,box-shadow .2s;position:relative;z-index:1}
+.ct-card:hover{border-color:rgba(253,81,8,.55);transform:translateY(-2px)}
+.ct-card.is-open{border-color:var(--pwc-orange);box-shadow:0 0 0 3px rgba(253,81,8,.18)}
+.ct-card.is-root{width:250px;padding:12px 16px 12px 12px;cursor:default;
+  background:linear-gradient(135deg,rgba(253,81,8,.16),rgba(253,81,8,.03) 60%),#1b1b21;border-color:rgba(253,81,8,.5)}
+.ct-card.is-root:hover{transform:none}
+.ct-card.is-root .ct-av{width:50px;height:50px;font-size:15px;font-family:var(--serif)}
+.ct-txt{display:flex;flex-direction:column;min-width:0;flex:1}
+.ct-txt b{font-size:13px;font-weight:600;color:var(--ds-tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ct-txt span{font-size:11.5px;color:var(--ds-mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ct-badge{flex:none;font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;background:rgba(253,81,8,.14);color:#FFB08A;white-space:nowrap}
+.ct-card.is-open .ct-badge{background:var(--pwc-orange);color:#fff}
+.ct-txt .ct-off{color:var(--ds-mu2);font-size:11px}
+.ct-bio{flex:none;font-size:11px;color:var(--ds-mu2);white-space:nowrap}
+.ct-card:hover .ct-bio{color:var(--pwc-orange)}
+.ct-wrap .dim{opacity:.35}
+
+/* the org chart: straight lines with rounded corners, drawn from each <li>'s own borders */
+.ct-tree{--ct-ln:#3d3d45;--ct-gap:30px;overflow-x:auto;padding:4px 4px 18px;position:relative}
+.ct-org,.ct-org ul{display:flex;justify-content:center;margin:0;padding:0;list-style:none}
+.ct-org{min-width:max-content;margin:0 auto}
+.ct-org ul{position:relative;padding-top:var(--ct-gap)}
+.ct-org li{position:relative;display:flex;flex-direction:column;align-items:center;padding:var(--ct-gap) 8px 0}
+.ct-org > li{padding-top:0}
+.ct-org ul::before{content:'';position:absolute;top:0;left:50%;height:var(--ct-gap);border-left:1.5px solid var(--ct-ln)}
+.ct-org li::before,.ct-org li::after{content:'';position:absolute;top:0;width:50%;height:var(--ct-gap);border-top:1.5px solid var(--ct-ln)}
+.ct-org li::before{right:50%}
+.ct-org li::after{left:50%;border-left:1.5px solid var(--ct-ln)}
+.ct-org li:first-child::before,.ct-org li:last-child::after{border:0}
+.ct-org li:last-child::before{border-right:1.5px solid var(--ct-ln);border-radius:0 14px 0 0}
+.ct-org li:first-child::after{border-radius:14px 0 0 0}
+.ct-org li:only-child::before{display:none}
+.ct-org li:only-child::after{border-top:0;border-left:1.5px solid var(--ct-ln);border-radius:0}
+.ct-org > li::before,.ct-org > li::after{display:none}
+/* the line down to the branch you opened is drawn in orange */
+.ct-org li.on-path > ul::before{border-left-color:var(--pwc-orange)}
+.ct-org ul.ct-new{animation:ct-in .35s ease both}
+@keyframes ct-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.ct-org ul.ct-new{animation:none}.ct-card,.ct-head{transition:none}}
 .ct-empty{color:var(--ds-mu);font-size:14px;padding:30px 0}
-.ct-back{background:none;border:0;padding:0;margin-bottom:10px;color:var(--pwc-orange);font:inherit;font-size:13px;cursor:pointer}
-@media (max-width:1000px){
-  .ct-stage{grid-template-columns:1fr}
-  .ct-diagram{max-width:460px}
-}
+@media (max-width:900px){.ct-sum{grid-template-columns:1fr}}
 """
 
 CT_JS = r"""
@@ -1424,13 +1440,18 @@ CT_JS = r"""
       body = document.getElementById('ana-body'),
       filters = document.getElementById('ana-filters'),
       fy = document.getElementById('ana-fy-toggle'),
-      diagram = document.getElementById('ct-diagram'),
+      picker = document.getElementById('ct-picker'),
+      sum = document.getElementById('ct-sum'),
       crumbs = document.getElementById('ct-crumbs'),
-      side = document.getElementById('ct-side'),
-      picker = document.getElementById('ct-picker');
-  if (!toggle || !body || !diagram) return;
+      headsEl = document.getElementById('ct-heads'),
+      tree = document.getElementById('ct-tree');
+  if (!toggle || !body || !tree) return;
 
-  var ci = 0, path = [], sel = -1;     /* competency, the line drilled into, a childless pick */
+  var ci = 0, hi = -1, path = [];      /* competency, top-level person picked, branch opened below them */
+
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function num(n){ return n == null ? '—' : n.toLocaleString(); }
 
   /* --- the tab's own filters (the same controls Workforce Mix uses) decide who is in the slice.
      The selection is read off each control's chips, and matched against the dashboard's own
@@ -1454,12 +1475,28 @@ CT_JS = r"""
     };
   }
   function on(name){ return !inSlice || inSlice(name); }
-  function slice(c){ return c.m.filter(function(r){ return on(r[0]); }); }
 
-  /* the tiles over the people in the slice; the build's own figures when nothing is filtered out */
-  function stats(c){
-    var m = slice(c);
-    if (m.length === c.m.length) return c.st;
+  /* --- the tree --- */
+  function line(n, acc){                 /* the person and everyone under them */
+    acc = acc || [];
+    acc.push(n.n);
+    (n.k || []).forEach(function(k){ line(k, acc); });
+    return acc;
+  }
+  function anyOn(n){ return line(n).some(on); }
+  function opened(){                     /* the head, then each person opened below them */
+    var c = D.c[ci], out = [];
+    if (hi < 0) return out;
+    var n = c.h[hi];
+    out.push(n);
+    for (var d = 0; d < path.length && n; d++){ n = (n.k || [])[path[d]]; if (n) out.push(n); }
+    return out;
+  }
+
+  /* tiles over a set of people (a whole competency when names is null), inside the slice */
+  function stats(c, names){
+    var m = c.m.filter(function(r){ return (!names || names.indexOf(r[0]) >= 0) && on(r[0]); });
+    if (!names && m.length === c.m.length) return c.st;
     var s = {people: m.length, leads: 0, off: 0, terr: 0, g: []}, std = 0, ch = 0, fte = 0, ex = [],
         off = {}, ter = {}, g = {};
     m.forEach(function(r){
@@ -1482,167 +1519,102 @@ CT_JS = r"""
     }).map(function(k){ return [k, g[k]]; });
     return s;
   }
-  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
-    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
-  function num(n){ return n == null ? '—' : n.toLocaleString(); }
-  function polar(r, deg){ var a = deg * Math.PI / 180; return [50 + r * Math.cos(a), 50 + r * Math.sin(a)]; }
-
-  function focusNode(){
-    var n = D.c[ci].root;
-    for (var i = 0; i < path.length && n; i++) n = (n.k || [])[path[i]];
-    return n;
-  }
-  function trail(){                      /* the focus node and each of its ancestors */
-    var n = D.c[ci].root, out = [n];
-    for (var i = 0; i < path.length && n; i++){ n = (n.k || [])[path[i]]; out.push(n); }
-    return out;
-  }
-  function count(n){                     /* everyone under this person */
-    return (n.k || []).reduce(function(a, k){ return a + 1 + count(k); }, 0);
-  }
 
   /* --- pieces --- */
-  function orbit(n){
-    var k = (n.k || []).length;
-    if (!k) return '';
-    var shown = Math.min(k, 10), dots = '';
-    for (var i = 0; i < shown; i++){
-      dots += '<i style="--a:' + (i * 360 / shown).toFixed(1) + 'deg"></i>';
-    }
-    return '<span class="ct-orb" style="--spin:' + (16 + (k % 7) * 2) + 's">' + dots + '</span>';
+  function avatar(n){
+    if (n.ph) return '<span class="ct-av ' + n.ph + '"></span>';
+    var e = (EMP[n.n] || [])[0], src = e && e._photo;
+    return '<span class="ct-av">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : esc(n.i)) + '</span>';
   }
-  /* dots stand for the level you cannot see yet, so the person in focus never wears them —
-     their reports are the circles around them */
-  function avatar(n, dots){
-    return '<span class="ct-av ' + (n.ph || '') + '">' + (n.ph ? '' : esc(n.i)) +
-      (dots === false ? '' : orbit(n)) + '</span>';
-  }
-  function sub(n){
-    var k = (n.k || []).length;
-    return k ? k + (k === 1 ? ' report' : ' reports') + (count(n) > k ? ' · ' + count(n) + ' in all' : '') : '';
+  function reportsTxt(n){
+    var k = (n.k || []).length, all = line(n).length - 1;
+    return k ? k + (k === 1 ? ' report' : ' reports') + (all > k ? ' · ' + all + ' in line' : '') : 'no reports';
   }
 
-  function draw(){
-    var f = focusNode(), kids = (f && f.k) || [], n = kids.length, nodes = [], lines = [], i;
-    var ring = n >= 5, R = n > 8 ? 33 : 28, leadY = ring ? 50 : 22;
-
-    /* Five reports or more: a ring with the person in focus at its centre. Fewer: a plain
-       top-down chart, because a short ring leaves the person in focus hanging underneath. */
-    function kidPos(i){
-      if (ring) return polar(R, -90 + i * 360 / n);
-      var rows = n > 5 ? 2 : 1, per = Math.ceil(n / rows),
-          row = Math.floor(i / per), col = i % per,
-          wide = Math.min(per, n - row * per),
-          step = Math.min(24, 84 / Math.max(wide, 1));
-      return [50 + (col - (wide - 1) / 2) * step, rows === 1 ? 72 : (row ? 90 : 62)];
-    }
-
-    nodes.push({x: 50, y: leadY, kind: 'focus'});
-    for (i = 0; i < n; i++){
-      var kp = kidPos(i);
-      nodes.push({x: kp[0], y: kp[1], kind: 'kid', i: i});
-      lines.push([50, leadY, kp[0], kp[1]]);
-    }
-
-    var lo = 100, hi = 0;
-    nodes.forEach(function(p){ lo = Math.min(lo, p.y); hi = Math.max(hi, p.y); });
-    var dy = ring ? 50 - (lo + hi) / 2 : 0;
-
-    var svg = lines.map(function(l){
-      return '<line x1="' + l[0].toFixed(2) + '" y1="' + (l[1] + dy).toFixed(2) + '" x2="' + l[2].toFixed(2) +
-             '" y2="' + (l[3] + dy).toFixed(2) + '" stroke="rgba(255,255,255,.17)" stroke-width=".4" stroke-dasharray="1.6 1.6"/>';
-    }).join('');
-
-    var html = nodes.map(function(p){
-      var at = 'style="left:' + p.x.toFixed(2) + '%;top:' + (p.y + dy).toFixed(2) + '%"';
-      if (p.kind === 'focus'){
-        if (!f) return '<div class="ct-node ct-lead" ' + at + '><span class="ct-av">' +
-          esc(D.c[ci].n.slice(0, 2).toUpperCase()) + '</span><span class="ct-nm">' + esc(D.c[ci].n) +
-          '</span><span class="ct-sub">no Director on the roster</span></div>';
-        return '<button type="button" class="ct-node ct-lead' + (f.comp || on(f.n) ? '' : ' dim') + '" data-up="1" ' + at + ' title="' +
-          (path.length ? 'Back a level' : '') + '">' + avatar(f, false) +
-          '<span class="ct-nm">' + esc(f.n) + '</span><span class="ct-sub">' + esc(f.r) +
-          (path.length ? '' : ' · ' + esc(D.c[ci].n)) + '</span></button>';
-      }
-      var q = kids[p.i], deep = (q.k || []).length > 0;
-      return '<button type="button" class="ct-node ct-mgr' + (sel === p.i ? ' is-on' : '') +
-        (deep ? ' has-team' : '') + (on(q.n) ? '' : ' dim') + '" data-k="' + p.i + '" ' + at + '>' + avatar(q) +
-        '<span class="ct-nm">' + esc(q.n) + '</span><span class="ct-sub">' + esc(q.r) + '</span>' +
-        (deep ? '<span class="ct-cnt">' + sub(q) + '</span>' : '') + '</button>';
-    }).join('');
-
-    diagram.style.aspectRatio = ring ? '1' : (n > 5 ? '1.2' : '1.55');
-    diagram.innerHTML = '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' + svg + '</svg>' + html;
+  function drawSum(){
+    var c = D.c[ci], o = opened(), f = o[o.length - 1];
+    var s = f ? stats(c, line(f)) : stats(c, null), cut = !f && s !== c.st;
+    var title = f ? esc(f.n) : esc(c.n),
+        meta = f ? esc(f.r) + (f.o ? ' · ' + esc(f.o) : '') + ' · ' + reportsTxt(f)
+                 : (c.lead ? 'Led by ' + esc(c.lead) : 'Guided by the Managing Director') + ' · ' +
+                   c.h.length + (c.h.length === 1 ? ' top-level person' : ' top-level people') +
+                   (cut ? ' · ' + s.people + ' of ' + c.st.people + ' in the current filters' : '');
+    var tiles = [[num(s.people), f ? 'people in line' : 'people'], [s.util == null ? '—' : s.util + '%', 'utilization'],
+                 [s.fte == null ? '—' : s.fte.toFixed(1), 'available FTE' + (D.lm ? ' · ' + esc(D.lm) : '')],
+                 [num(s.ch), 'chargeable hours'], [s.exp == null ? '—' : s.exp, 'avg years exp.'],
+                 [s.off + ' / ' + s.terr, 'offices / territories']];
+    sum.innerHTML = '<div><h4>' + title + '</h4><p class="ct-meta">' + meta + '</p><div class="ct-gm">' +
+      s.g.map(function(g){ return '<span>' + esc(g[0]) + ' <b>' + g[1] + '</b></span>'; }).join('') + '</div></div>' +
+      '<div class="ct-tiles">' + tiles.map(function(t){
+        return '<div class="ct-tile"><b>' + t[0] + '</b><span>' + t[1] + '</span></div>'; }).join('') + '</div>';
   }
 
   function drawCrumbs(){
-    var t = trail();
-    crumbs.innerHTML = '<button type="button" class="ct-crumb" data-go="-1">' + esc(D.c[ci].n) + '</button>' +
-      t.filter(Boolean).map(function(n, i){
-        return '<span class="ct-sep">›</span>' + (i === t.length - 1
+    var o = opened();
+    crumbs.innerHTML = (o.length ? '<button type="button" class="ct-crumb" data-go="-2">' + esc(D.c[ci].n) + '</button>'
+                                 : '<span class="ct-crumb is-on">' + esc(D.c[ci].n) + '</span>') +
+      o.map(function(n, i){
+        return '<span class="ct-sep">›</span>' + (i === o.length - 1
           ? '<span class="ct-crumb is-on">' + esc(n.n) + '</span>'
-          : '<button type="button" class="ct-crumb" data-go="' + i + '">' + esc(n.n) + '</button>');
+          : '<button type="button" class="ct-crumb" data-go="' + (i - 1) + '">' + esc(n.n) + '</button>');
       }).join('');
   }
 
-  function bars(rows){
-    var mx = 1;
-    rows.forEach(function(r){ mx = Math.max(mx, r[1]); });
-    return rows.map(function(r){
-      return '<div class="ct-bar"><span>' + esc(r[0]) + '<u><i style="width:' +
-        Math.round(r[1] / mx * 100) + '%"></i></u></span><b>' + r[1] + '</b></div>';
+  function drawHeads(){
+    var c = D.c[ci];
+    headsEl.classList.toggle('compact', hi >= 0);
+    headsEl.innerHTML = c.h.map(function(h, i){
+      var outside = h.mg && h.r !== 'Director' ? '<span class="ct-out">reports to ' + esc(h.mg) + '</span>' : '';
+      return '<button type="button" class="ct-head' + (i === hi ? ' is-on' : '') + (anyOn(h) ? '' : ' dim') +
+        '" data-h="' + i + '">' + avatar(h) + '<span class="ct-txt"><b>' + esc(h.n) + '</b><span>' + esc(h.r) +
+        (h.o ? ' · ' + esc(h.o) : '') + '</span>' + outside + '<span class="ct-cnt">' + reportsTxt(h) + '</span></span></button>';
     }).join('');
   }
-  function people(list, clickable){
-    return '<ul class="ct-list">' + list.map(function(p, i){
-      var inner = '<span class="who">' + esc(p.n) + '<br><span class="where">' + esc(p.o) +
-        '</span></span><span class="where">' + esc(p.r) + ((p.k || []).length ? ' · ' + p.k.length : '') + '</span>';
-      var li = on(p.n) ? '<li>' : '<li class="dim">';
-      return clickable ? li + '<button type="button" class="ct-row" data-k="' + i + '">' + inner + '</button></li>'
-                       : li + inner + '</li>';
+
+  /* one card; a person with a team opens it, a person without one opens their bio */
+  function card(n, d, i, root){
+    var k = (n.k || []).length, open = !root && path[d] === i && k;
+    var cls = 'ct-card' + (root ? ' is-root' : '') + (open ? ' is-open' : '') + (on(n.n) ? '' : ' dim');
+    var tail = root ? '<span class="ct-badge">' + k + '</span>'
+             : k ? '<span class="ct-badge">' + k + (open ? ' ▴' : ' ▾') + '</span>'
+             : '<span class="ct-bio">Bio ›</span>';
+    var at = root ? ' aria-label="' + esc(n.n) + '"' : ' data-d="' + d + '" data-i="' + i + '"' + (k ? ' aria-expanded="' + !!open + '"' : '');
+    return '<button type="button" class="' + cls + '"' + at + ' title="' + esc(n.n + ' · ' + n.r + (n.o ? ' · ' + n.o : '')) +
+      '">' + avatar(n) + '<span class="ct-txt"><b>' + esc(n.n) + '</b><span>' + esc(n.r) + '</span>' +
+      (n.o ? '<span class="ct-off">' + esc(n.o) + '</span>' : '') + '</span>' + tail + '</button>';
+  }
+  function level(n, d){
+    if (!(n.k || []).length) return '';
+    return '<ul' + (d === path.length ? ' class="ct-new"' : '') + '>' + n.k.map(function(q, i){
+      var deeper = path[d] === i && (q.k || []).length;
+      return '<li' + (deeper ? ' class="on-path"' : '') + '>' + card(q, d, i, false) + (deeper ? level(q, d + 1) : '') + '</li>';
     }).join('') + '</ul>';
   }
-
-  function panel(){
-    var c = D.c[ci], f = focusNode(), kids = (f && f.k) || [];
-    if (sel >= 0 && kids[sel]){
-      var q = kids[sel];
-      side.innerHTML = '<button type="button" class="ct-back" data-go="' + (path.length - 1) + '">← ' +
-        esc(f.n) + '</button><h3>' + esc(q.n) + '</h3><p class="ct-meta">' + esc(q.r) +
-        (q.o ? ' · ' + esc(q.o) : '') + ' · no one reports to them</p>';
+  function drawTree(){
+    var c = D.c[ci];
+    if (hi < 0){
+      tree.innerHTML = '<p class="ct-hint">Pick a top-level person above to see their team.</p>';
       return;
     }
-    if (path.length){
-      side.innerHTML = '<button type="button" class="ct-back" data-go="' + (path.length - 2) + '">← back</button>' +
-        '<h3>' + esc(f.n) + '</h3><p class="ct-meta">' + esc(f.r) + (f.o ? ' · ' + esc(f.o) : '') +
-        ' · ' + kids.length + (kids.length === 1 ? ' direct report' : ' direct reports') +
-        (count(f) > kids.length ? ' · ' + count(f) + ' in the line below them' : '') + '</p>' +
-        '<p class="ct-k">Reports to them</p>' + people(kids, true);
-      return;
+    var h = c.h[hi];
+    tree.innerHTML = (h.k || []).length
+      ? '<ul class="ct-org"><li class="on-path">' + card(h, -1, -1, true) + level(h, 0) + '</li></ul>'
+      : '<ul class="ct-org"><li>' + card(h, -1, -1, true) + '</li></ul><p class="ct-hint">No one in this competency reports to ' +
+        esc(h.n) + '. <button type="button" class="ct-crumb" data-bio="' + esc(h.w) + '">Open their bio ›</button></p>';
+    /* keep the branch just opened in view when the chart is wider than the card */
+    var last = tree.querySelector('.ct-card.is-open') || tree.querySelector('.ct-card.is-root');
+    if (last && tree.scrollWidth > tree.clientWidth){
+      var r = last.getBoundingClientRect(), t = tree.getBoundingClientRect();
+      tree.scrollLeft += (r.left + r.width / 2) - (t.left + t.width / 2);
     }
-    var s = stats(c), cut = s !== c.st;
-    var tiles = [[num(s.people), 'people'], [s.util == null ? '—' : s.util + '%', 'utilization'],
-                 [s.fte == null ? '—' : s.fte.toFixed(1), 'available FTE' + (D.lm ? ' · ' + esc(D.lm) : '')],
-                 [num(s.ch), 'chargeable hours'],
-                 [s.exp == null ? '—' : s.exp, 'avg years experience'],
-                 [s.off + ' / ' + s.terr, 'offices / territories'],
-                 [s.leads, s.leads === 1 ? 'person with a team' : 'people with a team']];
-    side.innerHTML = '<h3>' + esc(c.n) + '</h3><p class="ct-meta">' +
-      (c.root ? 'Led by ' + esc(c.root.n) : 'Guided by the Managing Director') +
-      (cut ? ' · ' + s.people + ' of ' + c.st.people + ' people in the current filters' : '') + '</p>' +
-      '<div class="ct-tiles">' + tiles.map(function(t){
-        return '<div class="ct-tile"><b>' + t[0] + '</b><span>' + t[1] + '</span></div>'; }).join('') + '</div>' +
-      (c.root && c.root.k.length ? '<p class="ct-k">Reports to ' + esc(c.root.n) + '</p>' + people(c.root.k, true) : '') +
-      '<p class="ct-k">Grade mix</p>' + bars(s.g) +
-      (c.rest.length ? '<p class="ct-k">Reporting outside this competency</p>' + people(c.rest, false) : '');
   }
 
   function render(){
     /* a competency with no one in the slice drops out of the picker, as it would from Workforce Mix */
-    var shown = D.c.map(function(c){ return slice(c).length; });
+    var shown = D.c.map(function(c){ return c.m.filter(function(r){ return on(r[0]); }).length; });
     if (!shown[ci]){
       var first = shown.findIndex(function(k){ return k > 0; });
-      if (first >= 0){ ci = first; path = []; sel = -1; }
+      if (first >= 0){ ci = first; hi = -1; path = []; }
     }
     [].forEach.call(picker.querySelectorAll('.ct-chip'), function(b, i){
       b.classList.toggle('is-on', i === ci);
@@ -1651,37 +1623,47 @@ CT_JS = r"""
       if (n) n.textContent = (inSlice && shown[i] !== D.c[i].m.length ? shown[i] + ' of ' : '') + D.c[i].st.people + ' people';
     });
     if (!shown[ci]){
-      crumbs.innerHTML = ''; side.innerHTML = '';
-      diagram.style.aspectRatio = 'auto';
-      diagram.innerHTML = '<p class="ct-empty">No competency team has anyone in the current filters.</p>';
+      sum.innerHTML = ''; crumbs.innerHTML = ''; headsEl.innerHTML = '';
+      tree.innerHTML = '<p class="ct-empty">No competency team has anyone in the current filters.</p>';
       return;
     }
-    drawCrumbs(); draw(); panel();
+    drawSum(); drawCrumbs(); drawHeads(); drawTree();
   }
 
-  function open(i){
-    var kids = (focusNode() || {}).k || [];
-    if (!kids[i]) return;
-    if ((kids[i].k || []).length){ path.push(i); sel = -1; }   /* has a team: go a level deeper */
-    else { sel = (sel === i ? -1 : i); }                       /* no team: just show them */
-    render();
+  function bio(w, list){
+    if (typeof showBio === 'function' && w) showBio(w, false, list && list.length > 1 ? list : null, !(list && list.length > 1));
   }
 
   picker.addEventListener('click', function(ev){
     var b = ev.target.closest('.ct-chip'); if (!b) return;
-    ci = +b.getAttribute('data-ct'); path = []; sel = -1; render();
+    ci = +b.getAttribute('data-ct'); hi = -1; path = []; render();
   });
-  wrap.addEventListener('click', function(ev){
-    var t = ev.target;
-    var go = t.closest ? t.closest('[data-go]') : null;
-    if (go){ path = path.slice(0, Math.max(0, +go.getAttribute('data-go') + 1)); sel = -1; render(); return; }
-    var up = t.closest ? t.closest('[data-up]') : null;
-    if (up){ if (path.length){ path.pop(); sel = -1; render(); } return; }
-    var k = t.closest ? t.closest('[data-k]') : null;
-    if (k) open(+k.getAttribute('data-k'));
+  headsEl.addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-h]'); if (!b) return;
+    var i = +b.getAttribute('data-h');
+    hi = (hi === i ? -1 : i); path = []; render();
+  });
+  crumbs.addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-go]'); if (!b) return;
+    var go = +b.getAttribute('data-go');
+    if (go === -2){ hi = -1; path = []; } else path = path.slice(0, go + 1);
+    render();
+  });
+  tree.addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-bio]');
+    if (b){ bio(b.getAttribute('data-bio')); return; }
+    b = ev.target.closest('.ct-card[data-d]'); if (!b) return;
+    var d = +b.getAttribute('data-d'), i = +b.getAttribute('data-i');
+    var parent = opened()[d], q = parent && (parent.k || [])[i];
+    if (!q) return;
+    if ((q.k || []).length){                     /* has a team: open it here, closing its siblings' */
+      path = path[d] === i ? path.slice(0, d) : path.slice(0, d).concat(i);
+      render();
+    } else {                                     /* the end of the line: their bio, stepping through the siblings */
+      bio(q.w, parent.k.map(function(x){ return x.w; }));
+    }
   });
 
-  /* slot into the tab's own view toggle without touching the dashboard's handler */
   /* the filters and the "showing N people" line stay, as on Workforce Mix; only the fiscal-year
      toggle goes, since nothing here is a monthly series */
   function chrome(show){
