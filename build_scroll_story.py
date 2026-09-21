@@ -1486,17 +1486,28 @@ def competency_teams(people, comps, comp_color, comp_leads, deliv):
         tops = [p for p in sorted(members, key=order)
                 if s_(p.get("RL Manager")) not in names or s_(p.get("RL Manager")) == p["Name"]]
         heads = []
+        loose = []                     # no team, and their manager sits in another competency
         for p in tops + sorted(members, key=order):
             if p["Name"] in seen:
                 continue
             h = subtree(p)
             h["mg"] = s_(p.get("RL Manager"))
+            if not h["k"] and p["Role"] not in ("MD", "Director"):
+                loose.append(h)        # shown under their manager, which here means in the card below
+                continue
             photo = thumb_uri(p)
             if photo:
                 cls = f"ct-ph{idx}-{len(heads)}"
                 css.append(f".{cls}{{background-image:url({photo})}}")
                 h["ph"] = cls
             heads.append(h)
+        # People with no one reporting to them are not top level: they appear once their manager is
+        # opened. Those whose manager is in another competency have no manager here to open, so they
+        # share one card at the end of the row instead of each taking a place in it.
+        if loose:
+            heads.append({"n": f"Outside {COMPETENCY_CODE.get(name, name).replace('&amp;', '&')}",
+                          "r": "Report to other competencies", "o": "", "i": f"+{len(loose)}", "w": "",
+                          "grp": 1, "k": loose})
 
         f = deliv.figures({name}) if deliv else None
         pp = deliv.per_person({name}) if deliv else {}
@@ -1536,7 +1547,7 @@ def competency_teams(people, comps, comp_color, comp_leads, deliv):
     # the same card as the tab's other views, so switching views keeps the content where it was
     html = f"""<div class="ct-wrap ana-card full" id="ct-wrap" hidden>
   <h3 class="ana-h">Competency Teams</h3>
-  <p class="ana-sub ct-intro">Each competency starts from its top-level people. Pick one to open their team as an org chart, then click anyone with a team to go a level down, one branch at a time. Click someone with no one below them to open their bio. The filters above narrow who is counted; anyone outside the slice stays in the chart, dimmed, so the reporting line still reads.</p>
+  <p class="ana-sub ct-intro">Each competency starts from the people who lead a team in it; everyone else appears once their manager is opened, and anyone whose manager sits in another competency is gathered in one card at the end. Pick a leader to open their team as an org chart, then click anyone with a team to go a level down, one branch at a time; large teams wrap into rows. Click someone with no one below them to open their bio. The filters above narrow who is counted; anyone outside the slice stays in the chart, dimmed, so the reporting line still reads.</p>
   <div class="ct-picker" id="ct-picker">{chips}</div>
   <div class="ct-sum" id="ct-sum"></div>
   <nav class="ct-crumbs" id="ct-crumbs" aria-label="Reporting line"></nav>
@@ -1642,6 +1653,14 @@ CT_CSS = r"""
 /* the line down to the branch you opened is drawn in orange */
 .ct-org li.on-path > ul::before{border-left-color:var(--pwc-orange)}
 .ct-org ul.ct-new{animation:ct-in .35s ease both}
+/* a wide level: rows of up to four cards in one panel, one line down to it from the manager */
+.ct-org .ct-rows{display:grid;grid-template-columns:repeat(var(--cols),228px);gap:12px;padding:14px;
+  border:1px solid var(--ds-line);border-radius:18px;background:rgba(255,255,255,.02);position:relative;z-index:1}
+.ct-org .ct-cap{margin:18px 0 0;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--pwc-orange);position:relative;z-index:1;
+  background:var(--ds-card);padding:0 8px}
+.ct-org .ct-cap+ul{padding-top:14px}
+.ct-org .ct-cap+ul::before{height:14px}
+@media (max-width:1100px){.ct-org .ct-rows{grid-template-columns:repeat(2,228px)}}
 @keyframes ct-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.ct-org ul.ct-new{animation:none}.ct-card,.ct-head{transition:none}}
 .ct-empty{color:var(--ds-mu);font-size:14px;padding:30px 0}
@@ -1743,6 +1762,7 @@ CT_JS = r"""
     return '<span class="ct-av">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : esc(n.i)) + '</span>';
   }
   function reportsTxt(n){
+    if (n.grp) return n.k.length + (n.k.length === 1 ? ' person' : ' people');
     var k = (n.k || []).length, all = line(n).length - 1;
     return k ? k + (k === 1 ? ' report' : ' reports') + (all > k ? ' · ' + all + ' in line' : '') : 'no reports';
   }
@@ -1751,7 +1771,8 @@ CT_JS = r"""
     var c = D.c[ci], o = opened(), f = o[o.length - 1];
     var s = f ? stats(c, line(f)) : stats(c, null), cut = !f && s !== c.st;
     var title = f ? esc(f.n) : esc(c.n),
-        meta = f ? esc(f.r) + (f.o ? ' · ' + esc(f.o) : '') + ' · ' + reportsTxt(f)
+        meta = f ? (f.grp ? reportsTxt(f) + ' in ' + esc(c.n) + ' whose managers sit in other competencies'
+                          : esc(f.r) + (f.o ? ' · ' + esc(f.o) : '') + ' · ' + reportsTxt(f))
                  : (c.lead ? 'Led by ' + esc(c.lead) : 'Guided by the Managing Director') + ' · ' +
                    c.h.length + (c.h.length === 1 ? ' top-level person' : ' top-level people') +
                    (cut ? ' · ' + s.people + ' of ' + c.st.people + ' in the current filters' : '');
@@ -1780,7 +1801,8 @@ CT_JS = r"""
     var c = D.c[ci];
     headsEl.classList.toggle('compact', hi >= 0);
     headsEl.innerHTML = c.h.map(function(h, i){
-      var outside = h.mg && h.r !== 'Director' ? '<span class="ct-out">reports to ' + esc(h.mg) + '</span>' : '';
+      var outside = h.grp ? '<span class="ct-out">their managers sit in other competencies</span>'
+                  : h.mg && h.r !== 'Director' ? '<span class="ct-out">reports to ' + esc(h.mg) + '</span>' : '';
       return '<button type="button" class="ct-head' + (i === hi ? ' is-on' : '') + (anyOn(h) ? '' : ' dim') +
         '" data-h="' + i + '">' + avatar(h) + '<span class="ct-txt"><b>' + esc(h.n) + '</b><span>' + esc(h.r) +
         (h.o ? ' · ' + esc(h.o) : '') + '</span>' + outside + '<span class="ct-cnt">' + reportsTxt(h) + '</span></span></button>';
@@ -1790,7 +1812,7 @@ CT_JS = r"""
   /* one card; a person with a team opens it, a person without one opens their bio */
   function card(n, d, i, root){
     var k = (n.k || []).length, open = !root && path[d] === i && k;
-    var cls = 'ct-card' + (root ? ' is-root' : '') + (open ? ' is-open' : '') + (on(n.n) ? '' : ' dim');
+    var cls = 'ct-card' + (root ? ' is-root' : '') + (open ? ' is-open' : '') + (n.grp || on(n.n) ? '' : ' dim');
     var tail = root ? '<span class="ct-badge">' + k + '</span>'
              : k ? '<span class="ct-badge">' + k + (open ? ' ▴' : ' ▾') + '</span>'
              : '<span class="ct-bio">Bio ›</span>';
@@ -1799,12 +1821,23 @@ CT_JS = r"""
       '">' + avatar(n) + '<span class="ct-txt"><b>' + esc(n.n) + '</b><span>' + esc(n.r) + '</span>' +
       (n.o ? '<span class="ct-off">' + esc(n.o) + '</span>' : '') + '</span>' + tail + '</button>';
   }
+  var ROW_MAX = 4;                 /* more people than this on a level: rows of up to four, not one long line */
   function level(n, d){
     if (!(n.k || []).length) return '';
-    return '<ul' + (d === path.length ? ' class="ct-new"' : '') + '>' + n.k.map(function(q, i){
-      var deeper = path[d] === i && (q.k || []).length;
-      return '<li' + (deeper ? ' class="on-path"' : '') + '>' + card(q, d, i, false) + (deeper ? level(q, d + 1) : '') + '</li>';
-    }).join('') + '</ul>';
+    var fresh = d === path.length ? ' ct-new' : '';
+    if (n.k.length <= ROW_MAX){
+      return '<ul class="' + fresh + '">' + n.k.map(function(q, i){
+        var deeper = path[d] === i && (q.k || []).length;
+        return '<li' + (deeper ? ' class="on-path"' : '') + '>' + card(q, d, i, false) + (deeper ? level(q, d + 1) : '') + '</li>';
+      }).join('') + '</ul>';
+    }
+    /* A wide level wraps into rows inside one panel, hung from its manager by a single line. The
+       team of whoever is opened in it follows underneath, captioned, rather than under their card. */
+    var open = n.k[path[d]], deeper = open && (open.k || []).length ? open : null;
+    return '<ul class="ct-wide' + fresh + '"><li' + (deeper ? ' class="on-path"' : '') + '>' +
+      '<div class="ct-rows" style="--cols:' + Math.min(ROW_MAX, n.k.length) + '">' +
+      n.k.map(function(q, i){ return card(q, d, i, false); }).join('') + '</div>' +
+      (deeper ? '<p class="ct-cap">' + esc(deeper.n) + '&rsquo;s team</p>' + level(deeper, d + 1) : '') + '</li></ul>';
   }
   function drawTree(){
     var c = D.c[ci];
@@ -1817,11 +1850,11 @@ CT_JS = r"""
       ? '<ul class="ct-org"><li class="on-path">' + card(h, -1, -1, true) + level(h, 0) + '</li></ul>'
       : '<ul class="ct-org"><li>' + card(h, -1, -1, true) + '</li></ul><p class="ct-hint">No one in this competency reports to ' +
         esc(h.n) + '. <button type="button" class="ct-crumb" data-bio="' + esc(h.w) + '">Open their bio ›</button></p>';
-    /* keep the branch just opened in view when the chart is wider than the card */
-    var last = tree.querySelector('.ct-card.is-open') || tree.querySelector('.ct-card.is-root');
-    if (last && tree.scrollWidth > tree.clientWidth){
-      var r = last.getBoundingClientRect(), t = tree.getBoundingClientRect();
-      tree.scrollLeft += (r.left + r.width / 2) - (t.left + t.width / 2);
+    /* bring the level just opened into view: it grows downwards, so the page scrolls, not the chart */
+    var fresh = tree.querySelector('.ct-new');
+    if (fresh && path.length){
+      var r = fresh.getBoundingClientRect();
+      if (r.bottom > window.innerHeight) fresh.scrollIntoView({block: 'nearest', behavior: 'smooth'});
     }
   }
 
