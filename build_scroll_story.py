@@ -58,13 +58,16 @@ import openpyxl
 
 from build_dark_dashboard import dark_html
 
-# Full paths, so the script finds its files wherever it is run from. Edit here if a folder moves.
-WORKBOOK = Path(r"C:\02_Claude\Deals Skills and Bio\03_Output files\Employee Details.xlsx")
-IMAGES_DIR = Path(r"C:\02_Claude\Deals Skills and Bio\01_Source\Images")
-LOGO = Path(r"C:\02_Claude\Deals Skills and Bio\01_Source\PwC Logo.jpg")
-SKILL_IMG_DIR = Path(r"C:\02_Claude\Deals Skills and Bio\01_Source\Skill Images")
-# written beside the root dashboard and workbook, so every output lives in one folder
-OUT = Path(r"C:\02_Claude\Deals Skills and Bio\03_Output files\Deals_Scroll_Story.html")
+# ---- Configuration: the same folder layout generate_report.py uses -------------------------
+SCRIPT_DIR    = Path(__file__).resolve().parent          # 02_Scripts & ETL
+ROOT          = SCRIPT_DIR.parent                         # Deals Skills and Bio
+SOURCE_DIR    = ROOT / "01_Source"                        # Images, logo, Skill Images
+OUTPUT_DIR    = ROOT / "03_Output files"                  # workbook in, both dashboards out
+WORKBOOK      = OUTPUT_DIR / "Employee Details.xlsx"
+IMAGES_DIR    = SOURCE_DIR / "Images"
+LOGO          = SOURCE_DIR / "PwC Logo.jpg"
+SKILL_IMG_DIR = SOURCE_DIR / "Skill Images"
+OUT           = OUTPUT_DIR / "Deals_Scroll_Story.html"     # beside Employee_Dashboard.html
 UTIL_SHEET = "Utilization Full_Jul_Jun"
 RATES_SHEET = "Hourly Rates"
 # the dashboard's skills sheet, under any of the names generate_report.py accepts for it
