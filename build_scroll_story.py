@@ -1454,6 +1454,7 @@ def competency_teams(people, comps, comp_color, comp_leads, deliv):
     css, out = [], []
     s_ = lambda v: str(v or "").strip()
     order = lambda q: (rank(q), q["Name"])
+    by_name = {p["Name"]: p for p in people}
 
     def node(p):
         return {"n": p["Name"], "r": GRADE_LABEL.get(p["Role"], p["Role"]), "o": s_(p.get("Location")),
@@ -1495,12 +1496,27 @@ def competency_teams(people, comps, comp_color, comp_leads, deliv):
             if not h["k"] and p["Role"] not in ("MD", "Director"):
                 loose.append(h)        # shown under their manager, which here means in the card below
                 continue
-            photo = thumb_uri(p)
+            heads.append(h)
+        # Everyone with people under them is a starting point, not only the top of each line: the
+        # row lists every manager in the competency, most senior first, and picking one opens the
+        # chart from them. Their nodes are the same ones inside the larger trees.
+        def managers(n):
+            for q in n.get("k", []):
+                if q.get("k"):
+                    yield q
+                    yield from managers(q)
+        inner = [q for h in heads for q in managers(h)]
+        heads = sorted(heads + inner, key=lambda n: order(by_name[n["n"]]) if n["n"] in by_name else (99, n["n"]))
+        for j, h in enumerate(heads):
+            q = by_name.get(h["n"])
+            if q is None:
+                continue
+            h.setdefault("mg", s_(q.get("RL Manager")))
+            photo = thumb_uri(q)
             if photo:
-                cls = f"ct-ph{idx}-{len(heads)}"
+                cls = f"ct-ph{idx}-{j}"
                 css.append(f".{cls}{{background-image:url({photo})}}")
                 h["ph"] = cls
-            heads.append(h)
         # People with no one reporting to them are not top level: they appear once their manager is
         # opened. Those whose manager is in another competency have no manager here to open, so they
         # share one card at the end of the row instead of each taking a place in it.
@@ -1547,7 +1563,7 @@ def competency_teams(people, comps, comp_color, comp_leads, deliv):
     # the same card as the tab's other views, so switching views keeps the content where it was
     html = f"""<div class="ct-wrap ana-card full" id="ct-wrap" hidden>
   <h3 class="ana-h">Competency Teams</h3>
-  <p class="ana-sub ct-intro">Each competency starts from the people who lead a team in it; everyone else appears once their manager is opened, and anyone whose manager sits in another competency is gathered in one card at the end. Pick a leader to open their team as an org chart, then click anyone with a team to go a level down, one branch at a time; large teams wrap into rows. Click someone with no one below them to open their bio. The filters above narrow who is counted; anyone outside the slice stays in the chart, dimmed, so the reporting line still reads.</p>
+  <p class="ana-sub ct-intro">Each competency lists everyone in it who has people reporting to them, most senior first; everyone else appears once their manager is opened, and anyone whose manager sits in another competency is gathered in one card at the end. Pick anyone to open their team as an org chart, then click anyone with a team to go a level down, one branch at a time; large teams wrap into rows. Click someone with no one below them to open their bio. The filters above narrow who is counted; anyone outside the slice stays in the chart, dimmed, so the reporting line still reads.</p>
   <div class="ct-picker" id="ct-picker">{chips}</div>
   <div class="ct-sum" id="ct-sum"></div>
   <nav class="ct-crumbs" id="ct-crumbs" aria-label="Reporting line"></nav>
@@ -1774,7 +1790,7 @@ CT_JS = r"""
         meta = f ? (f.grp ? reportsTxt(f) + ' in ' + esc(c.n) + ' whose managers sit in other competencies'
                           : esc(f.r) + (f.o ? ' · ' + esc(f.o) : '') + ' · ' + reportsTxt(f))
                  : (c.lead ? 'Led by ' + esc(c.lead) : 'Guided by the Managing Director') + ' · ' +
-                   c.h.length + (c.h.length === 1 ? ' top-level person' : ' top-level people') +
+                   c.h.filter(function(h){ return !h.grp; }).length + ' with a team' +
                    (cut ? ' · ' + s.people + ' of ' + c.st.people + ' in the current filters' : '');
     var tiles = [[num(s.people), f ? 'people in line' : 'people'], [s.util == null ? '—' : s.util + '%', 'utilization'],
                  [s.fte == null ? '—' : s.fte.toFixed(1), 'available FTE' + (D.lm ? ' · ' + esc(D.lm) : '')],
@@ -1842,7 +1858,7 @@ CT_JS = r"""
   function drawTree(){
     var c = D.c[ci];
     if (hi < 0){
-      tree.innerHTML = '<p class="ct-hint">Pick a top-level person above to see their team.</p>';
+      tree.innerHTML = '<p class="ct-hint">Pick anyone above to see the people under them.</p>';
       return;
     }
     var h = c.h[hi];
@@ -1934,6 +1950,14 @@ CT_JS = r"""
       chrome(false);
     }
   }, true);
+
+  /* Reset clears the filters (the dashboard does that) and, here, the chart too: back to the first
+     competency with no one picked, the way the view opens */
+  var resetBtn = document.getElementById('ana-reset');
+  if (resetBtn) resetBtn.addEventListener('click', function(){
+    ci = 0; hi = -1; path = [];
+    if (!wrap.hidden){ readFilters(); render(); }
+  });
 
   /* any change to the filters — a tick, a chip removed, Clear, Reset, or another tab's synced
      filter — repaints this view while it is showing */
