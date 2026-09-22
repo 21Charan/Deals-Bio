@@ -353,7 +353,7 @@ class Delivery:
         out = defaultdict(lambda: [0.0, 0.0, 0.0])
         latest = defaultdict(lambda: [0.0, 0.0, None])
         for u in self.util:
-            if u[field] not in keys:
+            if keys is not None and u[field] not in keys:
                 continue
             out[u["id"]][0] += u["std"] or 0
             out[u["id"]][1] += u["ch"]
@@ -1440,15 +1440,15 @@ def thumb_uri(rec, px=208):
         return ""
 
 
-def competency_teams(people, comps, comp_color, comp_leads, deliv):
+def competency_teams(people, deliv):
     """The "Competency Teams" view added to the dashboard's Team Analytics tab.
 
-    Each competency starts from its top-level people: everyone whose RL manager sits outside it
-    (its Directors, and anyone who reports into another team), shown side by side. Picking one
-    opens their team as a top-down org chart, one branch at a time; a person with no one below
-    them opens their bio. Built from the roster, so it needs no hooks into the dashboard's code.
+    Competency Group first, then the Competency values inside it. A competency lists everyone in it
+    with people reporting to them, most senior first; picking one opens their team as a top-down
+    org chart, one branch at a time, and a person with no one below them opens their bio. Built
+    from the roster, so it needs no hooks into the dashboard's code.
     """
-    if not comps:
+    if not people:
         return "", "", "{}"
 
     css, out = [], []
@@ -1460,8 +1460,73 @@ def competency_teams(people, comps, comp_color, comp_leads, deliv):
         return {"n": p["Name"], "r": GRADE_LABEL.get(p["Role"], p["Role"]), "o": s_(p.get("Location")),
                 "i": initials(p["Name"]), "w": p["_id"]}
 
-    for idx, (name, members) in enumerate(comps):
-        leads = comp_leads.get(name) or []
+    # Competency Group first, then the Competency values inside it, from those two columns and
+    # cleaned the way generate_report.py cleans them (the Other/Others family merged, blanks to Others)
+    # so the names match the dashboard's filters.
+    def canon(v, blank):
+        t = s_(v)
+        if not t:
+            return blank
+        m = re.match(r"^others?\b[\s\-\u2013\u2014:]*", t, re.I)
+        if not m:
+            return t
+        rest = t[m.end():].strip()
+        return "Others - " + rest if rest else "Others"
+    tree = defaultdict(lambda: defaultdict(list))
+    for p in people:
+        tree[canon(p.get("Competency Group"), "Others")][canon(p.get("Competency"), "Others*")].append(p)
+    size_first = lambda kv: (kv[0].startswith("Others"), -sum(len(v) for v in kv[1].values()) if isinstance(kv[1], dict) else -len(kv[1]), kv[0])
+    groups, pairs = [], []
+    for gname, cs in sorted(tree.items(), key=size_first):
+        idxs = []
+        for cname, mem in sorted(cs.items(), key=size_first):
+            idxs.append(len(pairs))
+            pairs.append((len(groups), cname, mem))
+        groups.append({"n": gname, "col": ACCENTS[len(groups) % len(ACCENTS)], "c": idxs,
+                       "_mem": [q for c_ in cs.values() for q in c_]})
+    pp = deliv.per_person(None) if deliv else {}
+
+    def summary(members, reports):
+        """The tiles for a set of people, from their own hours rows, and one row per person so the
+        page can re-add them for a filtered slice or a reporting line."""
+        f = deliv.figures(ids={p["_id"] for p in members}) if deliv else None
+        exps = [p["_exp"] for p in members if p["_exp"] is not None]
+        grades = Counter(GRADE_LABEL.get(p["Role"], p["Role"]) for p in members)
+        dirs = sorted((p for p in members if p["Role"] == "Director"), key=lambda p: (-(p["_exp"] or 0), p["Name"]))
+        return {"lead": dirs[0]["Name"] if dirs else "",
+                "st": {"people": len(members),
+                       "leads": sum(1 for p in members if reports.get(p["Name"])),
+                       "util": (round(f["util"]) if f and f["util"] is not None else None),
+                       "ch": (round(f["ch"]) if f else None),
+                       "fte": (round(f["spare"], 1) if f else None),
+                       "exp": (round(sum(exps) / len(exps), 1) if exps else None),
+                       "off": len({s_(p.get("Location")) for p in members if s_(p.get("Location"))}),
+                       "terr": len({s_(p.get("Territory")) for p in members
+                                    if s_(p.get("Territory")) and not is_other_territory(s_(p.get("Territory")))}),
+                       "g": [[g, c] for g, c in sorted(grades.items(), key=lambda kv: GRADE_RANK.get(
+                           next((k for k, v in GRADE_LABEL.items() if v == kv[0]), ""), 99))]},
+                # name, grade, experience, office, territory (blank if "other"), has a team,
+                # standard hrs, chargeable hrs, spare FTE
+                "m": [[p["Name"], GRADE_LABEL.get(p["Role"], p["Role"]), p["_exp"], s_(p.get("Location")),
+                       "" if is_other_territory(s_(p.get("Territory"))) else s_(p.get("Territory")),
+                       1 if reports.get(p["Name"]) else 0]
+                      + [round(v, 2) for v in pp.get(p["_id"], [0.0, 0.0, 0.0])] for p in members]}
+
+    def reports_in(members):
+        names = {p["Name"] for p in members}
+        rep_ = defaultdict(list)
+        for p in members:
+            mgr = s_(p.get("RL Manager"))
+            if mgr in names and mgr != p["Name"]:
+                rep_[mgr].append(p)
+        return rep_
+
+    for g in groups:
+        g.update(summary(g["_mem"], reports_in(g["_mem"])))
+        g["h"] = []
+        del g["_mem"]
+
+    for idx, (gi, name, members) in enumerate(pairs):
         names = {p["Name"] for p in members}
 
         reports = defaultdict(list)                  # only inside this competency
@@ -1487,15 +1552,13 @@ def competency_teams(people, comps, comp_color, comp_leads, deliv):
         tops = [p for p in sorted(members, key=order)
                 if s_(p.get("RL Manager")) not in names or s_(p.get("RL Manager")) == p["Name"]]
         heads = []
-        loose = []                     # no team, and their manager sits in another competency
         for p in tops + sorted(members, key=order):
             if p["Name"] in seen:
                 continue
             h = subtree(p)
             h["mg"] = s_(p.get("RL Manager"))
             if not h["k"] and p["Role"] not in ("MD", "Director"):
-                loose.append(h)        # shown under their manager, which here means in the card below
-                continue
+                continue               # no team here: they appear once their manager is opened
             heads.append(h)
         # Everyone with people under them is a starting point, not only the top of each line: the
         # row lists every manager in the competency, most senior first, and picking one opens the
@@ -1517,61 +1580,32 @@ def competency_teams(people, comps, comp_color, comp_leads, deliv):
                 cls = f"ct-ph{idx}-{j}"
                 css.append(f".{cls}{{background-image:url({photo})}}")
                 h["ph"] = cls
-        # People with no one reporting to them are not top level: they appear once their manager is
-        # opened. Those whose manager is in another competency have no manager here to open, so they
-        # share one card at the end of the row instead of each taking a place in it.
-        if loose:
-            heads.append({"n": f"Outside {COMPETENCY_CODE.get(name, name).replace('&amp;', '&')}",
-                          "r": "Report to other competencies", "o": "", "i": f"+{len(loose)}", "w": "",
-                          "grp": 1, "k": loose})
-
-        f = deliv.figures({name}) if deliv else None
-        pp = deliv.per_person({name}) if deliv else {}
-        exps = [p["_exp"] for p in members if p["_exp"] is not None]
-        grades = Counter(GRADE_LABEL.get(p["Role"], p["Role"]) for p in members)
-
-        out.append({
-            "n": name, "col": comp_color.get(name, "#FD5108"), "lead": leads[0]["Name"] if leads else "",
-            "h": heads,
-            "st": {"people": len(members),
-                   "leads": sum(1 for p in members if reports.get(p["Name"])),
-                   "util": (round(f["util"]) if f and f["util"] is not None else None),
-                   "ch": (round(f["ch"]) if f else None),
-                   "fte": (round(f["spare"], 1) if f else None),
-                   "exp": (round(sum(exps) / len(exps), 1) if exps else None),
-                   "off": len({s_(p.get("Location")) for p in members if s_(p.get("Location"))}),
-                   "terr": len({s_(p.get("Territory")) for p in members
-                                if s_(p.get("Territory")) and not is_other_territory(s_(p.get("Territory")))}),
-                   "g": [[g, c] for g, c in sorted(grades.items(), key=lambda kv: GRADE_RANK.get(
-                       next((k for k, v in GRADE_LABEL.items() if v == kv[0]), ""), 99))]},
-            # one row per member, so the tiles can be re-added in the page for a slice or a line:
-            # name, grade, experience, office, territory (blank if "other"), has a team,
-            # standard hrs, chargeable hrs, spare FTE. The filters themselves are matched against
-            # the dashboard's own EMPLOYEES records, which carry the root build's renamed values.
-            "m": [[p["Name"], GRADE_LABEL.get(p["Role"], p["Role"]), p["_exp"], s_(p.get("Location")),
-                   "" if is_other_territory(s_(p.get("Territory"))) else s_(p.get("Territory")),
-                   1 if reports.get(p["Name"]) else 0]
-                  + [round(v, 2) for v in pp.get(p["_id"], [0.0, 0.0, 0.0])] for p in members],
-        })
+        entry = dict(summary(members, reports), n=name, g=gi, col=groups[gi]["col"], h=heads)
+        if not heads:                  # no one leads a team here: the page lists the people themselves
+            entry["p"] = [node(q) for q in sorted(members, key=order)]
+        out.append(entry)
 
     chips = "".join(
-        f'<button type="button" class="ct-chip{" is-on" if i == 0 else ""}" data-ct="{i}">'
-        f'<span class="ct-dot" style="background:{c["col"]}"></span>'
-        f'<b>{e(c["n"])}</b><span class="ct-n">{c["st"]["people"]} people</span></button>'
-        for i, c in enumerate(out))
+        f'<button type="button" class="ct-chip{" is-on" if i == 0 else ""}" data-g="{i}">'
+        f'<span class="ct-dot" style="background:{g["col"]}"></span>'
+        f'<b>{e(g["n"])}</b><span class="ct-n">{g["st"]["people"]} {"person" if g["st"]["people"] == 1 else "people"}</span></button>'
+        for i, g in enumerate(groups))
 
     # the same card as the tab's other views, so switching views keeps the content where it was
     html = f"""<div class="ct-wrap ana-card full" id="ct-wrap" hidden>
   <h3 class="ana-h">Competency Teams</h3>
-  <p class="ana-sub ct-intro">Each competency lists everyone in it who has people reporting to them, most senior first; everyone else appears once their manager is opened, and anyone whose manager sits in another competency is gathered in one card at the end. Pick anyone to open their team as an org chart, then click anyone with a team to go a level down, one branch at a time; large teams wrap into rows. Click someone with no one below them to open their bio. The filters above narrow who is counted; anyone outside the slice stays in the chart, dimmed, so the reporting line still reads.</p>
+  <p class="ana-sub ct-intro">Pick a competency group, then one of its competencies: it lists everyone in that competency who has people reporting to them, most senior first, and everyone else appears once their manager is opened. Pick anyone to open their team as an org chart, then click anyone with a team to go a level down, one branch at a time; large teams wrap into rows. Click someone with no one below them to open their bio. The filters above narrow who is counted; anyone outside the slice stays in the chart, dimmed, so the reporting line still reads.</p>
+  <p class="ct-k2">Competency group</p>
   <div class="ct-picker" id="ct-picker">{chips}</div>
+  <p class="ct-k2" id="ct-sub-k">Competency</p>
+  <div class="ct-picker ct-sub" id="ct-sub"></div>
   <div class="ct-sum" id="ct-sum"></div>
   <nav class="ct-crumbs" id="ct-crumbs" aria-label="Reporting line"></nav>
   <div class="ct-heads" id="ct-heads"></div>
   <div class="ct-tree" id="ct-tree"></div>
 </div>"""
     lm = month_label(deliv.latest) if deliv and deliv.latest else ""
-    return html, "\n".join(css), json.dumps({"c": out, "lm": lm}, separators=(",", ":"))
+    return html, "\n".join(css), json.dumps({"g": groups, "c": out, "lm": lm}, separators=(",", ":"))
 
 
 CT_CSS = r"""
@@ -1583,7 +1617,11 @@ CT_CSS = r"""
   border-radius:999px;padding:9px 16px;color:var(--ds-mu);font:inherit;font-size:13px;cursor:pointer;transition:all .18s}
 .ct-chip:hover{color:var(--ds-tx);background:rgba(255,255,255,.08)}
 .ct-chip.is-on{color:var(--ds-tx);border-color:rgba(253,81,8,.6);background:rgba(253,81,8,.12)}
-.ct-chip[hidden]{display:none}
+.ct-chip[hidden],.ct-picker[hidden],.ct-k2[hidden]{display:none}
+.ct-k2{margin:0 0 8px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ds-mu2);font-weight:600}
+.ct-sub{margin-top:-6px}
+.ct-sub .ct-chip{padding:7px 14px;font-size:12.5px}
+.ct-people{display:grid;grid-template-columns:repeat(auto-fill,228px);gap:12px}
 .ct-chip b{font-weight:600}
 .ct-chip .ct-n{color:var(--ds-mu2)}
 .ct-dot{width:9px;height:9px;border-radius:50%;flex:none}
@@ -1698,7 +1736,9 @@ CT_JS = r"""
       tree = document.getElementById('ct-tree');
   if (!toggle || !body || !tree) return;
 
-  var ci = 0, hi = -1, path = [];      /* competency, top-level person picked, branch opened below them */
+  var gi = 0, ci = -1, hi = -1, path = [];   /* group, competency (-1: none yet), person picked, branch opened */
+  var sub = document.getElementById('ct-sub'), subK = document.getElementById('ct-sub-k');
+  function cur(){ return ci >= 0 ? D.c[ci] : D.g[gi]; }   /* the competency, or the group while none is picked */
 
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
@@ -1736,7 +1776,7 @@ CT_JS = r"""
   }
   function anyOn(n){ return line(n).some(on); }
   function opened(){                     /* the head, then each person opened below them */
-    var c = D.c[ci], out = [];
+    var c = cur(), out = [];
     if (hi < 0) return out;
     var n = c.h[hi];
     out.push(n);
@@ -1778,19 +1818,19 @@ CT_JS = r"""
     return '<span class="ct-av">' + (src ? '<img loading="lazy" alt="" src="' + esc(src) + '">' : esc(n.i)) + '</span>';
   }
   function reportsTxt(n){
-    if (n.grp) return n.k.length + (n.k.length === 1 ? ' person' : ' people');
     var k = (n.k || []).length, all = line(n).length - 1;
     return k ? k + (k === 1 ? ' report' : ' reports') + (all > k ? ' · ' + all + ' in line' : '') : 'no reports';
   }
 
   function drawSum(){
-    var c = D.c[ci], o = opened(), f = o[o.length - 1];
+    var c = cur(), o = opened(), f = o[o.length - 1];
     var s = f ? stats(c, line(f)) : stats(c, null), cut = !f && s !== c.st;
     var title = f ? esc(f.n) : esc(c.n),
-        meta = f ? (f.grp ? reportsTxt(f) + ' in ' + esc(c.n) + ' whose managers sit in other competencies'
-                          : esc(f.r) + (f.o ? ' · ' + esc(f.o) : '') + ' · ' + reportsTxt(f))
-                 : (c.lead ? 'Led by ' + esc(c.lead) : 'Guided by the Managing Director') + ' · ' +
-                   c.h.filter(function(h){ return !h.grp; }).length + ' with a team' +
+        meta = f ? esc(f.r) + (f.o ? ' · ' + esc(f.o) : '') + ' · ' + reportsTxt(f)
+                 : (c.lead ? 'Led by ' + esc(c.lead) + ' · ' : '') +
+                   (ci < 0 ? D.g[gi].c.length + (D.g[gi].c.length === 1 ? ' competency' : ' competencies')
+                           : c.h.length ? c.h.length + ' with a team'
+                           : c.st.people + (c.st.people === 1 ? ' person' : ' people') + ' · none leads a team here') +
                    (cut ? ' · ' + s.people + ' of ' + c.st.people + ' in the current filters' : '');
     var tiles = [[num(s.people), f ? 'people in line' : 'people'], [s.util == null ? '—' : s.util + '%', 'utilization'],
                  [s.fte == null ? '—' : s.fte.toFixed(1), 'available FTE' + (D.lm ? ' · ' + esc(D.lm) : '')],
@@ -1804,8 +1844,12 @@ CT_JS = r"""
 
   function drawCrumbs(){
     var o = opened();
-    crumbs.innerHTML = (o.length ? '<button type="button" class="ct-crumb" data-go="-2">' + esc(D.c[ci].n) + '</button>'
-                                 : '<span class="ct-crumb is-on">' + esc(D.c[ci].n) + '</span>') +
+    var g = D.g[gi], single = g.c.length === 1;
+    var gc = ci < 0 || single ? '' : '<span class="ct-sep">›</span>' + (o.length
+      ? '<button type="button" class="ct-crumb" data-go="-2">' + esc(D.c[ci].n) + '</button>'
+      : '<span class="ct-crumb is-on">' + esc(D.c[ci].n) + '</span>');
+    crumbs.innerHTML = (ci < 0 || (single && !o.length) ? '<span class="ct-crumb is-on">' + esc(g.n) + '</span>'
+        : '<button type="button" class="ct-crumb" data-go="' + (single ? -2 : -3) + '">' + esc(g.n) + '</button>') + gc +
       o.map(function(n, i){
         return '<span class="ct-sep">›</span>' + (i === o.length - 1
           ? '<span class="ct-crumb is-on">' + esc(n.n) + '</span>'
@@ -1814,11 +1858,10 @@ CT_JS = r"""
   }
 
   function drawHeads(){
-    var c = D.c[ci];
+    var c = cur();
     headsEl.classList.toggle('compact', hi >= 0);
     headsEl.innerHTML = c.h.map(function(h, i){
-      var outside = h.grp ? '<span class="ct-out">their managers sit in other competencies</span>'
-                  : h.mg && h.r !== 'Director' ? '<span class="ct-out">reports to ' + esc(h.mg) + '</span>' : '';
+      var outside = h.mg && h.r !== 'Director' ? '<span class="ct-out">reports to ' + esc(h.mg) + '</span>' : '';
       return '<button type="button" class="ct-head' + (i === hi ? ' is-on' : '') + (anyOn(h) ? '' : ' dim') +
         '" data-h="' + i + '">' + avatar(h) + '<span class="ct-txt"><b>' + esc(h.n) + '</b><span>' + esc(h.r) +
         (h.o ? ' · ' + esc(h.o) : '') + '</span>' + outside + '<span class="ct-cnt">' + reportsTxt(h) + '</span></span></button>';
@@ -1828,7 +1871,7 @@ CT_JS = r"""
   /* one card; a person with a team opens it, a person without one opens their bio */
   function card(n, d, i, root){
     var k = (n.k || []).length, open = !root && path[d] === i && k;
-    var cls = 'ct-card' + (root ? ' is-root' : '') + (open ? ' is-open' : '') + (n.grp || on(n.n) ? '' : ' dim');
+    var cls = 'ct-card' + (root ? ' is-root' : '') + (open ? ' is-open' : '') + (on(n.n) ? '' : ' dim');
     var tail = root ? '<span class="ct-badge">' + k + '</span>'
              : k ? '<span class="ct-badge">' + k + (open ? ' ▴' : ' ▾') + '</span>'
              : '<span class="ct-bio">Bio ›</span>';
@@ -1856,7 +1899,22 @@ CT_JS = r"""
       (deeper ? '<p class="ct-cap">' + esc(deeper.n) + '&rsquo;s team</p>' + level(deeper, d + 1) : '') + '</li></ul>';
   }
   function drawTree(){
-    var c = D.c[ci];
+    var c = cur();
+    if (ci < 0){
+      tree.innerHTML = '<p class="ct-hint">Pick a competency above to see everyone in it who has people reporting to them.</p>';
+      return;
+    }
+    if (!c.h.length){
+      /* no one leads a team in this competency: show its people, each opening their bio */
+      var ppl = c.p || [], ids = ppl.map(function(q){ return q.w; });
+      tree.innerHTML = '<p class="ct-k">People in ' + esc(c.n) + '</p><div class="ct-people">' + ppl.map(function(q){
+        return '<button type="button" class="ct-card' + (on(q.n) ? '' : ' dim') + '" data-bio="' + esc(q.w) + '" data-ids="' + esc(ids.join(',')) +
+          '" title="' + esc(q.n + ' · ' + q.r + (q.o ? ' · ' + q.o : '')) + '">' + avatar(q) + '<span class="ct-txt"><b>' + esc(q.n) +
+          '</b><span>' + esc(q.r) + '</span>' + (q.o ? '<span class="ct-off">' + esc(q.o) + '</span>' : '') +
+          '</span><span class="ct-bio">Bio ›</span></button>';
+      }).join('') + '</div>';
+      return;
+    }
     if (hi < 0){
       tree.innerHTML = '<p class="ct-hint">Pick anyone above to see the people under them.</p>';
       return;
@@ -1875,19 +1933,31 @@ CT_JS = r"""
   }
 
   function render(){
-    /* a competency with no one in the slice drops out of the picker, as it would from Workforce Mix */
-    var shown = D.c.map(function(c){ return c.m.filter(function(r){ return on(r[0]); }).length; });
-    if (!shown[ci]){
-      var first = shown.findIndex(function(k){ return k > 0; });
-      if (first >= 0){ ci = first; hi = -1; path = []; }
+    /* a group or competency with no one in the slice drops out of the picker, as on Workforce Mix */
+    function inView(x){ return x.m.filter(function(r){ return on(r[0]); }).length; }
+    function label(n, x){ return (inSlice && n !== x.m.length ? n + ' of ' : '') + x.st.people + (x.st.people === 1 ? ' person' : ' people'); }
+    var gShown = D.g.map(inView);
+    if (!gShown[gi]){
+      var first = gShown.findIndex(function(k){ return k > 0; });
+      if (first >= 0){ gi = first; ci = -1; hi = -1; path = []; }
     }
     [].forEach.call(picker.querySelectorAll('.ct-chip'), function(b, i){
-      b.classList.toggle('is-on', i === ci);
-      b.hidden = !shown[i];
+      b.classList.toggle('is-on', i === gi);
+      b.hidden = !gShown[i];
       var n = b.querySelector('.ct-n');
-      if (n) n.textContent = (inSlice && shown[i] !== D.c[i].m.length ? shown[i] + ' of ' : '') + D.c[i].st.people + ' people';
+      if (n) n.textContent = label(gShown[i], D.g[i]);
     });
-    if (!shown[ci]){
+    /* the group's competencies; a group with just one opens it straight away */
+    var g = D.g[gi], cShown = g.c.map(function(k){ return inView(D.c[k]); });
+    if (ci >= 0 && (D.c[ci].g !== gi || !cShown[g.c.indexOf(ci)])){ ci = -1; hi = -1; path = []; }
+    if (g.c.length === 1 && cShown[0]) ci = g.c[0];
+    sub.innerHTML = g.c.map(function(k, j){
+      var c = D.c[k];
+      return '<button type="button" class="ct-chip' + (k === ci ? ' is-on' : '') + '" data-c="' + k + '"' + (cShown[j] ? '' : ' hidden') +
+        '><b>' + esc(c.n) + '</b><span class="ct-n">' + label(cShown[j], c) + '</span></button>';
+    }).join('');
+    sub.hidden = subK.hidden = g.c.length < 2;
+    if (!gShown[gi]){
       sum.innerHTML = ''; crumbs.innerHTML = ''; headsEl.innerHTML = '';
       tree.innerHTML = '<p class="ct-empty">No competency team has anyone in the current filters.</p>';
       return;
@@ -1901,7 +1971,11 @@ CT_JS = r"""
 
   picker.addEventListener('click', function(ev){
     var b = ev.target.closest('.ct-chip'); if (!b) return;
-    ci = +b.getAttribute('data-ct'); hi = -1; path = []; render();
+    gi = +b.getAttribute('data-g'); ci = -1; hi = -1; path = []; render();
+  });
+  sub.addEventListener('click', function(ev){
+    var b = ev.target.closest('.ct-chip'); if (!b) return;
+    ci = +b.getAttribute('data-c'); hi = -1; path = []; render();
   });
   headsEl.addEventListener('click', function(ev){
     var b = ev.target.closest('[data-h]'); if (!b) return;
@@ -1911,12 +1985,13 @@ CT_JS = r"""
   crumbs.addEventListener('click', function(ev){
     var b = ev.target.closest('[data-go]'); if (!b) return;
     var go = +b.getAttribute('data-go');
-    if (go === -2){ hi = -1; path = []; } else path = path.slice(0, go + 1);
+    if (go === -3){ ci = -1; hi = -1; path = []; }
+    else if (go === -2){ hi = -1; path = []; } else path = path.slice(0, go + 1);
     render();
   });
   tree.addEventListener('click', function(ev){
     var b = ev.target.closest('[data-bio]');
-    if (b){ bio(b.getAttribute('data-bio')); return; }
+    if (b){ bio(b.getAttribute('data-bio'), (b.getAttribute('data-ids') || '').split(',').filter(Boolean)); return; }
     b = ev.target.closest('.ct-card[data-d]'); if (!b) return;
     var d = +b.getAttribute('data-d'), i = +b.getAttribute('data-i');
     var parent = opened()[d], q = parent && (parent.k || [])[i];
@@ -1955,7 +2030,7 @@ CT_JS = r"""
      competency with no one picked, the way the view opens */
   var resetBtn = document.getElementById('ana-reset');
   if (resetBtn) resetBtn.addEventListener('click', function(){
-    ci = 0; hi = -1; path = [];
+    gi = 0; ci = -1; hi = -1; path = [];
     if (!wrap.hidden){ readFilters(); render(); }
   });
 
@@ -3084,7 +3159,7 @@ def build():
     generated = datetime.now().strftime("%d %b %Y")
 
     # the Competency Teams view added to the dashboard's Team Analytics tab
-    ct_html, ct_css, ct_data = competency_teams(people, comps, comp_color, comp_leads, deliv)
+    ct_html, ct_css, ct_data = competency_teams(people, deliv)
     ct_view = ({"html": ct_html, "css": CT_CSS + "\n" + ct_css, "js": CT_JS, "data": ct_data,
                 "view": "cteam", "label": "Competency Teams"} if ct_html else None)
 
