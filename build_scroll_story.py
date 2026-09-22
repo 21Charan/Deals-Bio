@@ -484,14 +484,26 @@ def initials(name):
     return (parts[0][0] + (parts[-1][0] if len(parts) > 1 else "")).upper()
 
 
-def team_size(name, children):
-    seen, stack = set(), list(children.get(name, []))
-    while stack:
-        n = stack.pop()
-        if n not in seen:
-            seen.add(n)
-            stack.extend(children.get(n, []))
-    return len(seen)
+def link_managers(people):
+    """Who reports to whom, decided the way the dashboard decides it: RL Manager Email matched to
+    the manager's emailid first, then the RL Manager name, both trimmed and case-insensitive.
+    People are told apart by Workday ID (p["_key"]), so two people with one name stay two people.
+    Sets p["_mgr"] (the manager's record, or None) and returns {manager key: [report keys]}."""
+    k = lambda v: str(v or "").strip().lower()
+    by_mail, by_name = {}, {}
+    for p in people:
+        p["_key"] = p["_id"] or "name:" + p["Name"]
+        if k(p.get("emailid")):
+            by_mail.setdefault(k(p.get("emailid")), p)
+        by_name.setdefault(k(p["Name"]), p)
+    children = defaultdict(list)
+    for p in people:
+        m = (by_mail.get(k(p.get("RL Manager Email"))) if k(p.get("RL Manager Email")) else None) \
+            or by_name.get(k(p.get("RL Manager")))
+        p["_mgr"] = m if m is not p else None
+        if p["_mgr"]:
+            children[p["_mgr"]["_key"]].append(p["_key"])
+    return children
 
 
 def count_word(n):
@@ -929,9 +941,9 @@ def bars(counter, order=None):
 SENIOR = ("MD", "Director", "SM")   # "Senior Manager and above", for the leadership orbit
 
 
-def line_of(name, children):
-    """Everyone under a person through the reporting lines, direct and indirect, nearest first."""
-    seen, out, queue = {name}, [], list(children.get(name, []))
+def line_of(key, children):
+    """Everyone under a person (by _key) through the reporting lines, direct and indirect, nearest first."""
+    seen, out, queue = {key}, [], list(children.get(key, []))
     while queue:
         n = queue.pop(0)
         if n not in seen:
@@ -948,14 +960,13 @@ def leadership(mds, directors, comps, comp_color, comp_leads, children, photos, 
     if not directors and not mds:
         return ""
     members = dict(comps)
-    by_name = {p["Name"]: p for p in people}
+    by_key = {p["_key"]: p for p in people}
     n_dir = len(directors)
     d_ang = {d["Name"]: -90 + i * 360 / max(n_dir, 1) for i, d in enumerate(directors)}
 
     def team_of(d):
         """(everyone in their line, delivery figures over that line)"""
-        names = line_of(d["Name"], children)
-        team = [by_name[n] for n in names if n in by_name]
+        team = [by_key[k] for k in line_of(d["_key"], children) if k in by_key]
         f = deliv.figures(ids={p["_id"] for p in team}) if deliv and team else None
         return team, f
 
@@ -1357,7 +1368,7 @@ def shape(people, children):
     mf = g.get("male", 0) + g.get("female", 0)
     ratio = f"{round(g.get('male', 0) / mf * 100)}% : {100 - round(g.get('male', 0) / mf * 100)}%" if mf else "—"
     exps = [p["_exp"] for p in people if p["_exp"] is not None]
-    leads = sum(1 for p in people if children.get(p["Name"]))
+    leads = sum(1 for p in people if children.get(p["_key"]))
     mix = (f'<div class="mix-rows">'
            f'<div class="mx"><b>{joiners}</b><span>joined in the last 12 months</span></div>'
            f'<div class="mx"><b>{ratio}</b><span>male : female</span></div>'
@@ -1384,7 +1395,7 @@ def shape(people, children):
              None if p["_exp"] is None else round(p["_exp"], 2),
              None if p["_pwc"] is None else round(p["_pwc"], 2),
              str(p.get("Gender") or "").strip().lower()[:1],
-             1 if children.get(p["Name"]) else 0] for p in people]
+             1 if children.get(p["_key"]) else 0] for p in people]
     data = json.dumps({"g": [[k, label] for k, label, _ in groups], "c": comps, "t": terrs,
                        "o": offices, "b": [[lab, lo, hi] for lab, lo, hi in BANDS], "p": recs},
                       separators=(",", ":"))
@@ -1495,7 +1506,7 @@ def competency_teams(people, deliv):
         dirs = sorted((p for p in members if p["Role"] == "Director"), key=lambda p: (-(p["_exp"] or 0), p["Name"]))
         return {"lead": dirs[0]["Name"] if dirs else "",
                 "st": {"people": len(members),
-                       "leads": sum(1 for p in members if reports.get(p["Name"])),
+                       "leads": sum(1 for p in members if reports.get(p["_key"])),
                        "util": (round(f["util"]) if f and f["util"] is not None else None),
                        "ch": (round(f["ch"]) if f else None),
                        "fte": (round(f["spare"], 1) if f else None),
@@ -1509,16 +1520,16 @@ def competency_teams(people, deliv):
                 # standard hrs, chargeable hrs, spare FTE
                 "m": [[p["Name"], GRADE_LABEL.get(p["Role"], p["Role"]), p["_exp"], s_(p.get("Location")),
                        "" if is_other_territory(s_(p.get("Territory"))) else s_(p.get("Territory")),
-                       1 if reports.get(p["Name"]) else 0]
+                       1 if reports.get(p["_key"]) else 0]
                       + [round(v, 2) for v in pp.get(p["_id"], [0.0, 0.0, 0.0])] for p in members]}
 
     def reports_in(members):
-        names = {p["Name"] for p in members}
+        """{manager key: [their reports]}, only where both are in `members`"""
+        keys = {p["_key"] for p in members}
         rep_ = defaultdict(list)
         for p in members:
-            mgr = s_(p.get("RL Manager"))
-            if mgr in names and mgr != p["Name"]:
-                rep_[mgr].append(p)
+            if p["_mgr"] and p["_mgr"]["_key"] in keys:
+                rep_[p["_mgr"]["_key"]].append(p)
         return rep_
 
     for g in groups:
@@ -1527,33 +1538,26 @@ def competency_teams(people, deliv):
         del g["_mem"]
 
     for idx, (gi, name, members) in enumerate(pairs):
-        names = {p["Name"] for p in members}
-
-        reports = defaultdict(list)                  # only inside this competency
-        for p in members:
-            mgr = s_(p.get("RL Manager"))
-            if mgr in names and mgr != p["Name"]:
-                reports[mgr].append(p)
-
+        keys = {p["_key"] for p in members}
+        reports = reports_in(members)                # only inside this competency
         seen = set()
 
         def subtree(person):
             """The person and everyone under them, most senior first at each level."""
-            seen.add(person["Name"])
-            kids = [k for k in sorted(reports.get(person["Name"], []), key=order) if k["Name"] not in seen]
+            seen.add(person["_key"])
+            kids = [k for k in sorted(reports.get(person["_key"], []), key=order) if k["_key"] not in seen]
             for k in kids:
-                seen.add(k["Name"])
+                seen.add(k["_key"])
             out_node = node(person)
             out_node["k"] = [subtree(k) for k in kids]
             return out_node
 
         # Top level: whoever reports outside this competency, most senior first. Then anyone a
         # reporting loop kept out of every line, so no member is ever left off the chart.
-        tops = [p for p in sorted(members, key=order)
-                if s_(p.get("RL Manager")) not in names or s_(p.get("RL Manager")) == p["Name"]]
+        tops = [p for p in sorted(members, key=order) if not p["_mgr"] or p["_mgr"]["_key"] not in keys]
         heads = []
         for p in tops + sorted(members, key=order):
-            if p["Name"] in seen:
+            if p["_key"] in seen:
                 continue
             h = subtree(p)
             h["mg"] = s_(p.get("RL Manager"))
@@ -3109,11 +3113,7 @@ def build():
         raise SystemExit("No rows found in 'Employee Details'.")
     deliv = Delivery(util, {p["_id"] for p in people})
 
-    children = defaultdict(list)
-    for p in people:
-        mgr = str(p.get("RL Manager") or "").strip()
-        if mgr:
-            children[mgr].append(p["Name"])
+    children = link_managers(people)
 
     by_comp = defaultdict(list)
     for p in people:
