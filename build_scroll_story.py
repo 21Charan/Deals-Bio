@@ -1320,7 +1320,11 @@ def shape(people, children):
         t = terr_of(p)
         return p["_comp"], (t if t in named else OTHER)
     offices = [k for k, _ in ranked(Counter(str(p.get("Location") or "Unassigned").strip() for p in people))]
-    BANDS = [("0–2 yrs", 0, 3), ("3–5 yrs", 3, 6), ("6–10 yrs", 6, 11), ("11+ yrs", 11, 999)]
+    # The dashboard's own bands (Workforce Mix tenure), so a person sits in the same band in both
+    # places. Each runs from its first figure up to, not including, the next: 2.5 yrs is 1–3,
+    # exactly 3.0 is 3–5.
+    BANDS = [("Under 1 yr", 0, 1), ("1–3 yrs", 1, 3), ("3–5 yrs", 3, 5), ("5–10 yrs", 5, 10), ("10+ yrs", 10, 999)]
+    band_note = '<p class="bnote">A band includes its first figure: exactly 3.0 yrs counts in 3–5.</p>'
 
     def band_rows(field, stagger=60):
         counts = [(lab, sum(1 for p in people if p[field] is not None and lo <= p[field] < hi)) for lab, lo, hi in BANDS]
@@ -1411,12 +1415,12 @@ def shape(people, children):
     </div>
     <div class="shape-grid">
       <div class="sh-card"><p class="k">Grade pyramid</p>{rows}{lev}
-        <p class="k">Experience</p><div class="exp-rows" id="ts-exp">{band_rows("_exp")}</div></div>
+        <p class="k">Experience</p><div class="exp-rows" id="ts-exp">{band_rows("_exp")}</div>{band_note}</div>
       <div class="sh-card"><p class="k" id="ts-grid-k">Competency &times; client territory &middot; people</p>{grid}</div>
     </div>
     <div class="shape-grid offices">
       <div class="sh-card"><p class="k">Offices</p><div class="off-grid one" id="ts-off">{otiles}</div></div>
-      <div class="sh-card"><p class="k">Time at PwC</p><div id="ts-ten">{band_rows("_pwc")}</div>
+      <div class="sh-card"><p class="k">Time at PwC</p><div id="ts-ten">{band_rows("_pwc")}</div>{band_note}
         <p class="k">Mix</p><div id="ts-mix">{mix}</div></div>
     </div>
   </div>
@@ -2427,6 +2431,7 @@ button.hm.is-on{box-shadow:0 0 0 2px var(--yl) inset}
 .cx{stroke:var(--line)}
 .cy{fill:var(--mu2);font-size:12px}
 .bch{fill:var(--or);opacity:.9}
+.bnote{margin:10px 0 0;font-size:12px;color:var(--mu2)}
 .dl{font-size:12px;font-weight:600;font-family:var(--sans)}
 .dl-ch{fill:rgba(255,255,255,.92);font-size:11px}
 .dl-nc{fill:var(--mu);font-size:11px}
