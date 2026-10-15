@@ -484,7 +484,7 @@
   .ov-dark .ov-legend{color:rgba(255,255,255,0.6)}
   .ov-legend .sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:7px;vertical-align:-1px}
 
-  .ov-ins{margin:26px 0 0;padding:0;list-style:none;display:grid;gap:11px;max-width:80ch}
+  .ov-ins{margin:26px 0 0;padding:0;list-style:none;display:grid;gap:11px;max-width:110ch}
   .ov-ins li{position:relative;padding-left:25px;font-size:14px;line-height:1.6;color:var(--pwc-grey-700)}
   .ov-dark .ov-ins li{color:rgba(255,255,255,0.78)}
   .ov-ins li::before{content:"";position:absolute;left:0;top:7px;width:9px;height:9px;border-radius:2px;background:var(--pwc-orange)}
@@ -1464,7 +1464,7 @@
       <div class="multiselect ms-compact" id="pulse-loc-ms"></div>
       <div class="multiselect ms-compact" id="pulse-comp-ms"></div>
       <div class="multiselect ms-compact" id="pulse-terr-ms"></div>
-      <div class="multiselect ms-compact" id="pulse-cat-ms"></div>
+      <div class="multiselect ms-compact" id="pulse-month-ms" title="Limit the heatmap and every figure above it to the months you pick"></div>
       <select id="pulse-sort" title="Sort the heatmap">
         <option value="avg-desc">Sort: avg util &#8595;</option>
         <option value="avg-asc">Sort: avg util &#8593;</option>
@@ -3734,6 +3734,39 @@
   let pulseLowThr = null;
 
   // KPIs (against latest month)
+  // Month filter, built with the other Pulse controls further down. Declared
+  // up here, ahead of the first setPulseKpis() call, so the opening paint sees
+  // null and falls back to the whole window instead of hitting a dead zone.
+  let pMonth = null;
+
+  // The months actually in view: the fiscal window, narrowed by the month
+  // filter when one is set. The KPI strip, the heatmap columns, the average
+  // column, the utilization band, the insight lists and the export all read
+  // their window from here, so picking months moves every figure together
+  // rather than only the grid.
+  function pulseWin(){
+    const MS = FY_DATA[pulseFY].months;
+    if (!pMonth || !pMonth.selected.size) return MS;
+    const sel = MS.filter(m => pMonth.selected.has(fmtMonth(m)));
+    // A selection carrying nothing from this window would blank the page.
+    return sel.length ? sel : MS;
+  }
+
+  // What to call that window on labels. A narrowed year must not still be
+  // labelled as the whole one, or the strip claims months it is not reporting.
+  function pulseWinLabel(){
+    const all = FY_DATA[pulseFY].months, MS = pulseWin();
+    const base = pulseFY === 'am' ? 'PY May-Apr' : 'FY Jul-Jun';
+    if (!MS.length || MS.length === all.length) return base;
+    if (MS.length === 1) return fmtMonth(MS[0]);
+    // A contiguous run reads as a range; a scattered pick cannot, so count it
+    // rather than imply the months in between were chosen.
+    const i = all.indexOf(MS[0]), j = all.indexOf(MS[MS.length - 1]);
+    return (j - i + 1 === MS.length)
+      ? fmtMonth(MS[0]) + ' - ' + fmtMonth(MS[MS.length - 1])
+      : MS.length + ' months';
+  }
+
   function setPulseKpis(list, agg, universe){
     list = list || EMPLOYEES;
     // Rates and hour totals are computed over `agg` (includes Managing
@@ -3750,9 +3783,9 @@
     // window here rather than from the globals is what makes that true.
     const FY   = FY_DATA[pulseFY];
     const HRS  = HOURS_FYD[pulseFY];
-    const MS   = FY.months;
+    const MS   = pulseWin();
     const last = MS.length ? MS[MS.length - 1] : '';
-    const win  = pulseFY === 'am' ? 'PY May-Apr' : 'FY Jul-Jun';
+    const win  = pulseWinLabel();
     const keys = (people, months) => people.flatMap(e => months.map(m => String(e.WorkdayID) + '|' + m));
     const pct  = v => v === null ? '-' : Math.round(v) + '%';
     const hfmt = n => Math.round(n).toLocaleString('en-US');
@@ -3763,7 +3796,8 @@
     const lastAvg = last ? utilOver(keys(agg, [last]), HRS, FY.lookup) : null;
     pulseLowThr = lastAvg;
     set('pl-avg',   pct(lastAvg));
-    set('pl-avg-lbl', 'Latest Month Avg' + (last ? ' \u00b7 ' + fmtMonth(last) : ''));
+    set('pl-avg-lbl', (MS.length === FY.months.length ? 'Latest Month Avg' : 'Month Avg')
+      + (last ? ' \u00b7 ' + fmtMonth(last) : ''));
 
     // Band counts read the same window, so they cannot drift from the average
     // above them when the toggle changes.
@@ -3920,7 +3954,13 @@
   const pLoc  = buildMS('pulse-loc-ms',  'All locations',        uniqueValues('Location'),                  pChange, 'loc');
   const pComp = buildMS('pulse-comp-ms', 'All competencies',     orderCompetency(uniqueValues('Competency Filter')), pChange, 'comp');
   const pTerr = buildMS('pulse-terr-ms', 'All territories',      orderTerritory(uniqueValues('Territory Filter')),           pChange, 'terr');
-  const pCat  = buildMS('pulse-cat-ms',  'All skill categories', ORDERED_CATS.filter(c => c !== 'Uncategorised'), pChange);
+  // Months of whichever fiscal window is showing. Rebuilt by the FY / PY
+  // toggle below, because the two windows do not cover the same months.
+  function buildMonthMS(){
+    pMonth = buildMS('pulse-month-ms', 'All months',
+      FY_DATA[pulseFY].months.map(fmtMonth), pChange);
+  }
+  buildMonthMS();
 
   // Pagination state
   const PULSE_PAGE_SIZE = 60;
@@ -3945,6 +3985,7 @@
     const q   = document.getElementById('pulse-search').value.toLowerCase().trim();
     const srt = document.getElementById('pulse-sort').value;
     const FY  = FY_DATA[pulseFY];
+    const MS  = pulseWin();
     const mgr = mgrMatcher();
     // The direct / overall choice only means something once a manager is
     // chosen, so the toggle appears with the selection and hides with it.
@@ -3960,7 +4001,7 @@
       }
     }
     const fyH  = HOURS_FYD[pulseFY];
-    const fyAvg = e => utilOver(FY.months.map(m => String(e.WorkdayID) + '|' + m), fyH, FY.lookup);
+    const fyAvg = e => utilOver(MS.map(m => String(e.WorkdayID) + '|' + m), fyH, FY.lookup);
 
     // The filters, on their own. Kept separate from the MD and population rules
     // so the reconciliation note below can ask "who ELSE matched these filters
@@ -3972,7 +4013,6 @@
       if (pLoc.selected.size  && !pLoc.selected.has(String(e['Location'] || ''))) return false;
       if (pComp.selected.size && !pComp.selected.has(String(e['Competency Filter'] || ''))) return false;
       if (pTerr.selected.size && !pTerr.selected.has(String(e['Territory Filter'] || ''))) return false;
-      if (pCat.selected.size && !empInCats(e, pCat.selected)) return false;
       if (!q) return true;
       return ['Name','Role','Location','Territory Group','Competency Group','Qualification']
         .some(k => String(e[k] ?? '').toLowerCase().includes(q));
@@ -4001,7 +4041,7 @@
     // Sort on the window that is showing. The precomputed _avgUtil /
     // _latestUtil are fixed to FY Jul-Jun, so sorting on them left the rows in
     // Jul-Jun order under the PY May-Apr heading — the column read as unsorted.
-    const sortLast = FY.months.length ? FY.months[FY.months.length - 1] : '';
+    const sortLast = MS.length ? MS[MS.length - 1] : '';
     const mapOf = f => new Map(list.map(e => {
       const v = f(e);
       return [e, (v === undefined || v === null || isNaN(v)) ? null : v];
@@ -4050,9 +4090,9 @@
 
     // Build grid template: name column (220px) + N month columns
     const heatmap = document.getElementById('heatmap');
-    heatmap.style.gridTemplateColumns = '220px 66px 14px repeat(' + FY.months.length + ', minmax(58px, 1fr))';
+    heatmap.style.gridTemplateColumns = '220px 66px 14px repeat(' + MS.length + ', minmax(58px, 1fr))';
 
-    if (!FY.months.length){
+    if (!MS.length){
       heatmap.innerHTML = '<div class="insight-empty" style="grid-column:1/-1;padding:30px;">No utilization data available.</div>';
       document.getElementById('pulse-pager').innerHTML = '';
       return;
@@ -4061,11 +4101,12 @@
     let html = '<div class="hm-corner">Employee (' + rows.length + ')</div>';
     // Named after the window that is showing. It read "FY Util" in both, which
     // made the PY column look like it was still reporting Jul-Jun.
-    const winShort = pulseFY === 'am' ? 'PY' : 'FY';
-    const winLong  = pulseFY === 'am' ? 'PY May-Apr' : 'FY Jul-Jun';
+    const fullWin  = MS.length === FY.months.length;
+    const winShort = fullWin ? (pulseFY === 'am' ? 'PY' : 'FY') : 'Avg';
+    const winLong  = pulseWinLabel();
     html += '<div class="hm-month-header hm-fy-col" title="Average utilization across ' + winLong + '">' + winShort + ' Util</div>';
     html += '<div class="hm-spacer"></div>';
-    FY.months.forEach(m => { html += '<div class="hm-month-header">' + esc(fmtMonth(m)) + '</div>'; });
+    MS.forEach(m => { html += '<div class="hm-month-header">' + esc(fmtMonth(m)) + '</div>'; });
 
     page.forEach(e => {
       const ph = e._photo
@@ -4075,9 +4116,9 @@
       // say what it is. A recent Join Date explains it; otherwise be honest
       // that nothing was reported rather than implying zero utilization.
       let gap = '';
-      if (!FY.months.some(m => FY.lookup[String(e.WorkdayID) + '|' + m] !== undefined)){
+      if (!MS.some(m => FY.lookup[String(e.WorkdayID) + '|' + m] !== undefined)){
         const jd = new Date(String(e['Join Date'] || ''));
-        const firstM = FY.months[0] || '';
+        const firstM = MS[0] || '';
         const jk = isNaN(jd) ? '' : jd.getFullYear() + '-' + String(jd.getMonth() + 1).padStart(2, '0');
         gap = (jk && jk >= firstM)
           ? '<span class="hm-gap">Joined ' + esc(fmtMonth(jk)) + '</span>'
@@ -4091,9 +4132,9 @@
             +   '</div></div>';
       const fv = fyAvg(e);
       if (fv === null){ html += '<div class="hm-cell hm-fy-col empty" title="No data"></div>'; }
-      else { const fc = utilColor(fv); html += '<div class="hm-cell hm-fy-col' + (fc.dark ? ' text-dark' : '') + '" style="background:' + fc.bg + ';font-weight:700;" data-id="' + esc(e.WorkdayID) + '" title="' + winShort + ' average &middot; ' + Math.round(fv) + '%">' + Math.round(fv) + '%</div>'; }
+      else { const fc = utilColor(fv); html += '<div class="hm-cell hm-fy-col' + (fc.dark ? ' text-dark' : '') + '" style="background:' + fc.bg + ';font-weight:700;" data-id="' + esc(e.WorkdayID) + '" title="' + winLong + ' average &middot; ' + Math.round(fv) + '%">' + Math.round(fv) + '%</div>'; }
       html += '<div class="hm-spacer"></div>';
-      FY.months.forEach(m => {
+      MS.forEach(m => {
         const v = FY.lookup[String(e.WorkdayID) + '|' + m];
         if (v === undefined){
           html += '<div class="hm-cell empty" title="No data"></div>';
@@ -4141,8 +4182,9 @@
     // KPI cards above these lists already switch with the toggle, and the two
     // must not appear to disagree.
     const iFY   = FY_DATA[pulseFY];
-    const iLast = iFY.months.length ? iFY.months[iFY.months.length - 1] : '';
-    const iL3   = iFY.months.slice(-3);
+    const iMS   = pulseWin();
+    const iLast = iMS.length ? iMS[iMS.length - 1] : '';
+    const iL3   = iMS.slice(-3);
     const latestOf = e => iFY.lookup[String(e.WorkdayID) + '|' + iLast];
     const sustainedOf = e => {
       const vs = iL3.map(m => iFY.lookup[String(e.WorkdayID) + '|' + m])
@@ -4250,7 +4292,7 @@
     const note = document.getElementById('pulse-range-note');
     if (!note) return;
     if (!on){ note.innerHTML = ''; return; }
-    const basis = (pulseFY === 'am' ? 'PY May&ndash;Apr' : 'FY Jul&ndash;Jun') + ' average';
+    const basis = esc(pulseWinLabel()) + ' average';
     note.innerHTML = 'Band <b>' + plMin + '&ndash;' + plMax + (plMax >= PL_BAND_MAX ? '%+' : '%')
       + '</b> on ' + basis + ' &mdash; showing <b>' + shown + '</b> of ' + total
       + ' filtered ' + (total === 1 ? 'person' : 'people')
@@ -4275,7 +4317,7 @@
 
   document.getElementById('pulse-reset').addEventListener('click', () => {
     document.getElementById('pulse-search').value = '';
-    [pMgr, pRole, pLoc, pComp, pTerr, pCat].forEach(ms => { ms.selected.clear(); ms.refresh(); });
+    [pMgr, pRole, pLoc, pComp, pTerr, pMonth].forEach(ms => { if (ms){ ms.selected.clear(); ms.refresh(); } });
     document.getElementById('pulse-sort').value = 'avg-desc';
     plMin = 0; plMax = PL_BAND_MAX;
     pulsePop = 'all';
@@ -4321,6 +4363,9 @@
       if (btn.disabled || btn.dataset.fy === pulseFY) return;
       pulseFY = btn.dataset.fy;
       document.querySelectorAll('#pulse-fy-toggle button').forEach(b => b.classList.toggle('active', b === btn));
+      // The two windows cover different months, so a pick made in one cannot
+      // carry into the other: rebuild the list and start again from All months.
+      buildMonthMS();
       pulsePage = 0; renderPulse();
     }));
 
@@ -4348,20 +4393,20 @@
       if (pLoc.selected.size  && !pLoc.selected.has(String(e['Location'] || ''))) return false;
       if (pComp.selected.size && !pComp.selected.has(String(e['Competency Filter'] || ''))) return false;
       if (pTerr.selected.size && !pTerr.selected.has(String(e['Territory Filter'] || ''))) return false;
-      if (pCat.selected.size && !empInCats(e, pCat.selected)) return false;
       if (!q) return true;
       return ['Name','Role','Location','Territory Group','Competency Group','Qualification'].some(k => String(e[k] ?? '').toLowerCase().includes(q));
     });
     if (!list.length){ alert('No employees to export with the current filters.'); return; }
-    const fyLabel = pulseFY === 'jj' ? 'FY Jul-Jun' : 'PY May-Apr';
-    const header = ['Employee', 'Role', 'Competency', 'Location', fyLabel + ' Avg %'].concat(FY.months.map(fmtMonth));
+    const eMS = pulseWin();
+    const fyLabel = pulseWinLabel();
+    const header = ['Employee', 'Role', 'Competency', 'Location', fyLabel + ' Avg %'].concat(eMS.map(fmtMonth));
     const rows = [header];
     list.forEach(e => {
       let sum = 0, n = 0;
-      const cells = FY.months.map(m => { const v = FY.lookup[String(e.WorkdayID) + '|' + m]; if (v !== undefined){ sum += v; n++; return Math.round(v); } return ''; });
+      const cells = eMS.map(m => { const v = FY.lookup[String(e.WorkdayID) + '|' + m]; if (v !== undefined){ sum += v; n++; return Math.round(v); } return ''; });
       // Hours-weighted, exactly as the FY Util column on screen. Averaging the
       // monthly percentages here would make the export disagree with the page.
-      const fyW = utilOver(FY.months.map(m => String(e.WorkdayID) + '|' + m), HOURS_FYD[pulseFY], FY.lookup);
+      const fyW = utilOver(eMS.map(m => String(e.WorkdayID) + '|' + m), HOURS_FYD[pulseFY], FY.lookup);
       const fyA = fyW === null ? '' : Math.round(fyW);
       rows.push([e.Name, e.Role, (e['Competency Group'] || e['Competency'] || ''), (e.Location || ''), fyA].concat(cells));
     });
@@ -5847,21 +5892,20 @@
     const srF = srs.filter(e => gOf(e) === 'f').length, srM = srs.filter(e => gOf(e) === 'm').length;
     const topLoc = pairs(locs)[0], topTerr = pairs(terrs)[0];
     $('ov-scale-ins').innerHTML = bullets([
-      topLoc ? '<b>' + esc(topLoc[0]) + '</b> is the largest location, holding '
-        + Math.round(topLoc[1] / ACT.length * 100) + '% of the practice.' : null,
-      topTerr ? 'Most people are aligned to <b>' + esc(topTerr[0]) + '</b> (' + topTerr[1] + ' of ' + ACT.length + ').' : null,
-      (males + females) ? 'Gender mix is <b>' + males + ' : ' + females + '</b> male to female'
-        + ((srF + srM) ? ', and <b>' + srM + ' : ' + srF + '</b> at Manager and above.' : '.') : null,
+      topLoc ? '<b>' + esc(topLoc[0]) + '</b> serves as the primary talent hub, accounting for <b>'
+        + Math.round(topLoc[1] / ACT.length * 100) + '%</b> of the practice.' : null,
+      topTerr ? '<b>' + esc(topTerr[0]) + '</b> is the key territory served, with <b>' + topTerr[1] + ' of ' + ACT.length
+        + '</b> professionals (' + Math.round(topTerr[1] / ACT.length * 100) + '%) aligned to it.' : null,
+      (males + females) ? 'Gender representation is nearly balanced at <b>' + males + ' male : ' + females + ' female</b>'
+        + ((srF + srM) ? ', with a <b>' + srM + ' : ' + srF + '</b> split at Manager level and above.' : '.') : null,
       // Two KPIs above read in years — total experience and time at PwC — and
       // they can look identical. Say what the gap between them means instead of
       // repeating either figure.
       (tens.length && xps.length) ? (function(){
         const totalExp = xps.reduce((a, b) => a + b, 0) / xps.length;
         const outside = totalExp - avgTen;
-        return outside < 0.5
-          ? 'Almost all experience on the team was built at PwC &mdash; little of it came from outside.'
-          : 'Of the <b>' + totalExp.toFixed(1) + ' years</b> of experience the average person brings, <b>'
-            + outside.toFixed(1) + '</b> were earned before joining PwC.';
+        return 'Professionals bring an average of <b>' + totalExp.toFixed(1) + ' years</b> of experience, including <b>'
+          + Math.max(0, outside).toFixed(1) + ' years</b> gained prior to joining PwC.';
       })() : null
     ]);
 
@@ -5912,17 +5956,18 @@
       return { c, skills: ks.length, people: ids.size, per: ids.size ? ks.length / ids.size : 0 };
     }).filter(r => r.people).sort((a, b) => b.per - a.per)[0];
     $('ov-cap-ins').innerHTML = bullets([
-      keys.length ? '<b>' + shared + '</b> of ' + keys.length + ' skills are used by more than one competency'
-        + (shared ? ' &mdash; those are the people you can move between teams.'
-                  : ', so no skill is shared across teams.') : null,
+      keys.length ? '<b>' + shared + '</b> of ' + keys.length + ' skills are applied across more than one competency'
+        + (shared ? ' - enabling flexible deployment of talent between teams.'
+                  : ', indicating no skill is currently shared across teams.') : null,
       keys.length ? (juniorOnly.length
-        ? '<b>' + juniorOnly.length + '</b> skills have no holder at Manager grade or above: '
+        ? '<b>' + juniorOnly.length + '</b> ' + (juniorOnly.length === 1 ? 'skill has' : 'skills have')
+          + ' no coverage at Manager level or above: '
           + juniorOnly.slice(0, 3).map(k => esc(SKILL_DISPLAY[k] || k)).join(', ')
           + (juniorOnly.length > 3 ? ' and others.' : '.')
-        : 'Every skill has at least one holder at Manager grade or above.') : null,
-      spread ? '<b>' + esc(spread.c) + '</b> covers <b>' + spread.skills + '</b> skills with only <b>'
-        + spread.people + '</b> ' + (spread.people === 1 ? 'person' : 'people')
-        + ' &mdash; the widest range per head.' : null
+        : 'Every skill is covered by at least one professional at Manager level or above.') : null,
+      spread ? '<b>' + esc(spread.c) + '</b> spans <b>' + spread.skills + '</b> skills with just <b>'
+        + spread.people + '</b> ' + (spread.people === 1 ? 'professional' : 'professionals')
+        + ' - the broadest skill range per head.' : null
     ]);
 
     // If any competency bucket is a catch-all, say what is inside it. Otherwise
